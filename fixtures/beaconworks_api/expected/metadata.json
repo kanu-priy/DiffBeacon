@@ -1,0 +1,61 @@
+{
+  "project_name": "BeaconWorks API",
+  "base_version": "v1.0-baseline",
+  "head_version": "v1.1-department-update",
+  "expected_deltas": [
+    {
+      "category": "api_contract",
+      "target_symbol": "api.serializers.EmployeeCreateSerializer",
+      "field": "department_id",
+      "change": "required=True changed to required=False, allow_null=True",
+      "file_path": "serializers.py"
+    },
+    {
+      "category": "validation",
+      "target_symbol": "api.serializers.EmployeeCreateSerializer.validate_annual_salary",
+      "change": "threshold increased from 30000 to 45000",
+      "file_path": "serializers.py"
+    },
+    {
+      "category": "data_model",
+      "target_symbol": "models.Employee.employment_status",
+      "change": "default value changed from 'probation' to 'active'",
+      "file_path": "models.py"
+    },
+    {
+      "category": "logic",
+      "target_symbol": "services.payroll.calculate_tax_deduction",
+      "change": "tax rate changed from 0.15 to 0.20",
+      "file_path": "services/payroll.py"
+    },
+    {
+      "category": "deleted_symbol_broken_reference",
+      "target_symbol": "services.utils.legacy_format_ssn",
+      "change": "function deleted from utils.py, still referenced in services/reporting.py",
+      "file_path": "services/utils.py"
+    }
+  ],
+  "expected_unknowns": [
+    {
+      "reason": "dynamic_dispatch",
+      "target_symbol": "services.notifications.dispatch_notification",
+      "file_path": "services/notifications.py",
+      "detail": "getattr(_dispatcher, f'send_{channel}')"
+    },
+    {
+      "reason": "missing_runtime_config",
+      "target_symbol": "config/legacy_keys.json",
+      "file_path": "config/legacy_keys.json",
+      "detail": "File present in base, deleted in head"
+    }
+  ],
+  "expected_scenarios": [
+    {
+      "id": "scenario-missing-dept",
+      "question": "What happens if a request omits department_id now?",
+      "base_outcome": "Fails at serializer validation with HTTP 400 Bad Request",
+      "head_outcome": "Passes serializer validation; assigns default fallback department (pk=1) in service",
+      "uncertainty": "Assumes Department with pk=1 exists in database"
+    }
+  ]
+}

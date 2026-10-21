@@ -1,0 +1,1 @@
+# DiffBeacon Django configuration package
