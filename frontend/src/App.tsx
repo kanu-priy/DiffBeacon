@@ -1,16 +1,38 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Navbar } from './components/Navbar';
+import { CommandPalette } from './components/CommandPalette';
 import { LandingPage } from './features/dashboard/LandingPage';
 import { Dashboard } from './features/dashboard/Dashboard';
 import { DemoWorkspace } from './features/dashboard/DemoWorkspace';
 import { AnalysisWorkspace } from './features/changes/AnalysisWorkspace';
 
 export const App: React.FC = () => {
+  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
+
+  // Global Ctrl+K / Cmd+K shortcut listener
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setIsCommandPaletteOpen((prev) => !prev);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   return (
     <BrowserRouter>
       <div className="min-h-screen flex flex-col bg-[#0b0f19] text-slate-100 selection:bg-cyan-500/30 selection:text-cyan-200">
-        <Navbar />
+        <Navbar onOpenCommandPalette={() => setIsCommandPaletteOpen(true)} />
+
+        <CommandPalette
+          isOpen={isCommandPaletteOpen}
+          onClose={() => setIsCommandPaletteOpen(false)}
+        />
+
         <main className="flex-1">
           <Routes>
             <Route path="/" element={<LandingPage />} />
@@ -20,6 +42,7 @@ export const App: React.FC = () => {
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </main>
+
         <footer className="border-t border-slate-800/80 py-6 text-center text-xs text-slate-500">
           <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
             <span>DiffBeacon — See what a change touches.</span>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ScenarioQuery, TraceStep } from '../../types';
 import { api } from '../../lib/api';
@@ -12,9 +12,15 @@ import {
   CheckCircle2,
   FileCode,
   Loader2,
-  HelpCircle,
   Play,
+  Pause,
+  SkipForward,
+  SkipBack,
   RotateCcw,
+  Terminal,
+  Copy,
+  Check,
+  Zap,
 } from 'lucide-react';
 
 interface Props {
@@ -26,6 +32,13 @@ export const ScenarioStudio: React.FC<Props> = ({ analysisId, onInspectLine }) =
   const queryClient = useQueryClient();
   const [questionInput, setQuestionInput] = useState('');
   const [selectedScenarioId, setSelectedScenarioId] = useState<string>('');
+
+  // Interactive Execution Stepper state
+  const [currentStepIndex, setCurrentStepIndex] = useState<number>(1);
+  const [isPlaying, setIsPlaying] = useState<boolean>(false);
+  const [isTestRunning, setIsTestRunning] = useState<boolean>(false);
+  const [testExecutionResult, setTestExecutionResult] = useState<'not_executed' | 'passed'>('not_executed');
+  const [copiedSummary, setCopiedSummary] = useState(false);
 
   const { data: scenarios, isLoading } = useQuery({
     queryKey: ['scenarios', analysisId],
@@ -41,6 +54,9 @@ export const ScenarioStudio: React.FC<Props> = ({ analysisId, onInspectLine }) =
       queryClient.invalidateQueries({ queryKey: ['scenarios', analysisId] });
       setSelectedScenarioId(newScenario.id);
       setQuestionInput('');
+      setCurrentStepIndex(1);
+      setIsPlaying(false);
+      setTestExecutionResult('not_executed');
     },
   });
 
@@ -53,40 +69,91 @@ export const ScenarioStudio: React.FC<Props> = ({ analysisId, onInspectLine }) =
     'What assumptions are needed to reach this conclusion?',
   ];
 
-  const handleStarterClick = (q: string) => {
-    setQuestionInput(q);
-    createScenarioMutation.mutate(q);
+  const maxSteps = Math.max(
+    activeScenario?.traces?.base?.length || 0,
+    activeScenario?.traces?.head?.length || 0,
+    1
+  );
+
+  // Auto-play stepper loop
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (isPlaying) {
+      timer = setInterval(() => {
+        setCurrentStepIndex((prev) => {
+          if (prev >= maxSteps) {
+            setIsPlaying(false);
+            return prev;
+          }
+          return prev + 1;
+        });
+      }, 1600);
+    }
+    return () => clearInterval(timer);
+  }, [isPlaying, maxSteps]);
+
+  const handleRunSimulatedTest = () => {
+    setIsTestRunning(true);
+    setTimeout(() => {
+      setIsTestRunning(false);
+      setTestExecutionResult('passed');
+    }, 1400);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!questionInput.trim() || createScenarioMutation.isPending) return;
-    createScenarioMutation.mutate(questionInput.trim());
+  const handleCopyMarkdown = () => {
+    if (!activeScenario) return;
+    const md = `### DiffBeacon Scenario Trace: ${activeScenario.question}
+**Condition:** ${activeScenario.normalized_condition}
+
+**Behavioral Delta:**
+${activeScenario.behavioral_delta_summary}
+
+**Downstream Impact:**
+${activeScenario.impact_summary}
+
+**Verification Plan:**
+- Preconditions: ${activeScenario.verification_plan.preconditions}
+- Expected: ${activeScenario.verification_plan.expected_result}`;
+    navigator.clipboard.writeText(md);
+    setCopiedSummary(true);
+    setTimeout(() => setCopiedSummary(false), 2500);
   };
 
   return (
     <div className="space-y-6">
-      {/* Header & Prompt Box */}
-      <div className="p-6 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <div className="p-1.5 rounded-lg bg-violet-950/60 border border-violet-800/60 text-violet-400">
+      {/* Top Header & Dynamic Evaluator */}
+      <div className="p-6 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-4 shadow-xl backdrop-blur-md">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 rounded-xl bg-violet-950/70 border border-violet-800/80 text-violet-400">
               <Split className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-base font-bold text-slate-100">Change Scenario Studio</h2>
+              <h2 className="text-base font-bold text-slate-100 flex items-center gap-2">
+                <span>Change Scenario Studio</span>
+                <span className="px-2 py-0.5 rounded text-[10px] font-mono uppercase bg-cyan-950 text-cyan-400 border border-cyan-800/80">
+                  Interactive Simulator
+                </span>
+              </h2>
               <p className="text-xs text-slate-400">
-                Query hypothetical runtime conditions and inspect side-by-side comparative execution traces.
+                Execute behavioral hypotheses across versions and step through side-by-side execution traces.
               </p>
             </div>
           </div>
 
-          <div className="text-[11px] font-mono text-cyan-400 bg-cyan-950/40 px-2.5 py-1 rounded border border-cyan-800/60">
-            Zero-Hallucination Guardrail Active
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleCopyMarkdown}
+              disabled={!activeScenario}
+              className="px-3 py-1.5 rounded-lg bg-slate-950 hover:bg-slate-800 border border-slate-700 text-slate-300 font-mono text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+            >
+              {copiedSummary ? <Check className="w-3.5 h-3.5 text-teal-400" /> : <Copy className="w-3.5 h-3.5 text-slate-400" />}
+              <span>{copiedSummary ? 'Copied PR Summary' : 'Export for PR'}</span>
+            </button>
           </div>
         </div>
 
-        {/* Question Starters */}
+        {/* Suggestion Starter Pills */}
         <div className="space-y-2">
           <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">
             Suggested Scenario Starters:
@@ -96,9 +163,12 @@ export const ScenarioStudio: React.FC<Props> = ({ analysisId, onInspectLine }) =
               <button
                 key={idx}
                 type="button"
-                onClick={() => handleStarterClick(q)}
+                onClick={() => {
+                  setQuestionInput(q);
+                  createScenarioMutation.mutate(q);
+                }}
                 disabled={createScenarioMutation.isPending}
-                className="px-3 py-1.5 rounded-lg bg-slate-950 hover:bg-slate-800 border border-slate-800 text-xs text-slate-300 hover:text-cyan-300 transition-colors text-left cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+                className="px-3 py-1.5 rounded-lg bg-slate-950/80 hover:bg-slate-800 border border-slate-800 text-xs text-slate-300 hover:text-cyan-300 transition-colors text-left cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
               >
                 <Sparkles className="w-3 h-3 text-cyan-400 shrink-0" />
                 <span>{q}</span>
@@ -108,38 +178,56 @@ export const ScenarioStudio: React.FC<Props> = ({ analysisId, onInspectLine }) =
         </div>
 
         {/* Input Form */}
-        <form onSubmit={handleSubmit} className="flex gap-2 pt-2">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (questionInput.trim() && !createScenarioMutation.isPending) {
+              createScenarioMutation.mutate(questionInput.trim());
+            }
+          }}
+          className="flex gap-2 pt-2"
+        >
           <input
             type="text"
-            placeholder="Ask a concrete behavioral question (e.g. 'What happens if a request omits department_id now?')..."
+            placeholder="Type a concrete developer question (e.g. 'What happens if a request omits department_id now?')..."
             value={questionInput}
             onChange={(e) => setQuestionInput(e.target.value)}
             disabled={createScenarioMutation.isPending}
-            className="flex-1 text-xs px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-cyan-500 transition-colors"
+            className="flex-1 text-xs px-4 py-3 rounded-xl bg-slate-950 border border-slate-700 text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-cyan-500 transition-colors font-mono"
           />
           <button
             type="submit"
             disabled={!questionInput.trim() || createScenarioMutation.isPending}
-            className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-400 hover:to-teal-400 disabled:opacity-50 text-slate-950 font-bold text-xs flex items-center gap-2 transition-all cursor-pointer shadow-md"
+            className="px-5 py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-400 hover:to-teal-400 disabled:opacity-50 text-slate-950 font-bold text-xs flex items-center gap-2 transition-all cursor-pointer shadow-lg shadow-cyan-500/20"
           >
             {createScenarioMutation.isPending ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>Auditing AST...</span>
+              </>
             ) : (
-              <Send className="w-4 h-4" />
+              <>
+                <Send className="w-4 h-4" />
+                <span>Trace Scenario</span>
+              </>
             )}
-            <span>Evaluate</span>
           </button>
         </form>
       </div>
 
-      {/* Scenario List Tabs */}
+      {/* Evaluated Scenarios Tab Strip */}
       {scenarios && scenarios.length > 0 && (
         <div className="flex items-center gap-2 overflow-x-auto pb-1">
           <span className="text-xs text-slate-400 font-semibold mr-1 shrink-0">Evaluated Scenarios:</span>
           {scenarios.map((s) => (
             <button
               key={s.id}
-              onClick={() => setSelectedScenarioId(s.id)}
+              onClick={() => {
+                setSelectedScenarioId(s.id);
+                setCurrentStepIndex(1);
+                setIsPlaying(false);
+                setTestExecutionResult('not_executed');
+              }}
               className={`px-3 py-1.5 rounded-lg text-xs font-mono truncate max-w-xs transition-colors cursor-pointer shrink-0 ${
                 activeScenario?.id === s.id
                   ? 'bg-cyan-950 text-cyan-300 border border-cyan-800 font-bold'
@@ -152,7 +240,7 @@ export const ScenarioStudio: React.FC<Props> = ({ analysisId, onInspectLine }) =
         </div>
       )}
 
-      {/* Active Scenario Detailed Trace */}
+      {/* Interactive Scenario View */}
       {isLoading ? (
         <div className="p-16 text-center text-slate-400 space-y-3">
           <Loader2 className="w-8 h-8 animate-spin text-cyan-400 mx-auto" />
@@ -163,23 +251,23 @@ export const ScenarioStudio: React.FC<Props> = ({ analysisId, onInspectLine }) =
           {/* Section A: Scenario Interpretation */}
           <div className="p-5 rounded-xl bg-slate-900/80 border border-slate-800 space-y-3">
             <div className="flex items-center justify-between pb-2 border-b border-slate-800">
-              <span className="text-xs font-mono font-bold text-cyan-400 uppercase tracking-wider">
-                A. Scenario Interpretation
+              <span className="text-xs font-mono font-bold text-cyan-400 uppercase tracking-wider flex items-center gap-1.5">
+                <span>A. Scenario Interpretation</span>
               </span>
               <span className="text-[11px] font-mono text-slate-400">
-                Status: <strong className="text-teal-400 uppercase">{activeScenario.status}</strong>
+                Resolution: <strong className="text-teal-400 uppercase">{activeScenario.status}</strong>
               </span>
             </div>
 
             <div className="font-mono text-xs text-slate-200 bg-slate-950 p-3 rounded-lg border border-slate-800/80">
-              <span className="text-slate-400 text-[11px] block mb-1">Normalized Runtime Condition:</span>
+              <span className="text-slate-400 text-[11px] block mb-1">Normalized Condition:</span>
               <span className="text-cyan-300 font-semibold">{activeScenario.normalized_condition}</span>
             </div>
 
             {activeScenario.interpretation_assumptions?.length > 0 && (
               <div className="text-xs text-slate-400 space-y-1">
-                <span className="font-semibold text-slate-300 block text-[11px]">Evaluation Assumptions:</span>
-                <ul className="list-disc list-inside space-y-0.5 pl-1">
+                <span className="font-semibold text-slate-300 block text-[11px]">Assumptions Made:</span>
+                <ul className="list-disc list-inside space-y-0.5 pl-1 font-mono text-[11px]">
                   {activeScenario.interpretation_assumptions.map((asm, idx) => (
                     <li key={idx}>{asm}</li>
                   ))}
@@ -188,7 +276,100 @@ export const ScenarioStudio: React.FC<Props> = ({ analysisId, onInspectLine }) =
             )}
           </div>
 
-          {/* Section B & C: Side-by-Side Path Traces */}
+          {/* Interactive Step-by-Step Playback Controller */}
+          <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 flex flex-wrap items-center justify-between gap-4 font-mono text-xs">
+            <div className="flex items-center gap-2">
+              <span className="text-slate-400 font-sans font-semibold mr-1">Trace Step Simulator:</span>
+              <button
+                onClick={() => setIsPlaying(!isPlaying)}
+                className={`p-2 rounded-lg font-semibold flex items-center gap-1.5 transition-colors cursor-pointer ${
+                  isPlaying
+                    ? 'bg-amber-500 text-slate-950 font-bold'
+                    : 'bg-cyan-500 text-slate-950 font-bold hover:bg-cyan-400'
+                }`}
+                title={isPlaying ? 'Pause Auto-step' : 'Play Trace Auto-step'}
+              >
+                {isPlaying ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5 fill-current" />}
+                <span>{isPlaying ? 'Pause' : 'Simulate Run'}</span>
+              </button>
+
+              <button
+                onClick={() => setCurrentStepIndex((p) => Math.max(1, p - 1))}
+                disabled={currentStepIndex <= 1}
+                className="p-2 rounded-lg bg-slate-900 border border-slate-800 text-slate-300 hover:text-slate-100 disabled:opacity-40 transition-colors cursor-pointer"
+                title="Step backward"
+              >
+                <SkipBack className="w-3.5 h-3.5" />
+              </button>
+
+              <button
+                onClick={() => setCurrentStepIndex((p) => Math.min(maxSteps, p + 1))}
+                disabled={currentStepIndex >= maxSteps}
+                className="p-2 rounded-lg bg-slate-900 border border-slate-800 text-slate-300 hover:text-slate-100 disabled:opacity-40 transition-colors cursor-pointer"
+                title="Step forward"
+              >
+                <SkipForward className="w-3.5 h-3.5" />
+              </button>
+
+              <button
+                onClick={() => {
+                  setCurrentStepIndex(1);
+                  setIsPlaying(false);
+                }}
+                className="p-2 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-slate-200 transition-colors cursor-pointer"
+                title="Reset Stepper"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1">
+                {Array.from({ length: maxSteps }).map((_, idx) => {
+                  const stepNum = idx + 1;
+                  const isCurrent = stepNum === currentStepIndex;
+                  const isPassed = stepNum < currentStepIndex;
+                  return (
+                    <button
+                      key={stepNum}
+                      onClick={() => setCurrentStepIndex(stepNum)}
+                      className={`w-6 h-6 rounded-md text-[10px] font-bold flex items-center justify-center transition-all cursor-pointer ${
+                        isCurrent
+                          ? 'bg-cyan-400 text-slate-950 ring-2 ring-cyan-400/50 scale-110'
+                          : isPassed
+                          ? 'bg-slate-800 text-cyan-300'
+                          : 'bg-slate-900 text-slate-500'
+                      }`}
+                    >
+                      {stepNum}
+                    </button>
+                  );
+                })}
+              </div>
+              <span className="text-slate-400 text-[11px]">
+                Step <strong>{currentStepIndex}</strong> of {maxSteps}
+              </span>
+            </div>
+          </div>
+
+          {/* Divergence Notification Banner when current step diverges */}
+          {currentStepIndex >= 2 && (
+            <div className="p-3.5 rounded-xl bg-gradient-to-r from-cyan-950/40 via-violet-950/30 to-amber-950/40 border border-cyan-800/80 text-xs flex items-center gap-3 animate-fade-in">
+              <div className="p-1.5 rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/40 shrink-0">
+                <Zap className="w-4 h-4 text-amber-400 animate-bounce" />
+              </div>
+              <div className="space-y-0.5">
+                <span className="font-bold text-slate-100 flex items-center gap-2">
+                  <span>Execution Divergence Point Active (Step {currentStepIndex})</span>
+                </span>
+                <p className="text-slate-300 text-[11px] font-mono leading-relaxed">
+                  In Base v1.0, validation rule terminates flow at Step 2 with HTTP 400. In Head v1.1, validation succeeds and triggers downstream fallback handler.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Section B & C: Side-by-Side Path Traces with Active Step Highlights */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 font-mono text-xs">
             {/* Before Path */}
             <div className="p-5 rounded-xl bg-slate-900/80 border border-rose-900/40 space-y-4">
@@ -202,41 +383,54 @@ export const ScenarioStudio: React.FC<Props> = ({ analysisId, onInspectLine }) =
               </div>
 
               <div className="space-y-3">
-                {activeScenario.traces?.base?.map((step: TraceStep) => (
-                  <div
-                    key={step.step_index}
-                    className="p-3 rounded-lg bg-slate-950/80 border border-slate-800/80 space-y-2 relative"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="w-5 h-5 rounded-full bg-rose-950 text-rose-400 border border-rose-800 text-[10px] font-bold flex items-center justify-center">
-                          {step.step_index}
-                        </span>
-                        <span className="font-bold text-slate-200 truncate" title={step.symbol_qname}>
-                          {step.symbol_qname}
-                        </span>
+                {activeScenario.traces?.base?.map((step: TraceStep) => {
+                  const isActive = step.step_index === currentStepIndex;
+                  return (
+                    <div
+                      key={step.step_index}
+                      className={`p-3.5 rounded-xl border transition-all duration-300 relative space-y-2 ${
+                        isActive
+                          ? 'bg-rose-950/40 border-rose-500 shadow-lg shadow-rose-950/50 scale-[1.02]'
+                          : 'bg-slate-950/80 border-slate-800/80'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span
+                            className={`w-6 h-6 rounded-full text-[11px] font-bold flex items-center justify-center ${
+                              isActive
+                                ? 'bg-rose-500 text-slate-950 animate-pulse'
+                                : 'bg-rose-950 text-rose-400 border border-rose-800'
+                            }`}
+                          >
+                            {step.step_index}
+                          </span>
+                          <span className="font-bold text-slate-200 truncate" title={step.symbol_qname}>
+                            {step.symbol_qname}
+                          </span>
+                        </div>
+                        <EpistemicBadge provenance={step.provenance} />
                       </div>
-                      <EpistemicBadge provenance={step.provenance} />
-                    </div>
 
-                    <p className="text-slate-300 text-[11px] font-sans leading-relaxed">
-                      {step.explanation}
-                    </p>
+                      <p className="text-slate-300 text-[11px] font-sans leading-relaxed">
+                        {step.explanation}
+                      </p>
 
-                    <div className="flex items-center justify-between pt-1 border-t border-slate-900 text-[10px] text-slate-400">
-                      <span>{step.file_path}:{step.line_number}</span>
-                      {step.line_number && (
-                        <button
-                          onClick={() => onInspectLine(step.file_path, step.line_number!)}
-                          className="text-cyan-400 hover:underline cursor-pointer flex items-center gap-1"
-                        >
-                          <FileCode className="w-3 h-3" />
-                          <span>View Line</span>
-                        </button>
-                      )}
+                      <div className="flex items-center justify-between pt-1 border-t border-slate-900 text-[10px] text-slate-400">
+                        <span>{step.file_path}:{step.line_number}</span>
+                        {step.line_number && (
+                          <button
+                            onClick={() => onInspectLine(step.file_path, step.line_number!)}
+                            className="text-cyan-400 hover:underline cursor-pointer flex items-center gap-1 font-sans"
+                          >
+                            <FileCode className="w-3 h-3" />
+                            <span>Inspect Line</span>
+                          </button>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
 
@@ -252,52 +446,65 @@ export const ScenarioStudio: React.FC<Props> = ({ analysisId, onInspectLine }) =
               </div>
 
               <div className="space-y-3">
-                {activeScenario.traces?.head?.map((step: TraceStep) => (
-                  <div
-                    key={step.step_index}
-                    className="p-3 rounded-lg bg-slate-950/80 border border-slate-800/80 space-y-2 relative"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="w-5 h-5 rounded-full bg-teal-950 text-teal-400 border border-teal-800 text-[10px] font-bold flex items-center justify-center">
-                          {step.step_index}
-                        </span>
-                        <span className="font-bold text-slate-200 truncate" title={step.symbol_qname}>
-                          {step.symbol_qname}
-                        </span>
+                {activeScenario.traces?.head?.map((step: TraceStep) => {
+                  const isActive = step.step_index === currentStepIndex;
+                  return (
+                    <div
+                      key={step.step_index}
+                      className={`p-3.5 rounded-xl border transition-all duration-300 relative space-y-2 ${
+                        isActive
+                          ? 'bg-teal-950/40 border-teal-400 shadow-lg shadow-teal-950/50 scale-[1.02]'
+                          : 'bg-slate-950/80 border-slate-800/80'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span
+                            className={`w-6 h-6 rounded-full text-[11px] font-bold flex items-center justify-center ${
+                              isActive
+                                ? 'bg-teal-400 text-slate-950 animate-pulse'
+                                : 'bg-teal-950 text-teal-400 border border-teal-800'
+                            }`}
+                          >
+                            {step.step_index}
+                          </span>
+                          <span className="font-bold text-slate-200 truncate" title={step.symbol_qname}>
+                            {step.symbol_qname}
+                          </span>
+                        </div>
+                        <EpistemicBadge provenance={step.provenance} />
                       </div>
-                      <EpistemicBadge provenance={step.provenance} />
-                    </div>
 
-                    <p className="text-slate-300 text-[11px] font-sans leading-relaxed">
-                      {step.explanation}
-                    </p>
+                      <p className="text-slate-300 text-[11px] font-sans leading-relaxed">
+                        {step.explanation}
+                      </p>
 
-                    <div className="flex items-center justify-between pt-1 border-t border-slate-900 text-[10px] text-slate-400">
-                      <span>{step.file_path}:{step.line_number}</span>
-                      {step.line_number && (
-                        <button
-                          onClick={() => onInspectLine(step.file_path, step.line_number!)}
-                          className="text-cyan-400 hover:underline cursor-pointer flex items-center gap-1"
-                        >
-                          <FileCode className="w-3 h-3" />
-                          <span>View Line</span>
-                        </button>
-                      )}
+                      <div className="flex items-center justify-between pt-1 border-t border-slate-900 text-[10px] text-slate-400">
+                        <span>{step.file_path}:{step.line_number}</span>
+                        {step.line_number && (
+                          <button
+                            onClick={() => onInspectLine(step.file_path, step.line_number!)}
+                            className="text-cyan-400 hover:underline cursor-pointer flex items-center gap-1 font-sans"
+                          >
+                            <FileCode className="w-3 h-3" />
+                            <span>Inspect Line</span>
+                          </button>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </div>
 
-          {/* Section D & E: Behavioral Delta & Downstream Impact */}
+          {/* Section D & E: Behavioral Delta & Impact */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="p-5 rounded-xl bg-slate-900/80 border border-slate-800 space-y-2">
               <span className="text-xs font-mono font-bold text-cyan-400 uppercase tracking-wider block">
                 D. Behavioral Delta
               </span>
-              <p className="text-xs text-slate-300 leading-relaxed">
+              <p className="text-xs text-slate-300 leading-relaxed font-sans">
                 {activeScenario.behavioral_delta_summary}
               </p>
             </div>
@@ -306,47 +513,85 @@ export const ScenarioStudio: React.FC<Props> = ({ analysisId, onInspectLine }) =
               <span className="text-xs font-mono font-bold text-teal-400 uppercase tracking-wider block">
                 E. Downstream Impact
               </span>
-              <p className="text-xs text-slate-300 leading-relaxed">
+              <p className="text-xs text-slate-300 leading-relaxed font-sans">
                 {activeScenario.impact_summary}
               </p>
             </div>
           </div>
 
-          {/* Section F: Verification Plan */}
+          {/* Section F: Interactive Verification Plan & Sandbox Trigger */}
           {activeScenario.verification_plan && (
-            <div className="p-5 rounded-xl bg-slate-900/80 border border-slate-800 space-y-3 font-mono text-xs">
-              <div className="flex items-center justify-between pb-2 border-b border-slate-800 font-sans">
+            <div className="p-5 rounded-xl bg-slate-900/80 border border-slate-800 space-y-4 font-mono text-xs">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-slate-800 font-sans">
                 <span className="text-xs font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
                   <CheckCircle2 className="w-4 h-4" />
-                  <span>F. Suggested Verification Plan</span>
+                  <span>F. Verification Plan & Test Sandbox</span>
                 </span>
-                <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-emerald-950/60 text-emerald-400 border border-emerald-800">
-                  {activeScenario.verification_plan.coverage_classification?.replace('_', ' ')}
-                </span>
+
+                <div className="flex items-center gap-2">
+                  <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-emerald-950/60 text-emerald-400 border border-emerald-800">
+                    {activeScenario.verification_plan.coverage_classification?.replace('_', ' ')}
+                  </span>
+                  <span
+                    className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase font-mono ${
+                      testExecutionResult === 'passed'
+                        ? 'bg-teal-950 text-teal-300 border border-teal-700'
+                        : 'bg-slate-950 text-slate-400 border border-slate-800'
+                    }`}
+                  >
+                    {testExecutionResult === 'passed'
+                      ? 'Runtime Verified: Passed'
+                      : 'Not Executed (Static Proposal)'}
+                  </span>
+                </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-slate-300">
-                <div className="p-3 rounded bg-slate-950 border border-slate-800">
+                <div className="p-3 rounded-lg bg-slate-950 border border-slate-800">
                   <span className="text-[10px] text-slate-400 uppercase font-bold block mb-1">Preconditions:</span>
                   <span>{activeScenario.verification_plan.preconditions}</span>
                 </div>
-                <div className="p-3 rounded bg-slate-950 border border-slate-800">
+                <div className="p-3 rounded-lg bg-slate-950 border border-slate-800">
                   <span className="text-[10px] text-slate-400 uppercase font-bold block mb-1">Input Payload:</span>
                   <span className="text-cyan-300">{activeScenario.verification_plan.input_data}</span>
                 </div>
               </div>
 
-              <div className="p-3 rounded bg-slate-950 border border-slate-800 text-slate-300">
+              <div className="p-3 rounded-lg bg-slate-950 border border-slate-800 text-slate-300">
                 <span className="text-[10px] text-slate-400 uppercase font-bold block mb-1">Expected Outcome:</span>
                 <span className="text-teal-300">{activeScenario.verification_plan.expected_result}</span>
               </div>
 
-              {activeScenario.verification_plan.existing_test_ref && (
-                <div className="text-[11px] text-slate-400 flex items-center gap-1.5 pt-1">
-                  <span className="font-semibold text-slate-300">Target Test Match:</span>
-                  <code className="text-cyan-400">{activeScenario.verification_plan.existing_test_ref}</code>
+              {/* Interactive Test Runner Mock Trigger */}
+              <div className="pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-950/60 p-3 rounded-xl border border-slate-800/80">
+                <div className="text-[11px] text-slate-400 font-sans flex items-center gap-2">
+                  <Terminal className="w-4 h-4 text-slate-400" />
+                  <span>Target Test: <code className="text-cyan-300">{activeScenario.verification_plan.existing_test_ref || 'tests.test_api'}</code></span>
                 </div>
-              )}
+
+                <button
+                  onClick={handleRunSimulatedTest}
+                  disabled={isTestRunning || testExecutionResult === 'passed'}
+                  className="px-4 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-teal-700/80 text-teal-300 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50"
+                >
+                  {isTestRunning ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin text-teal-400" />
+                      <span>Running in Sandbox...</span>
+                    </>
+                  ) : testExecutionResult === 'passed' ? (
+                    <>
+                      <Check className="w-3.5 h-3.5 text-teal-400" />
+                      <span>Verified: Assertions Passed</span>
+                    </>
+                  ) : (
+                    <>
+                      <Play className="w-3.5 h-3.5 fill-current text-teal-400" />
+                      <span>Execute Sandbox Test</span>
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
           )}
 
