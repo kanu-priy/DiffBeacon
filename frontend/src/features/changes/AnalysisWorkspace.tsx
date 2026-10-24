@@ -205,11 +205,15 @@ export const AnalysisWorkspace: React.FC = () => {
             deltas={deltas}
             analysisId={analysis.id}
             onInspectEvidence={handleInspectEvidence}
+            onNavigateToGraph={() => setActiveTab('graph')}
           />
         )}
 
         {activeTab === 'contracts' && (
-          <ContractMap contracts={contracts} />
+          <ContractMap
+            contracts={contracts}
+            onInspectEvidence={handleInspectEvidence}
+          />
         )}
 
         {activeTab === 'graph' && (

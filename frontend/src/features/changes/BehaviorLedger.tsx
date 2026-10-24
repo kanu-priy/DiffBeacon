@@ -1,38 +1,68 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { BehaviorDelta } from '../../types';
 import { EpistemicBadge } from '../../components/EpistemicBadge';
 import {
   FileCode,
   ArrowRight,
   Filter,
-  Check,
+  Search,
   ThumbsUp,
   ThumbsDown,
-  HelpCircle,
   ExternalLink,
+  Network,
+  Copy,
+  Check,
+  LayoutGrid,
+  List,
+  Sparkles,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import { api } from '../../lib/api';
+import { useToast } from '../../components/Toast';
 
 interface Props {
   deltas: BehaviorDelta[];
   analysisId: string;
   onInspectEvidence: (filePath: string, lineRange: [number, number]) => void;
+  onNavigateToGraph?: (symbol: string) => void;
 }
 
 export const BehaviorLedger: React.FC<Props> = ({
   deltas,
   analysisId,
   onInspectEvidence,
+  onNavigateToGraph,
 }) => {
+  const toast = useToast();
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [selectedConfidence, setSelectedConfidence] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [viewMode, setViewMode] = useState<'detailed' | 'compact'>('detailed');
   const [feedbackSent, setFeedbackSent] = useState<Record<string, string>>({});
+  const [copiedDeltaId, setCopiedDeltaId] = useState<string | null>(null);
+  const [expandedCards, setExpandedCards] = useState<Record<string, boolean>>({});
 
-  const categories = ['all', ...Array.from(new Set(deltas.map((d) => d.category)))];
+  const categories = useMemo(() => ['all', ...Array.from(new Set(deltas.map((d) => d.category)))], [deltas]);
+  const confidences = useMemo(() => ['all', ...Array.from(new Set(deltas.map((d) => d.confidence)))], [deltas]);
 
-  const filteredDeltas =
-    selectedCategory === 'all'
-      ? deltas
-      : deltas.filter((d) => d.category === selectedCategory);
+  const filteredDeltas = useMemo(() => {
+    return deltas.filter((d) => {
+      const matchesCategory = selectedCategory === 'all' || d.category === selectedCategory;
+      const matchesConfidence = selectedConfidence === 'all' || d.confidence === selectedConfidence;
+      const q = searchQuery.toLowerCase();
+      const matchesSearch =
+        !searchQuery ||
+        d.title.toLowerCase().includes(q) ||
+        d.summary.toLowerCase().includes(q) ||
+        d.affected_symbol.toLowerCase().includes(q) ||
+        d.file_path.toLowerCase().includes(q) ||
+        d.before_behavior.toLowerCase().includes(q) ||
+        d.after_behavior.toLowerCase().includes(q);
+
+      return matchesCategory && matchesConfidence && matchesSearch;
+    });
+  }, [deltas, selectedCategory, selectedConfidence, searchQuery]);
 
   const handleFeedback = async (deltaId: string, rating: string) => {
     try {
@@ -42,137 +72,283 @@ export const BehaviorLedger: React.FC<Props> = ({
         rating,
       });
       setFeedbackSent((prev) => ({ ...prev, [deltaId]: rating }));
+      toast.success(
+        rating === 'useful' ? 'Feedback Recorded: Helpful' : 'Feedback Recorded: Reported',
+        'Your assessment helps calibrate deterministic reasoning.'
+      );
     } catch (err) {
-      console.error(err);
+      toast.error('Failed to submit feedback');
     }
+  };
+
+  const copyAsMarkdown = (delta: BehaviorDelta) => {
+    const md = `### [Behavior Delta] ${delta.title} (${delta.category})
+**Symbol:** \`${delta.affected_symbol}\` in \`${delta.file_path}\`
+**Epistemic Provenance:** ${delta.confidence.replace('_', ' ')}
+
+- **Before (v1.0):** ${delta.before_behavior}
+- **After (v1.1):** ${delta.after_behavior}
+- **Summary:** ${delta.summary}
+`;
+    navigator.clipboard.writeText(md);
+    setCopiedDeltaId(delta.id);
+    toast.success('Copied PR Review Note', 'Markdown summary copied to clipboard');
+    setTimeout(() => setCopiedDeltaId(null), 2500);
+  };
+
+  const toggleExpand = (id: string) => {
+    setExpandedCards((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
   return (
     <div className="space-y-6">
-      {/* Filters */}
-      <div className="flex flex-wrap items-center justify-between gap-4 p-4 rounded-xl bg-slate-900/60 border border-slate-800">
-        <div className="flex items-center gap-2">
-          <Filter className="w-4 h-4 text-cyan-400" />
-          <span className="text-xs font-semibold text-slate-300">Category Filter:</span>
-          <div className="flex flex-wrap gap-1.5 ml-2">
+      {/* Search & Control Filter Bar */}
+      <div className="p-4 rounded-xl bg-slate-900/70 border border-slate-800 space-y-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          {/* Search Box */}
+          <div className="relative flex-1 max-w-md">
+            <Search className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search deltas by symbol, file, or behavior..."
+              className="w-full pl-9 pr-4 py-1.5 rounded-lg bg-slate-950 border border-slate-800 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-cyan-500 transition-colors font-mono"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 text-xs cursor-pointer"
+              >
+                ×
+              </button>
+            )}
+          </div>
+
+          {/* View Mode Toggle & Counter */}
+          <div className="flex items-center gap-3">
+            <div className="flex items-center rounded-lg bg-slate-950 p-1 border border-slate-800 text-xs">
+              <button
+                onClick={() => setViewMode('detailed')}
+                className={`px-2.5 py-1 rounded flex items-center gap-1.5 cursor-pointer transition-colors ${
+                  viewMode === 'detailed' ? 'bg-cyan-500 text-slate-950 font-bold' : 'text-slate-400 hover:text-slate-200'
+                }`}
+                title="Detailed Side-by-Side View"
+              >
+                <LayoutGrid className="w-3.5 h-3.5" />
+                <span>Detailed</span>
+              </button>
+              <button
+                onClick={() => setViewMode('compact')}
+                className={`px-2.5 py-1 rounded flex items-center gap-1.5 cursor-pointer transition-colors ${
+                  viewMode === 'compact' ? 'bg-cyan-500 text-slate-950 font-bold' : 'text-slate-400 hover:text-slate-200'
+                }`}
+                title="Compact List View"
+              >
+                <List className="w-3.5 h-3.5" />
+                <span>Compact</span>
+              </button>
+            </div>
+
+            <div className="text-xs text-slate-400 font-mono">
+              <span className="text-cyan-400 font-bold">{filteredDeltas.length}</span> of {deltas.length} deltas
+            </div>
+          </div>
+        </div>
+
+        {/* Filter Pills */}
+        <div className="flex flex-wrap items-center gap-3 pt-2 border-t border-slate-800/80 text-xs">
+          {/* Category Chips */}
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mr-1">Category:</span>
             {categories.map((cat) => (
               <button
                 key={cat}
                 onClick={() => setSelectedCategory(cat)}
-                className={`px-2.5 py-1 rounded-md text-xs font-mono uppercase tracking-wider transition-colors cursor-pointer ${
+                className={`px-2 py-0.5 rounded-md text-[11px] font-mono uppercase tracking-wider transition-all cursor-pointer ${
                   selectedCategory === cat
-                    ? 'bg-cyan-500 text-slate-950 font-bold'
-                    : 'bg-slate-800 text-slate-400 hover:text-slate-200'
+                    ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 font-bold shadow-sm'
+                    : 'bg-slate-950/80 text-slate-400 hover:text-slate-200 border border-slate-800'
                 }`}
               >
                 {cat.replace('_', ' ')}
               </button>
             ))}
           </div>
-        </div>
 
-        <div className="text-xs text-slate-400 font-mono">
-          Showing <span className="text-cyan-400 font-bold">{filteredDeltas.length}</span> of {deltas.length} deltas
-        </div>
-      </div>
+          <div className="hidden lg:block w-px h-4 bg-slate-800" />
 
-      {/* Deltas List */}
-      <div className="space-y-4">
-        {filteredDeltas.map((delta) => (
-          <div
-            key={delta.id}
-            className="p-5 rounded-xl bg-slate-900/80 border border-slate-800 hover:border-slate-700 transition-all space-y-4"
-          >
-            {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-800">
-              <div className="flex items-center gap-2.5 flex-wrap">
-                <span className="px-2 py-0.5 rounded text-[10px] font-mono uppercase tracking-wider font-bold bg-slate-800 text-slate-300">
-                  {delta.category.replace('_', ' ')}
-                </span>
-                <h3 className="text-sm font-bold text-slate-100">{delta.title}</h3>
-              </div>
-              <div className="flex items-center gap-2">
-                <EpistemicBadge provenance={delta.confidence} />
-              </div>
-            </div>
-
-            {/* Summary */}
-            <p className="text-xs text-slate-300 leading-relaxed">{delta.summary}</p>
-
-            {/* Before vs After Comparison */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 font-mono text-xs">
-              {/* Before */}
-              <div className="p-3.5 rounded-lg bg-rose-950/20 border border-rose-900/30 space-y-2">
-                <div className="flex items-center justify-between text-[11px] font-bold text-rose-400 uppercase tracking-wider">
-                  <span>Before Version (v1.0)</span>
-                  <span className="text-[10px] text-slate-400">
-                    L{delta.base_line_range[0]}-{delta.base_line_range[1]}
-                  </span>
-                </div>
-                <div className="text-slate-300 whitespace-pre-wrap text-[11px] bg-slate-950/60 p-2.5 rounded border border-rose-900/20 font-mono">
-                  {delta.before_behavior}
-                </div>
-              </div>
-
-              {/* After */}
-              <div className="p-3.5 rounded-lg bg-teal-950/20 border border-teal-900/30 space-y-2">
-                <div className="flex items-center justify-between text-[11px] font-bold text-teal-400 uppercase tracking-wider">
-                  <span>After Version (v1.1)</span>
-                  <span className="text-[10px] text-slate-400">
-                    L{delta.head_line_range[0]}-{delta.head_line_range[1]}
-                  </span>
-                </div>
-                <div className="text-slate-300 whitespace-pre-wrap text-[11px] bg-slate-950/60 p-2.5 rounded border border-teal-900/20 font-mono">
-                  {delta.after_behavior}
-                </div>
-              </div>
-            </div>
-
-            {/* Target Symbol & Actions */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2 text-xs text-slate-400">
-              <div className="flex items-center gap-2 font-mono truncate">
-                <FileCode className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
-                <span className="text-cyan-300 font-semibold truncate">{delta.affected_symbol}</span>
-                <span className="text-slate-500">in</span>
-                <span className="text-slate-400 truncate">{delta.file_path}</span>
-              </div>
-
-              <div className="flex items-center gap-3 shrink-0">
-                {/* Feedback */}
-                <div className="flex items-center gap-1 border-r border-slate-800 pr-3">
-                  <span className="text-[10px] text-slate-400 mr-1">Helpful?</span>
-                  <button
-                    onClick={() => handleFeedback(delta.id, 'useful')}
-                    className={`p-1 rounded hover:bg-slate-800 transition-colors cursor-pointer ${
-                      feedbackSent[delta.id] === 'useful' ? 'text-teal-400' : 'text-slate-400'
-                    }`}
-                    title="Mark as useful and accurate"
-                  >
-                    <ThumbsUp className="w-3.5 h-3.5" />
-                  </button>
-                  <button
-                    onClick={() => handleFeedback(delta.id, 'incorrect')}
-                    className={`p-1 rounded hover:bg-slate-800 transition-colors cursor-pointer ${
-                      feedbackSent[delta.id] === 'incorrect' ? 'text-rose-400' : 'text-slate-400'
-                    }`}
-                    title="Mark as incorrect"
-                  >
-                    <ThumbsDown className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-
-                <button
-                  onClick={() => onInspectEvidence(delta.file_path, delta.head_line_range)}
-                  className="px-3 py-1.5 rounded bg-slate-800 hover:bg-slate-700 text-cyan-300 font-medium text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
-                >
-                  <span>Inspect Source Evidence</span>
-                  <ExternalLink className="w-3 h-3" />
-                </button>
-              </div>
-            </div>
+          {/* Confidence Chips */}
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mr-1">Provenance:</span>
+            {confidences.map((conf) => (
+              <button
+                key={conf}
+                onClick={() => setSelectedConfidence(conf)}
+                className={`px-2 py-0.5 rounded-md text-[11px] font-mono uppercase tracking-wider transition-all cursor-pointer ${
+                  selectedConfidence === conf
+                    ? 'bg-teal-500/20 text-teal-300 border border-teal-500/40 font-bold shadow-sm'
+                    : 'bg-slate-950/80 text-slate-400 hover:text-slate-200 border border-slate-800'
+                }`}
+              >
+                {conf.replace('_', ' ')}
+              </button>
+            ))}
           </div>
-        ))}
+        </div>
       </div>
+
+      {/* Deltas Cards */}
+      {filteredDeltas.length === 0 ? (
+        <div className="p-12 text-center text-slate-500 text-xs border border-slate-800 rounded-xl bg-slate-950/40 space-y-2">
+          <p>No behavior deltas match your search and filter criteria.</p>
+          <button
+            onClick={() => {
+              setSelectedCategory('all');
+              setSelectedConfidence('all');
+              setSearchQuery('');
+            }}
+            className="text-cyan-400 hover:underline cursor-pointer"
+          >
+            Clear all filters
+          </button>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {filteredDeltas.map((delta) => {
+            const isExpanded = expandedCards[delta.id] ?? (viewMode === 'detailed');
+
+            return (
+              <div
+                key={delta.id}
+                className="rounded-xl bg-slate-900/80 border border-slate-800 hover:border-slate-700/80 transition-all shadow-xl overflow-hidden"
+              >
+                {/* Header Row */}
+                <div className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-900/90 border-b border-slate-800/80">
+                  <div className="flex items-center gap-2.5 flex-wrap">
+                    <span className="px-2 py-0.5 rounded text-[10px] font-mono uppercase tracking-wider font-bold bg-slate-950 text-cyan-300 border border-slate-800">
+                      {delta.category.replace('_', ' ')}
+                    </span>
+                    <h3 className="text-sm font-bold text-slate-100">{delta.title}</h3>
+                  </div>
+
+                  <div className="flex items-center gap-2 shrink-0">
+                    <EpistemicBadge provenance={delta.confidence} />
+                    <button
+                      onClick={() => toggleExpand(delta.id)}
+                      className="p-1.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors cursor-pointer"
+                      title={isExpanded ? 'Collapse details' : 'Expand details'}
+                    >
+                      {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Card Body */}
+                {isExpanded && (
+                  <div className="p-5 space-y-4">
+                    {/* Summary */}
+                    <p className="text-xs text-slate-300 leading-relaxed font-sans">{delta.summary}</p>
+
+                    {/* Before vs After Side-by-Side Comparison */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 font-mono text-xs">
+                      {/* Before */}
+                      <div className="p-3.5 rounded-lg bg-rose-950/20 border border-rose-900/30 space-y-2">
+                        <div className="flex items-center justify-between text-[11px] font-bold text-rose-400 uppercase tracking-wider">
+                          <span>Base Behavior (v1.0)</span>
+                          <span className="text-[10px] text-slate-400">
+                            L{delta.base_line_range[0]}-{delta.base_line_range[1]}
+                          </span>
+                        </div>
+                        <div className="text-slate-300 whitespace-pre-wrap text-[11px] bg-slate-950/80 p-2.5 rounded border border-rose-900/20 font-mono leading-relaxed">
+                          {delta.before_behavior}
+                        </div>
+                      </div>
+
+                      {/* After */}
+                      <div className="p-3.5 rounded-lg bg-teal-950/20 border border-teal-900/30 space-y-2">
+                        <div className="flex items-center justify-between text-[11px] font-bold text-teal-400 uppercase tracking-wider">
+                          <span>Head Behavior (v1.1)</span>
+                          <span className="text-[10px] text-slate-400">
+                            L{delta.head_line_range[0]}-{delta.head_line_range[1]}
+                          </span>
+                        </div>
+                        <div className="text-slate-300 whitespace-pre-wrap text-[11px] bg-slate-950/80 p-2.5 rounded border border-teal-900/20 font-mono leading-relaxed">
+                          {delta.after_behavior}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Bottom Metadata & Action Bar */}
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-slate-800/80 text-xs text-slate-400 font-sans">
+                      {/* Symbol Location */}
+                      <div className="flex items-center gap-2 font-mono truncate">
+                        <FileCode className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+                        <span className="text-cyan-300 font-semibold truncate">{delta.affected_symbol}</span>
+                        <span className="text-slate-600">in</span>
+                        <span className="text-slate-400 truncate">{delta.file_path}</span>
+                      </div>
+
+                      {/* Interactive Buttons */}
+                      <div className="flex items-center gap-2 flex-wrap shrink-0">
+                        {/* Copy Markdown */}
+                        <button
+                          onClick={() => copyAsMarkdown(delta)}
+                          className="px-2.5 py-1.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+                          title="Copy Markdown summary for pull request review"
+                        >
+                          {copiedDeltaId === delta.id ? (
+                            <>
+                              <Check className="w-3.5 h-3.5 text-teal-400" />
+                              <span className="text-teal-300">Copied!</span>
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="w-3.5 h-3.5" />
+                              <span>Copy PR Note</span>
+                            </>
+                          )}
+                        </button>
+
+                        {/* Inspect Source Diff */}
+                        <button
+                          onClick={() => onInspectEvidence(delta.file_path, delta.head_line_range)}
+                          className="px-3 py-1.5 rounded bg-cyan-950/80 hover:bg-cyan-900/80 text-cyan-300 border border-cyan-800/60 font-medium text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+                        >
+                          <span>Inspect Source</span>
+                          <ExternalLink className="w-3 h-3" />
+                        </button>
+
+                        {/* Feedback Thumbs */}
+                        <div className="flex items-center gap-1 pl-1">
+                          <button
+                            onClick={() => handleFeedback(delta.id, 'useful')}
+                            className={`p-1.5 rounded hover:bg-slate-800 transition-colors cursor-pointer ${
+                              feedbackSent[delta.id] === 'useful' ? 'text-teal-400 bg-teal-950/60' : 'text-slate-400'
+                            }`}
+                            title="Helpful and verified"
+                          >
+                            <ThumbsUp className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => handleFeedback(delta.id, 'incorrect')}
+                            className={`p-1.5 rounded hover:bg-slate-800 transition-colors cursor-pointer ${
+                              feedbackSent[delta.id] === 'incorrect' ? 'text-rose-400 bg-rose-950/60' : 'text-slate-400'
+                            }`}
+                            title="Report inaccuracy"
+                          >
+                            <ThumbsDown className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 };
