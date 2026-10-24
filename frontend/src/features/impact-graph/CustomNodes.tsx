@@ -7,7 +7,6 @@ import {
   FileCode,
   Database,
   PlayCircle,
-  AlertCircle,
   Sparkles,
 } from 'lucide-react';
 
@@ -26,10 +25,10 @@ export interface SymbolNodeData extends Record<string, unknown> {
 const getNodeConfig = (type: string, isChanged: boolean) => {
   if (isChanged) {
     return {
-      border: 'border-amber-400/90 shadow-[0_0_15px_rgba(245,158,11,0.25)]',
-      bg: 'bg-gradient-to-b from-slate-900 to-amber-950/20',
+      border: 'border-amber-500/90 shadow-md',
+      bg: 'bg-slate-900',
       tagBg: 'bg-amber-950 text-amber-300 border border-amber-700/80',
-      icon: <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-pulse" />,
+      icon: <Sparkles className="w-3.5 h-3.5 text-amber-400" />,
       glowColor: '#f59e0b',
     };
   }
@@ -37,7 +36,7 @@ const getNodeConfig = (type: string, isChanged: boolean) => {
   switch (type) {
     case 'route':
       return {
-        border: 'border-violet-700/60 hover:border-violet-500',
+        border: 'border-slate-800 hover:border-slate-600',
         bg: 'bg-slate-900/95',
         tagBg: 'bg-violet-950/70 text-violet-300 border border-violet-800/80',
         icon: <Network className="w-3.5 h-3.5 text-violet-400" />,
@@ -45,16 +44,16 @@ const getNodeConfig = (type: string, isChanged: boolean) => {
       };
     case 'class':
       return {
-        border: 'border-cyan-700/60 hover:border-cyan-500',
+        border: 'border-slate-800 hover:border-slate-600',
         bg: 'bg-slate-900/95',
-        tagBg: 'bg-cyan-950/70 text-cyan-300 border border-cyan-800/80',
-        icon: <Cpu className="w-3.5 h-3.5 text-cyan-400" />,
-        glowColor: '#06b6d4',
+        tagBg: 'bg-blue-950/70 text-blue-300 border border-blue-800/80',
+        icon: <Cpu className="w-3.5 h-3.5 text-blue-400" />,
+        glowColor: '#3b82f6',
       };
     case 'method':
     case 'function':
       return {
-        border: 'border-teal-700/60 hover:border-teal-500',
+        border: 'border-slate-800 hover:border-slate-600',
         bg: 'bg-slate-900/95',
         tagBg: 'bg-teal-950/70 text-teal-300 border border-teal-800/80',
         icon: <Layers className="w-3.5 h-3.5 text-teal-400" />,
@@ -62,7 +61,7 @@ const getNodeConfig = (type: string, isChanged: boolean) => {
       };
     case 'model':
       return {
-        border: 'border-emerald-700/60 hover:border-emerald-500',
+        border: 'border-slate-800 hover:border-slate-600',
         bg: 'bg-slate-900/95',
         tagBg: 'bg-emerald-950/70 text-emerald-300 border border-emerald-800/80',
         icon: <Database className="w-3.5 h-3.5 text-emerald-400" />,
@@ -70,7 +69,7 @@ const getNodeConfig = (type: string, isChanged: boolean) => {
       };
     case 'test':
       return {
-        border: 'border-emerald-600/60 hover:border-emerald-400',
+        border: 'border-slate-800 hover:border-slate-600',
         bg: 'bg-slate-900/95',
         tagBg: 'bg-emerald-950 text-emerald-300 border border-emerald-700',
         icon: <PlayCircle className="w-3.5 h-3.5 text-emerald-400" />,
@@ -91,9 +90,9 @@ export const CustomSymbolNode = memo(({ data }: NodeProps<any>) => {
   const nodeData = data as SymbolNodeData;
   const config = getNodeConfig(nodeData.symbol_type, nodeData.is_changed);
 
-  const opacityClass = nodeData.is_dimmed ? 'opacity-25 scale-95' : 'opacity-100 scale-100';
+  const opacityClass = nodeData.is_dimmed ? 'opacity-20 scale-95' : 'opacity-100 scale-100';
   const highlightClass = nodeData.is_highlighted
-    ? 'ring-2 ring-cyan-400 ring-offset-2 ring-offset-slate-950 scale-105'
+    ? 'ring-2 ring-blue-500 ring-offset-2 ring-offset-slate-950 scale-105'
     : '';
 
   return (
@@ -104,13 +103,13 @@ export const CustomSymbolNode = memo(({ data }: NodeProps<any>) => {
       <Handle
         type="target"
         position={Position.Top}
-        className="!w-2.5 !h-2.5 !bg-cyan-400 !border-2 !border-slate-950 !-top-1.5 transition-transform hover:scale-125"
+        className="!w-2 !h-2 !bg-blue-400 !border-2 !border-slate-950 !-top-1 transition-transform hover:scale-125"
       />
 
       {/* Header Tag & Change Status */}
       <div className="flex items-center justify-between gap-1.5 mb-2">
         <div className="flex items-center gap-1.5">
-          <div className="p-1 rounded bg-slate-950/80 border border-slate-800">
+          <div className="p-1 rounded bg-slate-950 border border-slate-800">
             {config.icon}
           </div>
           <span className={`px-1.5 py-0.5 rounded text-[10px] font-mono font-bold uppercase tracking-wider ${config.tagBg}`}>
@@ -119,8 +118,7 @@ export const CustomSymbolNode = memo(({ data }: NodeProps<any>) => {
         </div>
 
         {nodeData.is_changed && (
-          <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold font-mono uppercase bg-amber-500/20 text-amber-300 border border-amber-500/40">
-            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping" />
+          <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[9px] font-bold font-mono uppercase bg-amber-500/20 text-amber-300 border border-amber-500/40">
             <span>Changed</span>
           </span>
         )}
@@ -136,7 +134,7 @@ export const CustomSymbolNode = memo(({ data }: NodeProps<any>) => {
         <span className="truncate max-w-[140px]" title={nodeData.file_path}>
           {nodeData.file_path.split('/').pop()}
         </span>
-        <span className="text-cyan-400/90 font-semibold">
+        <span className="text-blue-400 font-semibold">
           :{nodeData.line_number}
         </span>
       </div>
@@ -145,7 +143,7 @@ export const CustomSymbolNode = memo(({ data }: NodeProps<any>) => {
       <Handle
         type="source"
         position={Position.Bottom}
-        className="!w-2.5 !h-2.5 !bg-teal-400 !border-2 !border-slate-950 !-bottom-1.5 transition-transform hover:scale-125"
+        className="!w-2 !h-2 !bg-slate-400 !border-2 !border-slate-950 !-bottom-1 transition-transform hover:scale-125"
       />
     </div>
   );

@@ -17,353 +17,329 @@ import {
   FileCheck,
   PlayCircle,
   Terminal,
-  Sparkles,
+  Code2,
+  GitCommit,
+  Check,
 } from 'lucide-react';
 
 export const LandingPage: React.FC = () => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<'scenarios' | 'ledger' | 'contracts' | 'graph' | 'verification' | 'unknowns'>('scenarios');
-  const [selectedScenarioPrompt, setSelectedScenarioPrompt] = useState(
-    'What happens if a request omits department_id now?'
-  );
+  const [selectedPrIndex, setSelectedPrIndex] = useState(0);
 
-  const scenarioExamples = [
+  const samplePullRequests = [
     {
-      q: 'What happens if a request omits department_id now?',
-      target: 'EmployeeCreateSerializer',
-      base: 'Returns HTTP 400 Bad Request ("department_id is required").',
-      head: 'Passes validation; downstream service assigns fallback Dept #1.',
-      divergence: 'Step 2: Base raises ValidationError; Head branches to fallback service.',
+      id: 'pr-102',
+      title: 'Make department_id optional with default fallback',
+      branch: 'feature/optional-dept',
+      symbol: 'EmployeeCreateSerializer',
+      file: 'serializers.py:12',
+      nature: 'Behavioral Fork',
+      status: 'Compatible',
+      question: 'What happens if a request omits department_id now?',
+      baseBehavior: 'Returns HTTP 400 Bad Request ("department_id is required").',
+      headBehavior: 'Passes validation; downstream service assigns fallback Department #1.',
+      divergence: 'Step 2: Base raises DRF ValidationError; Head routes to assign_default_department.',
+      contract: 'DRF Serializer: department_id changed from required=True to required=False.',
+      test: 'POST /api/v1/employees/ with {"name": "Alex", "salary": 50000}',
     },
     {
-      q: 'What happens if an employee salary is under $45,000?',
-      target: 'EmployeeCreateView',
-      base: 'Passes validation (Base salary floor: $30,000).',
-      head: 'Raises HTTP 400 ValidationError ("Minimum salary threshold is $45,000").',
-      divergence: 'Step 3: Base saves record; Head rejects compensation.',
+      id: 'pr-103',
+      title: 'Raise minimum employee salary floor from $30k to $45k',
+      branch: 'feature/salary-bounds',
+      symbol: 'EmployeeCreateView',
+      file: 'views.py:15',
+      nature: 'Validation Tightening',
+      status: 'Breaking',
+      question: 'How does salary validation behave for $40,000 compensation?',
+      baseBehavior: 'Validates successfully and persists record in Employee table.',
+      headBehavior: 'Fails with HTTP 400 ValidationError ("Minimum salary threshold is $45,000").',
+      divergence: 'Step 3: Base executes model.save(); Head rejects compensation bounds.',
+      contract: 'API Endpoint: POST /api/v1/employees/ rejects previously accepted payloads.',
+      test: 'POST /api/v1/employees/ with {"salary": 40000}',
     },
     {
-      q: 'What happens when an event notification triggers unknown handler?',
-      target: 'send_notification',
-      base: 'Silent fallback or missing handler log.',
-      head: 'Dynamic getattr dispatch; static analyzer surfaces explicit boundary.',
-      divergence: 'Step 2: Analysis marks dynamic dispatch in Unknowns Register.',
+      id: 'pr-104',
+      title: 'Update payroll statutory tax withholding from 15% to 20%',
+      branch: 'feature/payroll-tax',
+      symbol: 'PayrollService.calculate_payroll',
+      file: 'services/payroll.py:18',
+      nature: 'Calculation Shift',
+      status: 'Compatible',
+      question: 'What net payout is generated for $50,000 gross salary?',
+      baseBehavior: 'Deducts 15% tax ($7,500) yielding $42,500 net compensation.',
+      headBehavior: 'Deducts 20% tax ($10,000) yielding $40,000 net compensation.',
+      divergence: 'Step 4: Output formula changed from gross * 0.85 to gross * 0.80.',
+      contract: 'Service Contract: Internal calculation difference affecting payslip reports.',
+      test: 'calculate_payroll(employee_id=1, gross_salary=50000)',
     },
   ];
 
-  const currentScenario = scenarioExamples.find((s) => s.q === selectedScenarioPrompt) || scenarioExamples[0];
+  const currentPr = samplePullRequests[selectedPrIndex];
 
   return (
-    <div className="space-y-24 py-8">
+    <div className="space-y-20 py-10">
       {/* Hero Section */}
-      <section className="relative overflow-hidden pt-12 pb-16 text-center">
-        {/* Ambient Glow Effects */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[360px] bg-gradient-to-tr from-cyan-500/15 via-violet-500/15 to-teal-500/15 blur-[120px] pointer-events-none -z-10" />
-
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-cyan-950/50 border border-cyan-800/80 text-cyan-400 text-xs font-medium mb-6 shadow-sm">
-          <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
-          <span>AI-Assisted Code-Change Understanding & Behavioral Impact Analysis</span>
+      <section className="max-w-6xl mx-auto px-4 text-center space-y-6">
+        <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-slate-900 border border-slate-800 text-slate-300 text-xs font-mono">
+          <span className="w-2 h-2 rounded-full bg-blue-500" />
+          <span>Deterministic Code-Change Intelligence Platform</span>
         </div>
 
-        <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight max-w-4xl mx-auto leading-tight sm:leading-tight">
-          See what a code change <span className="bg-gradient-to-r from-cyan-400 via-teal-300 to-violet-400 bg-clip-text text-transparent">touches</span> before you ship.
+        <h1 className="text-4xl sm:text-6xl font-bold tracking-tight text-white max-w-4xl mx-auto leading-tight sm:leading-tight">
+          Understand how backend changes behave <span className="text-blue-400">before merging</span>.
         </h1>
 
-        <p className="mt-6 text-base sm:text-lg text-slate-300 max-w-2xl mx-auto leading-relaxed">
-          DiffBeacon delivers an evidence-backed explanation of how program behavior differs between two versions, which downstream systems are impacted, which scenarios require verification, and what static analysis acknowledges it cannot know.
+        <p className="text-base sm:text-lg text-slate-400 max-w-2xl mx-auto leading-relaxed">
+          DiffBeacon analyzes abstract syntax trees, API contracts, and dependency graphs between Git snapshots. Trace behavioral forks, detect breaking contracts, and verify execution paths with zero fabricated citations.
         </p>
 
         {/* Action Buttons */}
-        <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
+        <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
           <button
             onClick={() => navigate('/demo')}
-            className="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-400 hover:to-teal-400 text-slate-950 font-bold text-sm shadow-xl shadow-cyan-500/25 transition-all flex items-center justify-center gap-2.5 group cursor-pointer"
+            className="w-full sm:w-auto px-6 py-3 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-medium text-xs shadow-lg shadow-blue-600/20 transition-all flex items-center justify-center gap-2 group cursor-pointer"
           >
-            <Compass className="w-4 h-4 group-hover:rotate-45 transition-transform" />
-            <span>Launch Built-In Demo (BeaconWorks API)</span>
-            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            <Compass className="w-4 h-4" />
+            <span>Explore BeaconWorks API Demo</span>
+            <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
           </button>
 
           <button
             onClick={() => navigate('/dashboard')}
-            className="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-slate-200 border border-slate-700 font-semibold text-sm transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm"
+            className="w-full sm:w-auto px-6 py-3 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 font-medium text-xs transition-all flex items-center justify-center gap-2 cursor-pointer"
           >
             <FileCode2 className="w-4 h-4 text-slate-400" />
-            <span>Open Dashboard / Upload Snapshots</span>
+            <span>Workspace Dashboard</span>
           </button>
         </div>
 
-        <div className="mt-6 text-xs text-slate-400 flex items-center justify-center gap-4 flex-wrap">
-          <span>✓ 100% Free & Local</span>
+        {/* Feature Badges */}
+        <div className="pt-4 flex items-center justify-center gap-5 text-xs text-slate-400 flex-wrap font-mono">
+          <span className="flex items-center gap-1.5">
+            <Check className="w-3.5 h-3.5 text-blue-400" />
+            <span>Python AST Symbol Table</span>
+          </span>
           <span>•</span>
-          <span>✓ No API Keys or Cloud Account Required</span>
+          <span className="flex items-center gap-1.5">
+            <Check className="w-3.5 h-3.5 text-blue-400" />
+            <span>DRF & Model Contract Mapping</span>
+          </span>
           <span>•</span>
-          <span>✓ Zero Hallucination Guarantee</span>
+          <span className="flex items-center gap-1.5">
+            <Check className="w-3.5 h-3.5 text-blue-400" />
+            <span>Isolated Sandbox Test Suite</span>
+          </span>
         </div>
       </section>
 
-      {/* Interactive Scenario Studio Live Showcase */}
+      {/* Interactive PR Impact Explorer (Live Interactive Demo in Hero) */}
       <section className="max-w-6xl mx-auto px-4">
-        <div className="border border-slate-800 rounded-2xl bg-slate-900/70 p-6 sm:p-8 backdrop-blur-md shadow-2xl">
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-6 border-b border-slate-800">
-            <div>
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-violet-950/60 border border-violet-700/60 text-violet-300 text-xs font-semibold mb-2">
-                <Split className="w-3.5 h-3.5 text-violet-400" />
-                <span>The Signature Experience</span>
-              </div>
-              <h2 className="text-2xl sm:text-3xl font-bold text-slate-100">
-                Change Scenario Studio
-              </h2>
-              <p className="text-xs sm:text-sm text-slate-400 mt-1 max-w-xl">
-                DiffBeacon resolves deterministic AST paths before synthesizing side-by-side Base vs Head execution traces. Try a prompt below:
-              </p>
+        <div className="rounded-xl border border-slate-800 bg-[#0e1320] shadow-2xl overflow-hidden">
+          {/* PR Selector Header */}
+          <div className="p-4 bg-slate-900/90 border-b border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <GitBranch className="w-4 h-4 text-blue-400" />
+              <span className="text-xs font-semibold text-slate-200">Interactive Change Story Showcase:</span>
             </div>
 
-            <button
-              onClick={() => navigate('/demo')}
-              className="px-4 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs flex items-center gap-1.5 self-start lg:self-auto cursor-pointer transition-colors"
-            >
-              <span>Explore in Studio</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </button>
-          </div>
-
-          {/* Interactive Question Prompts */}
-          <div className="pt-6 space-y-4">
-            <div className="flex items-center gap-2 overflow-x-auto pb-2">
-              {scenarioExamples.map((ex) => (
+            <div className="flex items-center gap-2 overflow-x-auto pb-1 md:pb-0">
+              {samplePullRequests.map((pr, idx) => (
                 <button
-                  key={ex.q}
-                  onClick={() => setSelectedScenarioPrompt(ex.q)}
-                  className={`px-3.5 py-2 rounded-lg text-xs font-medium transition-all shrink-0 cursor-pointer ${
-                    selectedScenarioPrompt === ex.q
-                      ? 'bg-violet-950/80 text-violet-200 border border-violet-500/80 font-bold shadow-md shadow-violet-950'
-                      : 'bg-slate-950/80 text-slate-400 hover:text-slate-200 border border-slate-800'
+                  key={pr.id}
+                  onClick={() => setSelectedPrIndex(idx)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-mono transition-all shrink-0 cursor-pointer ${
+                    selectedPrIndex === idx
+                      ? 'bg-blue-600 text-white font-semibold shadow-sm'
+                      : 'bg-slate-950 text-slate-400 hover:text-slate-200 border border-slate-800'
                   }`}
                 >
-                  {ex.q}
+                  {pr.id.toUpperCase()}: {pr.symbol.split('.').pop()}
                 </button>
               ))}
             </div>
+          </div>
 
-            {/* Interactive Trace Result Card */}
-            <div className="p-5 rounded-xl bg-slate-950 border border-slate-800 space-y-4 font-mono text-xs">
-              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                <div className="flex items-center gap-2">
-                  <span className="text-[11px] font-semibold text-slate-400">Target Symbol:</span>
-                  <span className="text-cyan-300 font-bold">{currentScenario.target}</span>
-                </div>
-                <span className="text-[10px] text-teal-400 font-bold uppercase bg-teal-950 px-2 py-0.5 rounded border border-teal-800">
-                  Statically Established
-                </span>
-              </div>
-
-              {/* Side-by-Side Path Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="p-4 rounded-lg bg-rose-950/20 border border-rose-900/40 space-y-2">
-                  <div className="text-[11px] font-bold text-rose-400 uppercase tracking-wider">
-                    Base Path Execution (v1.0)
-                  </div>
-                  <div className="text-slate-300 text-xs leading-relaxed">
-                    {currentScenario.base}
-                  </div>
-                </div>
-
-                <div className="p-4 rounded-lg bg-teal-950/20 border border-teal-900/40 space-y-2">
-                  <div className="text-[11px] font-bold text-teal-400 uppercase tracking-wider">
-                    Head Path Execution (v1.1)
-                  </div>
-                  <div className="text-slate-300 text-xs leading-relaxed">
-                    {currentScenario.head}
-                  </div>
+          {/* Interactive Inspection Workspace */}
+          <div className="p-6 space-y-6">
+            {/* PR Meta Bar */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-800/80">
+              <div>
+                <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                  <span>{currentPr.title}</span>
+                  <span
+                    className={`px-2 py-0.5 text-[10px] uppercase font-mono font-bold rounded ${
+                      currentPr.status === 'Breaking'
+                        ? 'bg-rose-950 text-rose-300 border border-rose-800'
+                        : 'bg-emerald-950 text-emerald-300 border border-emerald-800'
+                    }`}
+                  >
+                    {currentPr.status}
+                  </span>
+                </h3>
+                <div className="flex items-center gap-3 text-xs text-slate-400 font-mono mt-1">
+                  <span>Branch: {currentPr.branch}</span>
+                  <span>•</span>
+                  <span>Target: {currentPr.file}</span>
                 </div>
               </div>
 
-              {/* Divergence Fork Highlight */}
-              <div className="p-3 rounded-lg bg-amber-950/30 border border-amber-800/50 flex items-center gap-2.5 text-amber-300 text-xs font-sans">
-                <Sparkles className="w-4 h-4 text-amber-400 shrink-0" />
-                <span><strong>Behavioral Fork:</strong> {currentScenario.divergence}</span>
+              <button
+                onClick={() => navigate('/demo')}
+                className="px-3.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium flex items-center gap-1.5 self-start sm:self-auto cursor-pointer"
+              >
+                <span>View Full Analysis</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
+            {/* Scenario Question */}
+            <div className="p-3.5 rounded-lg bg-slate-950 border border-slate-800 flex items-start gap-3">
+              <Split className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" />
+              <div className="text-xs">
+                <span className="text-slate-400 font-mono block text-[11px] mb-0.5">Developer Scenario Query:</span>
+                <span className="text-slate-200 font-medium">"{currentPr.question}"</span>
+              </div>
+            </div>
+
+            {/* Side-by-Side Execution Trace */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 font-mono text-xs">
+              {/* Base Trace */}
+              <div className="p-4 rounded-lg bg-slate-950 border border-slate-800 space-y-2">
+                <div className="flex items-center justify-between text-[11px] text-slate-400 pb-2 border-b border-slate-800/80">
+                  <span className="font-bold text-slate-300 uppercase">Base Snapshot (v1.0)</span>
+                  <span className="text-[10px] text-slate-500">main baseline</span>
+                </div>
+                <p className="text-slate-300 leading-relaxed font-sans text-xs">
+                  {currentPr.baseBehavior}
+                </p>
+              </div>
+
+              {/* Head Trace */}
+              <div className="p-4 rounded-lg bg-slate-950 border border-blue-900/40 space-y-2">
+                <div className="flex items-center justify-between text-[11px] text-blue-400 pb-2 border-b border-slate-800/80">
+                  <span className="font-bold text-blue-300 uppercase">Head Snapshot (v1.1)</span>
+                  <span className="text-[10px] text-blue-400/80">pull request changes</span>
+                </div>
+                <p className="text-slate-200 leading-relaxed font-sans text-xs">
+                  {currentPr.headBehavior}
+                </p>
+              </div>
+            </div>
+
+            {/* Behavioral Divergence Fork */}
+            <div className="p-3 rounded-lg bg-amber-950/20 border border-amber-800/40 text-xs text-amber-300 font-sans flex items-start gap-2.5">
+              <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+              <div>
+                <span className="font-semibold block text-amber-200">Execution Divergence Point:</span>
+                <span>{currentPr.divergence}</span>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* The 6 Pillars of the Change Story Interactive Explorer */}
-      <section className="max-w-6xl mx-auto px-4">
-        <div className="text-center max-w-2xl mx-auto mb-10">
-          <h2 className="text-2xl sm:text-3xl font-bold text-slate-100">
-            The 6 Pillars of the Change Story
+      {/* The 6 Core Engineering Pillars */}
+      <section className="max-w-6xl mx-auto px-4 space-y-8">
+        <div className="text-center max-w-2xl mx-auto space-y-2">
+          <h2 className="text-2xl sm:text-3xl font-bold text-white">
+            Comprehensive Behavioral Intelligence
           </h2>
-          <p className="mt-2 text-xs sm:text-sm text-slate-400">
-            Every analysis constructs a verifiable Change Story answering what changed, what it touches, and what static analysis cannot know.
+          <p className="text-xs sm:text-sm text-slate-400">
+            DiffBeacon structures every code comparison into six verified facets so engineers can review with complete clarity.
           </p>
         </div>
 
-        {/* Tab Buttons */}
-        <div className="flex items-center justify-center gap-2 overflow-x-auto pb-4">
-          {[
-            { id: 'scenarios', label: 'Scenario Studio', icon: <Split className="w-3.5 h-3.5 text-violet-400" /> },
-            { id: 'ledger', label: 'Behavior Ledger', icon: <Layers className="w-3.5 h-3.5 text-cyan-400" /> },
-            { id: 'contracts', label: 'Contract Map', icon: <Cpu className="w-3.5 h-3.5 text-teal-400" /> },
-            { id: 'graph', label: 'Impact Explorer', icon: <Network className="w-3.5 h-3.5 text-emerald-400" /> },
-            { id: 'verification', label: 'Verification Matrix', icon: <CheckCircle2 className="w-3.5 h-3.5 text-teal-400" /> },
-            { id: 'unknowns', label: 'Unknowns Register', icon: <AlertTriangle className="w-3.5 h-3.5 text-amber-400" /> },
-          ].map((t) => (
-            <button
-              key={t.id}
-              onClick={() => setActiveTab(t.id as any)}
-              className={`px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all cursor-pointer shrink-0 ${
-                activeTab === t.id
-                  ? 'bg-cyan-950 text-cyan-300 border border-cyan-800/80 shadow-md shadow-cyan-950'
-                  : 'bg-slate-900/60 text-slate-400 hover:text-slate-200 border border-slate-800'
-              }`}
-            >
-              {t.icon}
-              <span>{t.label}</span>
-            </button>
-          ))}
-        </div>
-
-        {/* Tab Content Preview Card */}
-        <div className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 max-w-4xl mx-auto text-xs space-y-3 font-sans">
-          {activeTab === 'scenarios' && (
-            <div>
-              <h3 className="text-base font-bold text-slate-100 flex items-center gap-2">
-                <Split className="w-4 h-4 text-violet-400" />
-                <span>Scenario Studio: Side-by-Side Execution Paths</span>
-              </h3>
-              <p className="text-slate-300 mt-2 leading-relaxed">
-                Pose hypothetical developer questions about inputs, edge cases, and runtime conditions. The system calculates deterministic AST paths and renders side-by-side before/after traces with source line citations.
-              </p>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-xs font-sans">
+          <div className="p-5 rounded-xl bg-slate-900/60 border border-slate-800 hover:border-slate-700 transition-colors space-y-2">
+            <div className="flex items-center gap-2 text-blue-400 font-mono text-[11px] font-bold">
+              <Layers className="w-4 h-4" />
+              <span>BEHAVIORAL DELTAS</span>
             </div>
-          )}
+            <h3 className="text-sm font-semibold text-white">Observable Behavior Ledger</h3>
+            <p className="text-slate-400 leading-relaxed">
+              Examines meaningful behavior shifts (modified validation boundaries, tax calculation changes, error status codes) rather than added lines.
+            </p>
+          </div>
 
-          {activeTab === 'ledger' && (
-            <div>
-              <h3 className="text-base font-bold text-slate-100 flex items-center gap-2">
-                <Layers className="w-4 h-4 text-cyan-400" />
-                <span>Behavior Delta Ledger: Observable Shifts</span>
-              </h3>
-              <p className="text-slate-300 mt-2 leading-relaxed">
-                Explains meaningful behavioral consequences rather than lines added or removed. Categorizes API contracts, validation bounds, data models, error handling, and deleted symbols with exact line ranges.
-              </p>
+          <div className="p-5 rounded-xl bg-slate-900/60 border border-slate-800 hover:border-slate-700 transition-colors space-y-2">
+            <div className="flex items-center gap-2 text-teal-400 font-mono text-[11px] font-bold">
+              <Cpu className="w-4 h-4" />
+              <span>CONTRACT SURFACE MAP</span>
             </div>
-          )}
+            <h3 className="text-sm font-semibold text-white">API & Model Schema Diffs</h3>
+            <p className="text-slate-400 leading-relaxed">
+              Audits DRF serializers, URL route definitions, and database constraints. Distinguishes harmless extensions from breaking interface regressions.
+            </p>
+          </div>
 
-          {activeTab === 'contracts' && (
-            <div>
-              <h3 className="text-base font-bold text-slate-100 flex items-center gap-2">
-                <Cpu className="w-4 h-4 text-teal-400" />
-                <span>Contract Surface Map: Breaking vs Compatible Differences</span>
-              </h3>
-              <p className="text-slate-300 mt-2 leading-relaxed">
-                Compares supported contracts across DRF serializers, URL routes, and database models. Distinguishes harmless schema field additions from demonstrated breaking contract regressions.
-              </p>
+          <div className="p-5 rounded-xl bg-slate-900/60 border border-slate-800 hover:border-slate-700 transition-colors space-y-2">
+            <div className="flex items-center gap-2 text-indigo-400 font-mono text-[11px] font-bold">
+              <Network className="w-4 h-4" />
+              <span>IMPACT EXPLORER</span>
             </div>
-          )}
+            <h3 className="text-sm font-semibold text-white">Dependency Blast Radius</h3>
+            <p className="text-slate-400 leading-relaxed">
+              Interactive topological graph connecting modified symbols to callers, serializers, models, and test suites with verified line citations.
+            </p>
+          </div>
 
-          {activeTab === 'graph' && (
-            <div>
-              <h3 className="text-base font-bold text-slate-100 flex items-center gap-2">
-                <Network className="w-4 h-4 text-emerald-400" />
-                <span>Evidence-Backed Impact Explorer: Interactive Graph Canvas</span>
-              </h3>
-              <p className="text-slate-300 mt-2 leading-relaxed">
-                Powered by an interactive topological canvas with real-time blast-radius isolation. Clicking any node dims unrelated code, spotlighting the exact chain of callers and callees connected to the change.
-              </p>
+          <div className="p-5 rounded-xl bg-slate-900/60 border border-slate-800 hover:border-slate-700 transition-colors space-y-2">
+            <div className="flex items-center gap-2 text-violet-400 font-mono text-[11px] font-bold">
+              <Split className="w-4 h-4" />
+              <span>SCENARIO STUDIO</span>
             </div>
-          )}
+            <h3 className="text-sm font-semibold text-white">Execution Path Simulation</h3>
+            <p className="text-slate-400 leading-relaxed">
+              Query specific runtime hypotheses (*"What if input X is omitted?"*) and step through synchronized Base vs. Head execution paths.
+            </p>
+          </div>
 
-          {activeTab === 'verification' && (
-            <div>
-              <h3 className="text-base font-bold text-slate-100 flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-teal-400" />
-                <span>Verification Matrix: Test Recommendations & Sandbox Execution</span>
-              </h3>
-              <p className="text-slate-300 mt-2 leading-relaxed">
-                Derives test cases with preconditions, input payloads, and expected observable results. Test cases can be run directly inside the interactive sandbox runner to verify runtime assertions.
-              </p>
+          <div className="p-5 rounded-xl bg-slate-900/60 border border-slate-800 hover:border-slate-700 transition-colors space-y-2">
+            <div className="flex items-center gap-2 text-emerald-400 font-mono text-[11px] font-bold">
+              <CheckCircle2 className="w-4 h-4" />
+              <span>VERIFICATION MATRIX</span>
             </div>
-          )}
+            <h3 className="text-sm font-semibold text-white">Automated Sandbox Runner</h3>
+            <p className="text-slate-400 leading-relaxed">
+              Derived test recommendations with preconditions, inputs, and expected outcomes. Execute tests directly in an isolated sandbox runner.
+            </p>
+          </div>
 
-          {activeTab === 'unknowns' && (
-            <div>
-              <h3 className="text-base font-bold text-slate-100 flex items-center gap-2">
-                <AlertTriangle className="w-4 h-4 text-amber-400" />
-                <span>The Unknowns Register: Honest Epistemic Boundaries</span>
-              </h3>
-              <p className="text-slate-300 mt-2 leading-relaxed">
-                Surfaces what static analysis cannot establish with certainty—such as dynamic dispatches, missing runtime configuration, and database state assumptions—instead of manufacturing hallucinations.
-              </p>
+          <div className="p-5 rounded-xl bg-slate-900/60 border border-slate-800 hover:border-slate-700 transition-colors space-y-2">
+            <div className="flex items-center gap-2 text-amber-400 font-mono text-[11px] font-bold">
+              <AlertTriangle className="w-4 h-4" />
+              <span>ANALYSIS BOUNDARIES</span>
             </div>
-          )}
+            <h3 className="text-sm font-semibold text-white">Explicit Unknowns Register</h3>
+            <p className="text-slate-400 leading-relaxed">
+              Surfaces dynamic dispatches, missing runtime configuration, and database row assumptions that require runtime testing.
+            </p>
+          </div>
         </div>
       </section>
 
-      {/* Comparison Grid: Generic PR Bots vs DiffBeacon */}
-      <section className="max-w-5xl mx-auto px-4 pb-8">
-        <div className="text-center mb-8">
-          <h2 className="text-2xl font-bold text-slate-100">
-            Why DiffBeacon is Different
+      {/* Bottom CTA */}
+      <section className="max-w-4xl mx-auto px-4 text-center py-6">
+        <div className="p-8 rounded-2xl bg-gradient-to-b from-slate-900 to-slate-950 border border-slate-800 space-y-4">
+          <h2 className="text-xl sm:text-2xl font-bold text-white">
+            Ready to inspect your first code change?
           </h2>
-          <p className="text-xs text-slate-400 mt-1">
-            Built from first principles to solve the fundamental flaws of conversational diff reviewers.
+          <p className="text-xs text-slate-400 max-w-md mx-auto">
+            Test the pre-seeded BeaconWorks Django REST API analysis or upload your own Git snapshots.
           </p>
-        </div>
-
-        <div className="border border-slate-800 rounded-2xl bg-slate-900/50 overflow-hidden text-xs">
-          <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-slate-800">
-            {/* Generic PR Bots */}
-            <div className="p-6 space-y-4 bg-slate-950/40">
-              <div className="text-rose-400 font-bold uppercase tracking-wider text-[11px]">
-                Generic AI Code Reviewers & PR Bots
-              </div>
-              <ul className="space-y-2.5 text-slate-400">
-                <li className="flex items-start gap-2">
-                  <span className="text-rose-400 font-bold">✕</span>
-                  <span>Summarizes diff lines without understanding program execution paths.</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-rose-400 font-bold">✕</span>
-                  <span>Fabricates nonexistent line numbers, files, and functions.</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-rose-400 font-bold">✕</span>
-                  <span>Conflates schema additions with catastrophic breaking changes.</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-rose-400 font-bold">✕</span>
-                  <span>Hides dynamic execution uncertainties behind false confidence.</span>
-                </li>
-              </ul>
-            </div>
-
-            {/* DiffBeacon */}
-            <div className="p-6 space-y-4 bg-teal-950/10">
-              <div className="text-teal-400 font-bold uppercase tracking-wider text-[11px] flex items-center gap-1.5">
-                <ShieldCheck className="w-4 h-4 text-teal-400" />
-                <span>DiffBeacon Behavioral Impact Platform</span>
-              </div>
-              <ul className="space-y-2.5 text-slate-300">
-                <li className="flex items-start gap-2">
-                  <span className="text-teal-400 font-bold">✓</span>
-                  <span>Answers concrete developer scenarios (*"What happens if input X is missing?"*).</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-teal-400 font-bold">✓</span>
-                  <span>Zero fabricated citations; audited against snapshot AST symbol tables.</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-teal-400 font-bold">✓</span>
-                  <span>Visual field-level schema diffing with breaking vs compatible distinction.</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-teal-400 font-bold">✓</span>
-                  <span>Explicit Unknowns Register cataloging dynamic boundaries and reflection.</span>
-                </li>
-              </ul>
-            </div>
+          <div className="pt-2 flex items-center justify-center gap-3">
+            <button
+              onClick={() => navigate('/demo')}
+              className="px-5 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-medium text-xs cursor-pointer transition-colors"
+            >
+              Open BeaconWorks Demo
+            </button>
+            <button
+              onClick={() => navigate('/dashboard')}
+              className="px-5 py-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium cursor-pointer transition-colors"
+            >
+              Go to Dashboard
+            </button>
           </div>
         </div>
       </section>

@@ -43,7 +43,7 @@ describe('Navbar Component', () => {
     );
 
     expect(screen.getByText('DiffBeacon')).toBeDefined();
-    expect(screen.getByText('See what a change touches.')).toBeDefined();
+    expect(screen.getByText('Behavioral Change Intelligence')).toBeDefined();
 
     const searchButton = screen.getByText('Search symbols, scenarios, diffs...');
     fireEvent.click(searchButton);

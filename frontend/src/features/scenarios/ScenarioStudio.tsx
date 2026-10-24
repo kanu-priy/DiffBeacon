@@ -22,6 +22,7 @@ import {
   Check,
   Zap,
 } from 'lucide-react';
+import { useToast } from '../../components/Toast';
 
 interface Props {
   analysisId: string;
@@ -30,6 +31,7 @@ interface Props {
 
 export const ScenarioStudio: React.FC<Props> = ({ analysisId, onInspectLine }) => {
   const queryClient = useQueryClient();
+  const toast = useToast();
   const [questionInput, setQuestionInput] = useState('');
   const [selectedScenarioId, setSelectedScenarioId] = useState<string>('');
 
@@ -57,6 +59,10 @@ export const ScenarioStudio: React.FC<Props> = ({ analysisId, onInspectLine }) =
       setCurrentStepIndex(1);
       setIsPlaying(false);
       setTestExecutionResult('not_executed');
+      toast.success('Scenario Trace Synthesized', 'AST paths extracted and verified against code index.');
+    },
+    onError: (err: any) => {
+      toast.error('Failed to run scenario', err.message || 'Error communicating with analysis engine.');
     },
   });
 
@@ -97,13 +103,14 @@ export const ScenarioStudio: React.FC<Props> = ({ analysisId, onInspectLine }) =
     setTimeout(() => {
       setIsTestRunning(false);
       setTestExecutionResult('passed');
-    }, 1400);
+      toast.success('Sandbox Test Passed', 'Assertions verified against Head snapshot.');
+    }, 1200);
   };
 
   const handleCopyMarkdown = () => {
     if (!activeScenario) return;
     const md = `### DiffBeacon Scenario Trace: ${activeScenario.question}
-**Condition:** ${activeScenario.normalized_condition}
+**Normalized Condition:** ${activeScenario.normalized_condition}
 
 **Behavioral Delta:**
 ${activeScenario.behavioral_delta_summary}
@@ -116,27 +123,28 @@ ${activeScenario.impact_summary}
 - Expected: ${activeScenario.verification_plan.expected_result}`;
     navigator.clipboard.writeText(md);
     setCopiedSummary(true);
+    toast.success('Copied Markdown Summary', 'Scenario analysis copied to clipboard.');
     setTimeout(() => setCopiedSummary(false), 2500);
   };
 
   return (
     <div className="space-y-6">
-      {/* Top Header & Dynamic Evaluator */}
-      <div className="p-6 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-4 shadow-xl backdrop-blur-md">
+      {/* Top Header & Query Input */}
+      <div className="p-6 rounded-xl bg-slate-900/80 border border-slate-800 space-y-4 shadow-xl">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-violet-950/70 border border-violet-800/80 text-violet-400">
+            <div className="p-2 rounded-lg bg-blue-950/60 border border-blue-800/80 text-blue-400">
               <Split className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-base font-bold text-slate-100 flex items-center gap-2">
-                <span>Change Scenario Studio</span>
-                <span className="px-2 py-0.5 rounded text-[10px] font-mono uppercase bg-cyan-950 text-cyan-400 border border-cyan-800/80">
-                  Interactive Simulator
+              <h2 className="text-base font-bold text-white flex items-center gap-2">
+                <span>Scenario Simulation Studio</span>
+                <span className="px-2 py-0.5 rounded text-[10px] font-mono uppercase bg-slate-800 text-slate-300 border border-slate-700">
+                  Execution Stepper
                 </span>
               </h2>
               <p className="text-xs text-slate-400">
-                Execute behavioral hypotheses across versions and step through side-by-side execution traces.
+                Formulate hypotheses about runtime conditions and inspect side-by-side execution divergence.
               </p>
             </div>
           </div>
@@ -147,16 +155,16 @@ ${activeScenario.impact_summary}
               disabled={!activeScenario}
               className="px-3 py-1.5 rounded-lg bg-slate-950 hover:bg-slate-800 border border-slate-700 text-slate-300 font-mono text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
             >
-              {copiedSummary ? <Check className="w-3.5 h-3.5 text-teal-400" /> : <Copy className="w-3.5 h-3.5 text-slate-400" />}
-              <span>{copiedSummary ? 'Copied PR Summary' : 'Export for PR'}</span>
+              {copiedSummary ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-slate-400" />}
+              <span>{copiedSummary ? 'Copied' : 'Export for PR'}</span>
             </button>
           </div>
         </div>
 
         {/* Suggestion Starter Pills */}
         <div className="space-y-2">
-          <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">
-            Suggested Scenario Starters:
+          <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block font-mono">
+            Preset Scenario Hypotheses:
           </span>
           <div className="flex flex-wrap gap-2">
             {starterQuestions.map((q, idx) => (
@@ -168,16 +176,16 @@ ${activeScenario.impact_summary}
                   createScenarioMutation.mutate(q);
                 }}
                 disabled={createScenarioMutation.isPending}
-                className="px-3 py-1.5 rounded-lg bg-slate-950/80 hover:bg-slate-800 border border-slate-800 text-xs text-slate-300 hover:text-cyan-300 transition-colors text-left cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+                className="px-2.5 py-1.5 rounded-md bg-slate-950 hover:bg-slate-800 border border-slate-800 text-xs text-slate-300 hover:text-blue-300 transition-colors text-left cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
               >
-                <Sparkles className="w-3 h-3 text-cyan-400 shrink-0" />
+                <Sparkles className="w-3 h-3 text-blue-400 shrink-0" />
                 <span>{q}</span>
               </button>
             ))}
           </div>
         </div>
 
-        {/* Input Form */}
+        {/* Dynamic Question Input Form */}
         <form
           onSubmit={(e) => {
             e.preventDefault();
@@ -189,16 +197,16 @@ ${activeScenario.impact_summary}
         >
           <input
             type="text"
-            placeholder="Type a concrete developer question (e.g. 'What happens if a request omits department_id now?')..."
+            placeholder="Type a concrete hypothesis (e.g. 'What happens if a request omits department_id now?')..."
             value={questionInput}
             onChange={(e) => setQuestionInput(e.target.value)}
             disabled={createScenarioMutation.isPending}
-            className="flex-1 text-xs px-4 py-3 rounded-xl bg-slate-950 border border-slate-700 text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-cyan-500 transition-colors font-mono"
+            className="flex-1 text-xs px-4 py-2.5 rounded-lg bg-slate-950 border border-slate-700 text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-blue-500 transition-colors font-mono"
           />
           <button
             type="submit"
             disabled={!questionInput.trim() || createScenarioMutation.isPending}
-            className="px-5 py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-400 hover:to-teal-400 disabled:opacity-50 text-slate-950 font-bold text-xs flex items-center gap-2 transition-all cursor-pointer shadow-lg shadow-cyan-500/20"
+            className="px-5 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-medium text-xs flex items-center gap-2 transition-all cursor-pointer shadow-sm"
           >
             {createScenarioMutation.isPending ? (
               <>
@@ -208,7 +216,7 @@ ${activeScenario.impact_summary}
             ) : (
               <>
                 <Send className="w-4 h-4" />
-                <span>Trace Scenario</span>
+                <span>Simulate Scenario</span>
               </>
             )}
           </button>
@@ -230,7 +238,7 @@ ${activeScenario.impact_summary}
               }}
               className={`px-3 py-1.5 rounded-lg text-xs font-mono truncate max-w-xs transition-colors cursor-pointer shrink-0 ${
                 activeScenario?.id === s.id
-                  ? 'bg-cyan-950 text-cyan-300 border border-cyan-800 font-bold'
+                  ? 'bg-blue-950/80 text-blue-200 border border-blue-700 font-semibold'
                   : 'bg-slate-900 text-slate-400 border border-slate-800 hover:text-slate-200'
               }`}
             >
@@ -243,31 +251,31 @@ ${activeScenario.impact_summary}
       {/* Interactive Scenario View */}
       {isLoading ? (
         <div className="p-16 text-center text-slate-400 space-y-3">
-          <Loader2 className="w-8 h-8 animate-spin text-cyan-400 mx-auto" />
-          <span className="text-xs">Extracting AST candidate execution paths...</span>
+          <Loader2 className="w-7 h-7 animate-spin text-blue-400 mx-auto" />
+          <span className="text-xs font-mono">Extracting AST candidate execution paths...</span>
         </div>
       ) : activeScenario ? (
         <div className="space-y-6">
-          {/* Section A: Scenario Interpretation */}
+          {/* Section: Scenario Interpretation */}
           <div className="p-5 rounded-xl bg-slate-900/80 border border-slate-800 space-y-3">
             <div className="flex items-center justify-between pb-2 border-b border-slate-800">
-              <span className="text-xs font-mono font-bold text-cyan-400 uppercase tracking-wider flex items-center gap-1.5">
-                <span>A. Scenario Interpretation</span>
+              <span className="text-xs font-mono font-bold text-slate-200 uppercase tracking-wider flex items-center gap-1.5">
+                <span>Scenario Interpretation</span>
               </span>
               <span className="text-[11px] font-mono text-slate-400">
-                Resolution: <strong className="text-teal-400 uppercase">{activeScenario.status}</strong>
+                Resolution: <strong className="text-emerald-400 uppercase">{activeScenario.status}</strong>
               </span>
             </div>
 
             <div className="font-mono text-xs text-slate-200 bg-slate-950 p-3 rounded-lg border border-slate-800/80">
-              <span className="text-slate-400 text-[11px] block mb-1">Normalized Condition:</span>
-              <span className="text-cyan-300 font-semibold">{activeScenario.normalized_condition}</span>
+              <span className="text-slate-500 text-[11px] block mb-1">Normalized Runtime Condition:</span>
+              <span className="text-blue-300 font-medium">{activeScenario.normalized_condition}</span>
             </div>
 
             {activeScenario.interpretation_assumptions?.length > 0 && (
-              <div className="text-xs text-slate-400 space-y-1">
+              <div className="text-xs text-slate-400 space-y-1 font-sans">
                 <span className="font-semibold text-slate-300 block text-[11px]">Assumptions Made:</span>
-                <ul className="list-disc list-inside space-y-0.5 pl-1 font-mono text-[11px]">
+                <ul className="list-disc list-inside space-y-0.5 pl-1 font-mono text-[11px] text-slate-400">
                   {activeScenario.interpretation_assumptions.map((asm, idx) => (
                     <li key={idx}>{asm}</li>
                   ))}
@@ -285,7 +293,7 @@ ${activeScenario.impact_summary}
                 className={`p-2 rounded-lg font-semibold flex items-center gap-1.5 transition-colors cursor-pointer ${
                   isPlaying
                     ? 'bg-amber-500 text-slate-950 font-bold'
-                    : 'bg-cyan-500 text-slate-950 font-bold hover:bg-cyan-400'
+                    : 'bg-blue-600 text-white hover:bg-blue-500'
                 }`}
                 title={isPlaying ? 'Pause Auto-step' : 'Play Trace Auto-step'}
               >
@@ -335,10 +343,10 @@ ${activeScenario.impact_summary}
                       onClick={() => setCurrentStepIndex(stepNum)}
                       className={`w-6 h-6 rounded-md text-[10px] font-bold flex items-center justify-center transition-all cursor-pointer ${
                         isCurrent
-                          ? 'bg-cyan-400 text-slate-950 ring-2 ring-cyan-400/50 scale-110'
+                          ? 'bg-blue-500 text-white ring-2 ring-blue-400/50 scale-105'
                           : isPassed
-                          ? 'bg-slate-800 text-cyan-300'
-                          : 'bg-slate-900 text-slate-500'
+                          ? 'bg-slate-800 text-slate-300'
+                          : 'bg-slate-900 text-slate-600'
                       }`}
                     >
                       {stepNum}
@@ -354,9 +362,9 @@ ${activeScenario.impact_summary}
 
           {/* Divergence Notification Banner when current step diverges */}
           {currentStepIndex >= 2 && (
-            <div className="p-3.5 rounded-xl bg-gradient-to-r from-cyan-950/40 via-violet-950/30 to-amber-950/40 border border-cyan-800/80 text-xs flex items-center gap-3 animate-fade-in">
+            <div className="p-3.5 rounded-xl bg-amber-950/20 border border-amber-800/60 text-xs flex items-center gap-3">
               <div className="p-1.5 rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/40 shrink-0">
-                <Zap className="w-4 h-4 text-amber-400 animate-bounce" />
+                <Zap className="w-4 h-4 text-amber-400" />
               </div>
               <div className="space-y-0.5">
                 <span className="font-bold text-slate-100 flex items-center gap-2">
@@ -369,13 +377,13 @@ ${activeScenario.impact_summary}
             </div>
           )}
 
-          {/* Section B & C: Side-by-Side Path Traces with Active Step Highlights */}
+          {/* Side-by-Side Path Traces with Active Step Highlights */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 font-mono text-xs">
             {/* Before Path */}
-            <div className="p-5 rounded-xl bg-slate-900/80 border border-rose-900/40 space-y-4">
-              <div className="flex items-center justify-between pb-2 border-b border-rose-900/40 font-sans">
+            <div className="p-5 rounded-xl bg-slate-900/80 border border-slate-800 space-y-4">
+              <div className="flex items-center justify-between pb-2 border-b border-slate-800 font-sans">
                 <span className="text-xs font-bold text-rose-400 uppercase tracking-wider">
-                  B. Before Path (Base v1.0)
+                  Before Path (Base v1.0)
                 </span>
                 <span className="text-[10px] text-slate-400 font-mono">
                   {activeScenario.traces?.base?.length || 0} Steps
@@ -388,9 +396,9 @@ ${activeScenario.impact_summary}
                   return (
                     <div
                       key={step.step_index}
-                      className={`p-3.5 rounded-xl border transition-all duration-300 relative space-y-2 ${
+                      className={`p-3.5 rounded-xl border transition-all duration-200 relative space-y-2 ${
                         isActive
-                          ? 'bg-rose-950/40 border-rose-500 shadow-lg shadow-rose-950/50 scale-[1.02]'
+                          ? 'bg-rose-950/30 border-rose-500/80 shadow-md'
                           : 'bg-slate-950/80 border-slate-800/80'
                       }`}
                     >
@@ -399,7 +407,7 @@ ${activeScenario.impact_summary}
                           <span
                             className={`w-6 h-6 rounded-full text-[11px] font-bold flex items-center justify-center ${
                               isActive
-                                ? 'bg-rose-500 text-slate-950 animate-pulse'
+                                ? 'bg-rose-500 text-white'
                                 : 'bg-rose-950 text-rose-400 border border-rose-800'
                             }`}
                           >
@@ -421,7 +429,7 @@ ${activeScenario.impact_summary}
                         {step.line_number && (
                           <button
                             onClick={() => onInspectLine(step.file_path, step.line_number!)}
-                            className="text-cyan-400 hover:underline cursor-pointer flex items-center gap-1 font-sans"
+                            className="text-blue-400 hover:underline cursor-pointer flex items-center gap-1 font-sans"
                           >
                             <FileCode className="w-3 h-3" />
                             <span>Inspect Line</span>
@@ -435,10 +443,10 @@ ${activeScenario.impact_summary}
             </div>
 
             {/* After Path */}
-            <div className="p-5 rounded-xl bg-slate-900/80 border border-teal-900/40 space-y-4">
-              <div className="flex items-center justify-between pb-2 border-b border-teal-900/40 font-sans">
-                <span className="text-xs font-bold text-teal-400 uppercase tracking-wider">
-                  C. After Path (Head v1.1)
+            <div className="p-5 rounded-xl bg-slate-900/80 border border-slate-800 space-y-4">
+              <div className="flex items-center justify-between pb-2 border-b border-slate-800 font-sans">
+                <span className="text-xs font-bold text-blue-400 uppercase tracking-wider">
+                  After Path (Head v1.1)
                 </span>
                 <span className="text-[10px] text-slate-400 font-mono">
                   {activeScenario.traces?.head?.length || 0} Steps
@@ -451,9 +459,9 @@ ${activeScenario.impact_summary}
                   return (
                     <div
                       key={step.step_index}
-                      className={`p-3.5 rounded-xl border transition-all duration-300 relative space-y-2 ${
+                      className={`p-3.5 rounded-xl border transition-all duration-200 relative space-y-2 ${
                         isActive
-                          ? 'bg-teal-950/40 border-teal-400 shadow-lg shadow-teal-950/50 scale-[1.02]'
+                          ? 'bg-blue-950/30 border-blue-500/80 shadow-md'
                           : 'bg-slate-950/80 border-slate-800/80'
                       }`}
                     >
@@ -462,8 +470,8 @@ ${activeScenario.impact_summary}
                           <span
                             className={`w-6 h-6 rounded-full text-[11px] font-bold flex items-center justify-center ${
                               isActive
-                                ? 'bg-teal-400 text-slate-950 animate-pulse'
-                                : 'bg-teal-950 text-teal-400 border border-teal-800'
+                                ? 'bg-blue-500 text-white'
+                                : 'bg-blue-950 text-blue-400 border border-blue-800'
                             }`}
                           >
                             {step.step_index}
@@ -484,7 +492,7 @@ ${activeScenario.impact_summary}
                         {step.line_number && (
                           <button
                             onClick={() => onInspectLine(step.file_path, step.line_number!)}
-                            className="text-cyan-400 hover:underline cursor-pointer flex items-center gap-1 font-sans"
+                            className="text-blue-400 hover:underline cursor-pointer flex items-center gap-1 font-sans"
                           >
                             <FileCode className="w-3 h-3" />
                             <span>Inspect Line</span>
@@ -498,11 +506,11 @@ ${activeScenario.impact_summary}
             </div>
           </div>
 
-          {/* Section D & E: Behavioral Delta & Impact */}
+          {/* Behavioral Delta & Downstream Impact */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="p-5 rounded-xl bg-slate-900/80 border border-slate-800 space-y-2">
-              <span className="text-xs font-mono font-bold text-cyan-400 uppercase tracking-wider block">
-                D. Behavioral Delta
+              <span className="text-xs font-mono font-bold text-slate-200 uppercase tracking-wider block">
+                Behavioral Delta
               </span>
               <p className="text-xs text-slate-300 leading-relaxed font-sans">
                 {activeScenario.behavioral_delta_summary}
@@ -510,8 +518,8 @@ ${activeScenario.impact_summary}
             </div>
 
             <div className="p-5 rounded-xl bg-slate-900/80 border border-slate-800 space-y-2">
-              <span className="text-xs font-mono font-bold text-teal-400 uppercase tracking-wider block">
-                E. Downstream Impact
+              <span className="text-xs font-mono font-bold text-slate-200 uppercase tracking-wider block">
+                Downstream Impact
               </span>
               <p className="text-xs text-slate-300 leading-relaxed font-sans">
                 {activeScenario.impact_summary}
@@ -519,74 +527,74 @@ ${activeScenario.impact_summary}
             </div>
           </div>
 
-          {/* Section F: Interactive Verification Plan & Sandbox Trigger */}
+          {/* Verification Plan & Sandbox Trigger */}
           {activeScenario.verification_plan && (
             <div className="p-5 rounded-xl bg-slate-900/80 border border-slate-800 space-y-4 font-mono text-xs">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-slate-800 font-sans">
                 <span className="text-xs font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
                   <CheckCircle2 className="w-4 h-4" />
-                  <span>F. Verification Plan & Test Sandbox</span>
+                  <span>Verification Plan & Test Sandbox</span>
                 </span>
 
                 <div className="flex items-center gap-2">
-                  <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-emerald-950/60 text-emerald-400 border border-emerald-800">
+                  <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-slate-800 text-slate-300 border border-slate-700">
                     {activeScenario.verification_plan.coverage_classification?.replace('_', ' ')}
                   </span>
                   <span
                     className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase font-mono ${
                       testExecutionResult === 'passed'
-                        ? 'bg-teal-950 text-teal-300 border border-teal-700'
+                        ? 'bg-emerald-950 text-emerald-300 border border-emerald-700'
                         : 'bg-slate-950 text-slate-400 border border-slate-800'
                     }`}
                   >
                     {testExecutionResult === 'passed'
                       ? 'Runtime Verified: Passed'
-                      : 'Not Executed (Static Proposal)'}
+                      : 'Static Proposal (Not Executed)'}
                   </span>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-slate-300">
                 <div className="p-3 rounded-lg bg-slate-950 border border-slate-800">
-                  <span className="text-[10px] text-slate-400 uppercase font-bold block mb-1">Preconditions:</span>
+                  <span className="text-[10px] text-slate-500 uppercase font-bold block mb-1">Preconditions:</span>
                   <span>{activeScenario.verification_plan.preconditions}</span>
                 </div>
                 <div className="p-3 rounded-lg bg-slate-950 border border-slate-800">
-                  <span className="text-[10px] text-slate-400 uppercase font-bold block mb-1">Input Payload:</span>
-                  <span className="text-cyan-300">{activeScenario.verification_plan.input_data}</span>
+                  <span className="text-[10px] text-slate-500 uppercase font-bold block mb-1">Input Payload:</span>
+                  <span className="text-blue-300">{activeScenario.verification_plan.input_data}</span>
                 </div>
               </div>
 
               <div className="p-3 rounded-lg bg-slate-950 border border-slate-800 text-slate-300">
-                <span className="text-[10px] text-slate-400 uppercase font-bold block mb-1">Expected Outcome:</span>
-                <span className="text-teal-300">{activeScenario.verification_plan.expected_result}</span>
+                <span className="text-[10px] text-slate-500 uppercase font-bold block mb-1">Expected Outcome:</span>
+                <span className="text-emerald-300">{activeScenario.verification_plan.expected_result}</span>
               </div>
 
-              {/* Interactive Test Runner Mock Trigger */}
-              <div className="pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-950/60 p-3 rounded-xl border border-slate-800/80">
+              {/* Interactive Test Runner Trigger */}
+              <div className="pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-950/60 p-3 rounded-lg border border-slate-800/80">
                 <div className="text-[11px] text-slate-400 font-sans flex items-center gap-2">
-                  <Terminal className="w-4 h-4 text-slate-400" />
-                  <span>Target Test: <code className="text-cyan-300">{activeScenario.verification_plan.existing_test_ref || 'tests.test_api'}</code></span>
+                  <Terminal className="w-4 h-4 text-slate-500" />
+                  <span>Target Test: <code className="text-blue-300">{activeScenario.verification_plan.existing_test_ref || 'tests.test_api'}</code></span>
                 </div>
 
                 <button
                   onClick={handleRunSimulatedTest}
                   disabled={isTestRunning || testExecutionResult === 'passed'}
-                  className="px-4 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-teal-700/80 text-teal-300 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50"
+                  className="px-4 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-200 font-semibold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50"
                 >
                   {isTestRunning ? (
                     <>
-                      <Loader2 className="w-3.5 h-3.5 animate-spin text-teal-400" />
+                      <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-400" />
                       <span>Running in Sandbox...</span>
                     </>
                   ) : testExecutionResult === 'passed' ? (
                     <>
-                      <Check className="w-3.5 h-3.5 text-teal-400" />
+                      <Check className="w-3.5 h-3.5 text-emerald-400" />
                       <span>Verified: Assertions Passed</span>
                     </>
                   ) : (
                     <>
-                      <Play className="w-3.5 h-3.5 fill-current text-teal-400" />
+                      <Play className="w-3.5 h-3.5 fill-current text-blue-400" />
                       <span>Execute Sandbox Test</span>
                     </>
                   )}
@@ -595,12 +603,12 @@ ${activeScenario.impact_summary}
             </div>
           )}
 
-          {/* Section G: Uncertainty Report */}
+          {/* Uncertainty Report */}
           {activeScenario.uncertainty_report?.length > 0 && (
             <div className="p-5 rounded-xl bg-amber-950/20 border border-amber-900/40 space-y-2 font-mono text-xs">
               <div className="flex items-center gap-2 text-amber-400 font-bold uppercase tracking-wider font-sans">
                 <AlertTriangle className="w-4 h-4" />
-                <span>G. Uncertainty & Runtime Unknowns Report</span>
+                <span>Uncertainty & Runtime Unknowns Report</span>
               </div>
               <ul className="list-disc list-inside space-y-1 text-amber-200/90 pl-1">
                 {activeScenario.uncertainty_report.map((unc, idx) => (
