@@ -105,6 +105,11 @@ export const EvidenceInspector: React.FC<Props> = ({
     if (initialLineRange) setHighlightRange(initialLineRange);
   }, [initialFilePath, initialLineRange]);
 
+  // Binary extensions that should not be displayed in source code viewer
+  const BINARY_EXTENSIONS = new Set([
+    'png', 'jpg', 'jpeg', 'gif', 'svg', 'ico', 'pdf', 'zip', 'tar', 'gz', 'pyc', 'exe', 'bin', 'woff', 'woff2', 'ttf', 'eot', 'db', 'sqlite3'
+  ]);
+
   // Fetch Base snapshot file content
   const { data: fileIndex } = useQuery({
     queryKey: ['analysis-files', analysisId],
@@ -112,9 +117,26 @@ export const EvidenceInspector: React.FC<Props> = ({
     enabled: !!analysisId,
   });
 
-  const switcherFiles = (fileIndex?.files || FALLBACK_FILES).filter((f) =>
-    (f.path || '').endsWith('.py')
-  ).slice(0, 18);
+  const switcherFiles = useMemo(() => {
+    const raw = fileIndex?.files && fileIndex.files.length > 0 ? fileIndex.files : FALLBACK_FILES;
+    return raw
+      .filter((f) => {
+        const ext = (f.path || '').split('.').pop()?.toLowerCase() || '';
+        return !BINARY_EXTENSIONS.has(ext);
+      })
+      .slice(0, 30);
+  }, [fileIndex]);
+
+  // Automatically select first modified or available file when loaded
+  useEffect(() => {
+    if (switcherFiles.length > 0) {
+      const exists = switcherFiles.some((f) => f.path === filePath);
+      if (!exists) {
+        const modified = switcherFiles.find((f) => f.change === 'modified');
+        setFilePath(modified ? modified.path : switcherFiles[0].path);
+      }
+    }
+  }, [switcherFiles, filePath]);
 
   const {
     data: baseFileData,

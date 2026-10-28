@@ -1,7 +1,10 @@
 import os
+import io
+import zipfile
 import shutil
 from pathlib import Path
 from django.conf import settings
+from django.http import HttpResponse
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -319,3 +322,36 @@ class WorkspaceHistoryView(APIView):
                 }
             )
         return Response(history_list)
+
+
+class DemoSampleArchiveDownloadView(APIView):
+    """
+    GET /api/v1/demo/sample-archive/?version=base|head
+    Streams a dynamically created ZIP archive of the BeaconWorks API fixtures.
+    """
+
+    def get(self, request):
+        version = request.query_params.get("version", "base").lower()
+        if version not in ("base", "head"):
+            version = "base"
+
+        target_dir = Path(settings.FIXTURES_DIR) / version
+        if not target_dir.exists():
+            return Response(
+                {"error": f"Fixtures directory for {version} not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        buffer = io.BytesIO()
+        with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
+            for root, _, files in os.walk(target_dir):
+                for f in files:
+                    full_p = Path(root) / f
+                    rel_p = full_p.relative_to(target_dir)
+                    zip_file.write(full_p, arcname=str(rel_p))
+
+        buffer.seek(0)
+        filename = f"beaconworks-{version}-v1.{ '0' if version == 'base' else '1' }.zip"
+        response = HttpResponse(buffer.getvalue(), content_type="application/zip")
+        response["Content-Disposition"] = f'attachment; filename="{filename}"'
+        return response

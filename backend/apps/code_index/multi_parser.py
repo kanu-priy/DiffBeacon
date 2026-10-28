@@ -436,9 +436,10 @@ class MultiLanguageParserService:
             return cls._fallback_structural_parse(file_path, code)
 
         if lang == "python":
-            from .parser import PythonCodeParser
-            parser = PythonCodeParser()
-            return parser.parse_file(file_path, code)
+            from .parser import PythonASTParser
+            parser = PythonASTParser()
+            syms, _, _ = parser.parse_source(code, file_path)
+            return syms
         elif lang in ("typescript", "javascript"):
             return cls._parse_js_ts(file_path, code, is_ts=(lang == "typescript"))
         elif lang == "go":

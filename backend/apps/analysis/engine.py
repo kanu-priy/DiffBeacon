@@ -443,4 +443,23 @@ class AnalysisPipelineEngine:
                     }
                 )
 
+        # Detect newly introduced symbols (present in head, absent in base)
+        base_names = {s["name"] for s in base_symbols}
+        for head_s in head_symbols:
+            if head_s["symbol_type"] in ("function", "method", "class") and head_s["name"] not in base_names:
+                deltas.append(
+                    {
+                        "category": "added_symbol",
+                        "title": f"Added Symbol: {head_s['name']}",
+                        "summary": f"New symbol {head_s['qualified_name']} introduced in Head version.",
+                        "before_behavior": f"Symbol {head_s['name']} did not exist in base snapshot.",
+                        "after_behavior": f"Introduced at line {head_s['start_line']}: {head_s['signature']}",
+                        "affected_symbol": head_s["qualified_name"],
+                        "file_path": head_s["file_path"],
+                        "base_line_range": [1, 1],
+                        "head_line_range": [head_s["start_line"], head_s["end_line"]],
+                        "confidence": "statically_established",
+                    }
+                )
+
         return deltas

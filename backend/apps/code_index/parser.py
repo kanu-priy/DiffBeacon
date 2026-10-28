@@ -162,6 +162,24 @@ class PythonASTParser:
         imports: List[Dict[str, Any]] = []
         unknowns: List[Dict[str, Any]] = []
 
+        if not file_path.endswith((".py", ".pyw", ".pyi")):
+            from .multi_parser import MultiLanguageParserService
+            try:
+                symbols = MultiLanguageParserService.parse_source(file_path, source_code)
+                return symbols, imports, unknowns
+            except Exception as e:
+                return symbols, imports, [
+                    {
+                        "title": f"Structural Parse Limitation in {file_path}",
+                        "reason": "unsupported_parse",
+                        "file_path": file_path,
+                        "line_number": 1,
+                        "code_snippet": "",
+                        "explanation": str(e),
+                        "resolution_strategy": "Structural inspection fallback used.",
+                    }
+                ]
+
         try:
             tree = ast.parse(source_code, filename=file_path)
         except SyntaxError as e:

@@ -55,13 +55,29 @@ class SafeArchiveExtractor:
         ):
             return "skipped", "ignored"
 
-        if "tests/" in norm_path or "test_" in norm_path or "_test.py" in norm_path:
-            return "test", "python" if ext == ".py" else ext[1:]
-        elif "migrations/" in norm_path:
+        is_test = any(t in norm_path for t in ("tests/", "test_", "_test.", ".test.", ".spec."))
+
+        if "migrations/" in norm_path:
             return "migration", "python" if ext == ".py" else ext[1:]
+
+        # Check multi-language registry for all Tier 1 and Tier 2 languages
+        try:
+            from apps.code_index.multi_parser import MultiLanguageParserService
+            lang = MultiLanguageParserService.identify_language(norm_path)
+            if lang:
+                if is_test:
+                    return "test", lang
+                if lang in ("json", "yaml", "toml"):
+                    return "config", lang
+                return "source", lang
+        except Exception:
+            pass
+
+        if is_test:
+            return "test", "python" if ext == ".py" else ext[1:]
         elif ext == ".py":
             return "source", "python"
-        elif ext in (".json", ".yaml", ".yml", ".toml", ".ini", ".env"):
+        elif ext in (".json", ".yaml", ".yml", ".toml", ".ini", ".env", ".xml", ".properties"):
             return "config", ext[1:]
         elif ext in (".md", ".rst", ".txt"):
             return "doc", ext[1:]
