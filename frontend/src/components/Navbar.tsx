@@ -50,10 +50,17 @@ export const Navbar: React.FC<Props> = ({ onOpenCommandPalette }) => {
           <nav className="flex items-center gap-1 text-xs font-medium">
             <Link
               to="/dashboard"
-              className={`px-3 py-1.5 rounded-lg border text-xs transition-colors flex items-center gap-1.5 ${isActive('/dashboard')}`}
+              className={`px-3 py-1.5 rounded-lg border text-xs transition-colors flex items-center gap-1.5 ${isActive('/dashboard') || isActive('/app/dashboard')}`}
             >
               <Layers className="w-3.5 h-3.5 text-slate-400" />
               <span>Workspaces</span>
+            </Link>
+            <Link
+              to="/languages"
+              className={`px-3 py-1.5 rounded-lg border text-xs transition-colors flex items-center gap-1.5 ${isActive('/languages') || isActive('/app/languages')}`}
+            >
+              <Terminal className="w-3.5 h-3.5 text-slate-400" />
+              <span>Languages</span>
             </Link>
             <Link
               to="/demo"
@@ -61,6 +68,14 @@ export const Navbar: React.FC<Props> = ({ onOpenCommandPalette }) => {
             >
               <Compass className="w-3.5 h-3.5 text-indigo-400" />
               <span>Live Demo</span>
+            </Link>
+            <Link
+              to="/settings"
+              className={`px-2.5 py-1.5 rounded-lg border text-xs transition-colors flex items-center gap-1.5 ${isActive('/settings') || isActive('/app/settings')}`}
+              title="Settings & AI Providers"
+            >
+              <ShieldCheck className="w-3.5 h-3.5 text-slate-400" />
+              <span>Settings</span>
             </Link>
           </nav>
 

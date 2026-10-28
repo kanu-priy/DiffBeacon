@@ -13,9 +13,14 @@ from .views import (
     AnalysisNavigatorView,
     VerificationRunView,
     SourceFileContentView,
+    LanguageRegistryView,
+    ProviderSettingsView,
 )
 
 urlpatterns = [
+    path("languages/", LanguageRegistryView.as_view(), name="language-registry"),
+    path("settings/providers/", ProviderSettingsView.as_view(), name="provider-settings"),
+    path("settings/providers/test/", ProviderSettingsView.as_view(), name="provider-settings-test"),
     path("analyses/", AnalysisCreateListView.as_view(), name="analysis-create-list"),
     path("analyses/<uuid:id>/", AnalysisDetailView.as_view(), name="analysis-detail"),
     path("analyses/<uuid:id>/deltas/", AnalysisDeltasView.as_view(), name="analysis-deltas"),

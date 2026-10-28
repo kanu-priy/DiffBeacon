@@ -97,6 +97,54 @@ export const api = {
     analysisId: string,
     payload: { target_type: string; target_id: string; rating: string; comment?: string }
   ) => request(`/analyses/${analysisId}/feedback/`, { method: 'POST', body: JSON.stringify(payload) }),
+
+  getLanguages: () =>
+    request<{
+      total_supported: number;
+      tier_1_count: number;
+      tier_2_count: number;
+      languages: Array<{
+        key: string;
+        name: string;
+        tier: number;
+        extensions: string[];
+        capabilities: string[];
+        parser_engine: string;
+        description: string;
+        supported_frameworks: string[];
+        known_limitations: string[];
+        is_tier_1: boolean;
+      }>;
+    }>('/languages/'),
+
+  getProviderSettings: () =>
+    request<{
+      active_provider: string;
+      fallback_mode: string;
+      secret_redaction_enabled: boolean;
+      telemetry_enabled: boolean;
+      max_evidence_window_tokens: number;
+      providers: Array<{
+        id: string;
+        name: string;
+        status: string;
+        requires_key: boolean;
+        is_local: boolean;
+        description: string;
+      }>;
+    }>('/settings/providers/'),
+
+  testProvider: (provider: string) =>
+    request<{
+      provider: string;
+      status: string;
+      latency_ms: number;
+      message: string;
+      secret_redaction_applied: boolean;
+    }>('/settings/providers/test/', {
+      method: 'POST',
+      body: JSON.stringify({ provider }),
+    }),
 };
 
 export interface NavigatorPayload {

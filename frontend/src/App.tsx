@@ -7,6 +7,8 @@ import { LandingPage } from './features/dashboard/LandingPage';
 import { Dashboard } from './features/dashboard/Dashboard';
 import { DemoWorkspace } from './features/dashboard/DemoWorkspace';
 import { AnalysisWorkspace } from './features/changes/AnalysisWorkspace';
+import { LanguageRegistryView } from './features/languages/LanguageRegistryView';
+import { SettingsView } from './features/settings/SettingsView';
 
 export const App: React.FC = () => {
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
@@ -39,8 +41,19 @@ export const App: React.FC = () => {
             <Routes>
               <Route path="/" element={<LandingPage />} />
               <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/app/dashboard" element={<Dashboard />} />
+              <Route path="/app/workspaces" element={<Dashboard />} />
               <Route path="/demo" element={<DemoWorkspace />} />
+              <Route path="/languages" element={<LanguageRegistryView />} />
+              <Route path="/app/languages" element={<LanguageRegistryView />} />
+              <Route path="/settings" element={<SettingsView />} />
+              <Route path="/app/settings" element={<SettingsView />} />
+              <Route path="/app/settings/providers" element={<SettingsView />} />
+              <Route path="/app/settings/security" element={<SettingsView />} />
               <Route path="/analysis/:id" element={<AnalysisWorkspace />} />
+              <Route path="/analysis/:id/:subtab" element={<AnalysisWorkspace />} />
+              <Route path="/app/analyses/:id" element={<AnalysisWorkspace />} />
+              <Route path="/app/analyses/:id/:subtab" element={<AnalysisWorkspace />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </main>

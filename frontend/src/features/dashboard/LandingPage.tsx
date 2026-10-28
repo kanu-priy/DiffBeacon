@@ -27,6 +27,9 @@ import {
   GitPullRequest,
   CheckCircle,
   HelpCircle,
+  ChevronDown,
+  ChevronUp,
+  Workflow,
 } from 'lucide-react';
 import { api } from '../../lib/api';
 import { EpistemicBadge } from '../../components/EpistemicBadge';
@@ -297,6 +300,8 @@ export const LandingPage: React.FC = () => {
     return () => clearInterval(timer);
   }, [isPlayingTrace, currentPr.steps.length]);
 
+  const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null);
+
   const handleCopyInstall = () => {
     navigator.clipboard.writeText('pip install diffbeacon');
     setCopiedInstall(true);
@@ -321,22 +326,20 @@ export const LandingPage: React.FC = () => {
           <span className="live-dot" />
           <span className="text-indigo-400 font-semibold">DiffBeacon v1.4</span>
           <span className="text-slate-500">|</span>
-          <span className="text-slate-300">Deterministic AST Blast-Radius Engine</span>
+          <span className="text-slate-300">Deterministic Multi-Language AST Engine</span>
           <ArrowRight className="w-3.5 h-3.5 text-slate-400 ml-0.5" />
         </div>
 
         {/* Main Headline */}
         <div className="space-y-4 max-w-4xl mx-auto">
           <h1 className="text-4xl sm:text-6xl font-bold tracking-tight text-white leading-[1.08]">
-            Know the behavioral{' '}
+            Your diff shows what changed.{' '}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-300 via-indigo-400 to-indigo-200">
-              blast radius
-            </span>{' '}
-            before you merge.
+              Understand what it means.
+            </span>
           </h1>
-          <p className="text-base sm:text-xl text-slate-400 max-w-2xl mx-auto leading-relaxed">
-            DiffBeacon maps how code changes alter backend runtime contracts, downstream functions, and API behavior.
-            Anchored in deterministic AST analysis — zero AI hallucinations.
+          <p className="text-base sm:text-lg text-slate-300 max-w-3xl mx-auto leading-relaxed">
+            Trace code changes into observable behavior, runtime contracts, dependency blast radius, and verification scenarios — with source evidence behind every conclusion.
           </p>
         </div>
 
@@ -375,7 +378,7 @@ export const LandingPage: React.FC = () => {
         </div>
 
         {/* Metrics Guarantee Bar */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 max-w-4xl mx-auto pt-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 max-w-4xl mx-auto pt-4">
           {[
             { label: 'Zero Hallucinations', value: '100% AST Grounded', sub: 'Every claim links to exact lines' },
             { label: 'Contract Invariants', value: 'DRF & OpenAPI Native', sub: 'Automatic schema diff analysis' },
@@ -388,6 +391,28 @@ export const LandingPage: React.FC = () => {
               <div className="text-[11px] text-slate-400 mt-0.5">{item.sub}</div>
             </div>
           ))}
+        </div>
+
+        {/* Multi-Language Capability Preview Bar */}
+        <div className="max-w-4xl mx-auto p-3 rounded-xl bg-[#0c0f18] border border-[#1e2436] flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-2 text-slate-400 font-mono text-[11px]">
+            <span className="text-indigo-400 font-semibold">26 Languages Supported:</span>
+            <div className="flex flex-wrap items-center gap-1.5">
+              {['Python', 'TypeScript', 'Go', 'Rust', 'Java', 'C#', 'PHP', 'Ruby'].map((lang) => (
+                <span key={lang} className="px-1.5 py-0.5 rounded bg-[#141824] text-slate-300 border border-[#232a3d]">
+                  {lang}
+                </span>
+              ))}
+              <span className="text-slate-500 text-[10px]">+ 18 more</span>
+            </div>
+          </div>
+          <button
+            onClick={() => navigate('/languages')}
+            className="text-xs text-indigo-300 hover:text-white font-mono flex items-center gap-1 shrink-0 transition-colors cursor-pointer"
+          >
+            <span>Explore Capability Registry</span>
+            <ArrowRight className="w-3 h-3" />
+          </button>
         </div>
       </section>
 
@@ -863,6 +888,178 @@ export const LandingPage: React.FC = () => {
               </div>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* 5-STAGE BEHAVIORAL PIPELINE */}
+      <section className="relative max-w-6xl mx-auto px-4 pb-24 space-y-8">
+        <div className="text-center space-y-2 max-w-2xl mx-auto">
+          <div className="text-xs font-mono uppercase tracking-wider text-indigo-400 font-semibold">
+            Execution Pipeline
+          </div>
+          <h2 className="text-2xl sm:text-3xl font-bold text-white">How DiffBeacon turns raw diffs into behavioral certainty</h2>
+          <p className="text-sm text-slate-400">
+            A deterministic, multi-stage static analysis engine built for multi-language microservices and monolithic backends.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+          {[
+            {
+              step: '01',
+              title: 'Ingest & Normalize',
+              desc: 'Parses base and head snapshot archives, validating checksums and filtering non-source assets.',
+              pill: 'Stage 1',
+            },
+            {
+              step: '02',
+              title: 'AST Diff & Symbols',
+              desc: 'Extracts classes, functions, imports, decorators, and function signatures with exact line ranges.',
+              pill: 'Stage 2',
+            },
+            {
+              step: '03',
+              title: 'Contract Invariants',
+              desc: 'Diffs serializer validation rules, model fields, OpenAPI query parameters, and return types.',
+              pill: 'Stage 3',
+            },
+            {
+              step: '04',
+              title: 'Blast Radius Graph',
+              desc: 'Traverses typed call graphs and import chains to isolate every affected downstream consumer.',
+              pill: 'Stage 4',
+            },
+            {
+              step: '05',
+              title: 'Verification Matrix',
+              desc: 'Discovers existing tests, identifies unverified delta paths, and flags epistemic unknowns.',
+              pill: 'Stage 5',
+            },
+          ].map((stage) => (
+            <div key={stage.step} className="surface-card p-4 border-[#1f2638] flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="font-mono text-xs font-bold text-indigo-400">{stage.step}</span>
+                  <span className="text-[10px] font-mono uppercase text-slate-400 bg-[#121622] px-1.5 py-0.5 rounded border border-[#1d2334]">
+                    {stage.pill}
+                  </span>
+                </div>
+                <h4 className="text-xs font-semibold text-white mb-1.5">{stage.title}</h4>
+                <p className="text-[11px] text-slate-400 leading-relaxed">{stage.desc}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* REAL-WORLD USE CASES */}
+      <section className="relative max-w-6xl mx-auto px-4 pb-24 space-y-8">
+        <div className="text-center space-y-2 max-w-2xl mx-auto">
+          <div className="text-xs font-mono uppercase tracking-wider text-indigo-400 font-semibold">
+            Production Workflows
+          </div>
+          <h2 className="text-2xl sm:text-3xl font-bold text-white">Built for high-stakes engineering decisions</h2>
+          <p className="text-sm text-slate-400">
+            When standard line-by-line PR reviews leave silent production regressions behind.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {[
+            {
+              title: 'Refactoring Core Utility Functions',
+              problem: 'A change to a shared helper appears innocent in isolation, but alters return contracts for 18 downstream services.',
+              solution: 'DiffBeacon maps the full caller blast radius and flags signature mismatches before tests are even written.',
+            },
+            {
+              title: 'REST & GraphQL API Evolution',
+              problem: 'Making a request field optional or modifying default fallbacks can break mobile clients expecting strict schemas.',
+              solution: 'The Contract Surface Map compares serializer fields and highlights breaking changes with exact line numbers.',
+            },
+            {
+              title: 'Database & Model Schema Migrations',
+              problem: 'Altering foreign key constraints or column nullability triggers cascading changes across query sets and services.',
+              solution: 'Deterministic symbol mapping connects model field modifications directly to affected views and serializers.',
+            },
+            {
+              title: 'Onboarding to Large Unfamiliar Codebases',
+              problem: 'New engineers spend hours mentally simulating execution paths to understand the implications of a proposed PR.',
+              solution: 'The Change Scenario Studio lets engineers ask concrete questions and trace old vs new execution paths interactively.',
+            },
+          ].map((useCase, idx) => (
+            <div key={idx} className="surface-card p-5 border-[#1f2638] space-y-3">
+              <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-indigo-400" />
+                <span>{useCase.title}</span>
+              </h3>
+              <div className="space-y-2 text-xs">
+                <div className="p-2.5 rounded bg-rose-950/20 border border-rose-900/30 text-rose-200">
+                  <span className="font-semibold text-rose-400 uppercase text-[10px] block mb-0.5">The Challenge:</span>
+                  {useCase.problem}
+                </div>
+                <div className="p-2.5 rounded bg-indigo-950/30 border border-indigo-900/40 text-indigo-200">
+                  <span className="font-semibold text-indigo-400 uppercase text-[10px] block mb-0.5">DiffBeacon Difference:</span>
+                  {useCase.solution}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* FAQ SECTION */}
+      <section className="relative max-w-4xl mx-auto px-4 pb-24 space-y-6">
+        <div className="text-center space-y-2 max-w-xl mx-auto">
+          <div className="text-xs font-mono uppercase tracking-wider text-indigo-400 font-semibold">
+            Frequently Asked Questions
+          </div>
+          <h2 className="text-2xl sm:text-3xl font-bold text-white">Engineering FAQ</h2>
+        </div>
+
+        <div className="space-y-3">
+          {[
+            {
+              q: 'How does DiffBeacon differ from GitHub Copilot and CodeRabbit?',
+              a: 'General AI code reviewers use standard LLM prompts to produce informal text summaries or linter-like comments on diff hunks. DiffBeacon is an evidence-first static analysis platform: it parses snapshots into deterministic ASTs, extracts contract schemas, traverses call-graph blast radiuses, and generates an auditable ledger with zero fabricated citations. When an LLM is used, it operates strictly on structured facts with fallback guarantees.',
+            },
+            {
+              q: 'Does DiffBeacon send our proprietary source code to external AI vendors?',
+              a: 'No, not unless explicitly configured. DiffBeacon includes a 100% deterministic local rule engine that works offline with zero external API keys. When external providers (OpenAI, Anthropic, Gemini, Ollama) are configured in Settings, DiffBeacon applies automated secret and credential redaction before sending payload context, and never transmits base/head archive binaries.',
+            },
+            {
+              q: 'What languages and frameworks are supported?',
+              a: 'DiffBeacon features a 26-language capability registry with Tier 1 support for Python (Django/DRF, FastAPI, Flask), TypeScript, JavaScript, Go, Rust, Java, C#, PHP, and Ruby. Tier 2 support covers Kotlin, Swift, Scala, Dart, Lua, R, Shell, SQL, GraphQL, Protobuf, and config schemas. Every language displays its exact AST parser status and analysis limitations.',
+            },
+            {
+              q: 'How does DiffBeacon handle dynamic or unanalyzable code?',
+              a: 'Unlike tools that claim 100% certainty by hallucinating, DiffBeacon maintains an explicit Unknowns Register. If a call is made via reflection (e.g. getattr or dynamic dispatch) or if a dependency cannot be resolved statically, it is surfaced as an Unresolved Unknown with explicit risk classification so engineers know exactly what requires manual testing.',
+            },
+          ].map((faq, idx) => {
+            const isOpen = openFaqIndex === idx;
+            return (
+              <div
+                key={idx}
+                className="surface-card border-[#1f2638] overflow-hidden transition-all"
+              >
+                <button
+                  onClick={() => setOpenFaqIndex(isOpen ? null : idx)}
+                  className="w-full p-4 text-left flex items-center justify-between gap-4 hover:bg-[#121622] transition-colors cursor-pointer"
+                >
+                  <span className="text-xs sm:text-sm font-semibold text-white">{faq.q}</span>
+                  {isOpen ? (
+                    <ChevronUp className="w-4 h-4 text-indigo-400 shrink-0" />
+                  ) : (
+                    <ChevronDown className="w-4 h-4 text-slate-400 shrink-0" />
+                  )}
+                </button>
+                {isOpen && (
+                  <div className="px-4 pb-4 text-xs text-slate-300 leading-relaxed border-t border-[#1a2030] pt-3">
+                    {faq.a}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       </section>
 

@@ -26,11 +26,47 @@ import {
 } from 'lucide-react';
 
 export const AnalysisWorkspace: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
+  const { id, subtab } = useParams<{ id: string; subtab?: string }>();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<
-    'deltas' | 'contracts' | 'graph' | 'scenarios' | 'verification' | 'unknowns' | 'evidence' | 'history'
-  >('scenarios');
+
+  type TabType =
+    | 'deltas'
+    | 'contracts'
+    | 'graph'
+    | 'scenarios'
+    | 'verification'
+    | 'unknowns'
+    | 'evidence'
+    | 'history';
+
+  const normalizeSubtab = (tab?: string): TabType => {
+    if (!tab) return 'scenarios';
+    const clean = tab.toLowerCase();
+    if (clean === 'story' || clean === 'deltas' || clean === 'behavior') return 'deltas';
+    if (clean === 'contracts' || clean === 'contract') return 'contracts';
+    if (clean === 'impact' || clean === 'graph') return 'graph';
+    if (clean === 'scenarios' || clean === 'scenario') return 'scenarios';
+    if (clean === 'verification' || clean === 'tests') return 'verification';
+    if (clean === 'unknowns' || clean === 'blindspots') return 'unknowns';
+    if (clean === 'evidence' || clean === 'source') return 'evidence';
+    if (clean === 'history') return 'history';
+    return 'scenarios';
+  };
+
+  const [activeTab, setActiveTab] = useState<TabType>(() => normalizeSubtab(subtab));
+
+  React.useEffect(() => {
+    if (subtab) {
+      setActiveTab(normalizeSubtab(subtab));
+    }
+  }, [subtab]);
+
+  const handleTabChange = (target: TabType) => {
+    setActiveTab(target);
+    if (id) {
+      navigate(`/app/analyses/${id}/${target}`, { replace: true });
+    }
+  };
 
   // Evidence inspector target state
   const [inspectorFilePath, setInspectorFilePath] = useState('serializers.py');
@@ -76,13 +112,13 @@ export const AnalysisWorkspace: React.FC = () => {
   const handleInspectEvidence = (filePath: string, lineRange: [number, number]) => {
     setInspectorFilePath(filePath);
     setInspectorLineRange(lineRange);
-    setActiveTab('evidence');
+    handleTabChange('evidence');
   };
 
   const handleInspectLine = (filePath: string, line: number) => {
     setInspectorFilePath(filePath);
     setInspectorLineRange([Math.max(1, line - 5), line + 15]);
-    setActiveTab('evidence');
+    handleTabChange('evidence');
   };
 
   if (isAnalysisLoading) {
@@ -173,7 +209,7 @@ export const AnalysisWorkspace: React.FC = () => {
           return (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id as any)}
+              onClick={() => handleTabChange(tab.id as any)}
               className={`px-3.5 py-2 rounded-lg text-xs font-medium flex items-center gap-2 transition-all cursor-pointer shrink-0 ${
                 isActive
                   ? 'bg-indigo-950/70 text-white border border-indigo-700/60 shadow-sm font-semibold'
