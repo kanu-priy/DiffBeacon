@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import {
   Search,
   Split,
@@ -13,9 +14,9 @@ import {
   Code2,
   HelpCircle,
   Compass,
-  Command,
   X,
 } from 'lucide-react';
+import { api } from '../lib/api';
 
 interface Props {
   isOpen: boolean;
@@ -27,7 +28,7 @@ interface Props {
 
 interface PaletteItem {
   id: string;
-  category: 'Tabs' | 'Changed Symbols' | 'Predefined Scenarios' | 'Quick Actions';
+  category: string;
   title: string;
   subtitle: string;
   icon: React.ReactNode;
@@ -47,7 +48,15 @@ export const CommandPalette: React.FC<Props> = ({
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Focus input when opened
+  const analysisFromRoute = location.pathname.match(/\/analysis\/([^/]+)/)?.[1];
+  const liveAnalysisId = analysisId || analysisFromRoute;
+
+  const { data: navigator } = useQuery({
+    queryKey: ['navigator', liveAnalysisId],
+    queryFn: () => api.getNavigator(liveAnalysisId!),
+    enabled: isOpen && !!liveAnalysisId,
+  });
+
   useEffect(() => {
     if (isOpen) {
       setQuery('');
@@ -58,186 +67,140 @@ export const CommandPalette: React.FC<Props> = ({
 
   const goToTabOrPage = (tabName: string) => {
     onClose();
-    if (onSelectTab) {
-      onSelectTab(tabName);
-    } else {
-      // If outside analysis workspace, navigate to demo workspace
-      navigate('/demo');
-    }
+    if (onSelectTab) onSelectTab(tabName);
+    else if (liveAnalysisId) navigate(`/analysis/${liveAnalysisId}`);
+    else navigate('/demo');
   };
 
   const jumpToCode = (filePath: string, line: number) => {
     onClose();
-    if (onInspectSymbol) {
-      onInspectSymbol(filePath, line);
-    } else if (onSelectTab) {
-      onSelectTab('evidence');
-    } else {
-      navigate('/demo');
-    }
+    if (onInspectSymbol) onInspectSymbol(filePath, line);
+    else if (liveAnalysisId) navigate(`/analysis/${liveAnalysisId}`);
+    else navigate('/demo');
   };
 
-  const allItems: PaletteItem[] = [
-    // Change Story Views
-    {
-      id: 'tab-scenarios',
-      category: 'Tabs',
-      title: 'Scenario Studio',
-      subtitle: 'Side-by-side execution trace simulator & divergence detector',
-      icon: <Split className="w-4 h-4 text-violet-400" />,
-      action: () => goToTabOrPage('scenarios'),
-    },
-    {
-      id: 'tab-deltas',
-      category: 'Tabs',
-      title: 'Behavior Delta Ledger',
-      subtitle: '8 categorized behavioral changes between Base and Head',
-      icon: <Layers className="w-4 h-4 text-cyan-400" />,
-      action: () => goToTabOrPage('deltas'),
-    },
-    {
-      id: 'tab-contracts',
-      category: 'Tabs',
-      title: 'Contract Surface Map',
-      subtitle: 'DRF serializers, URL routes, and database models',
-      icon: <Cpu className="w-4 h-4 text-teal-400" />,
-      action: () => goToTabOrPage('contracts'),
-    },
-    {
-      id: 'tab-graph',
-      category: 'Tabs',
-      title: 'Evidence-backed Impact Explorer',
-      subtitle: 'Interactive dependency graph canvas with blast-radius focus',
-      icon: <Network className="w-4 h-4 text-emerald-400" />,
-      action: () => goToTabOrPage('graph'),
-    },
-    {
-      id: 'tab-verification',
-      category: 'Tabs',
-      title: 'Verification Matrix',
-      subtitle: 'Test recommendations and sandbox execution plans',
-      icon: <CheckCircle2 className="w-4 h-4 text-teal-400" />,
-      action: () => goToTabOrPage('verification'),
-    },
-    {
-      id: 'tab-unknowns',
-      category: 'Tabs',
-      title: 'Unknowns Register',
-      subtitle: 'Explicit catalog of dynamic calls, missing config & runtime state',
-      icon: <AlertTriangle className="w-4 h-4 text-amber-400" />,
-      action: () => goToTabOrPage('unknowns'),
-    },
-    {
-      id: 'tab-evidence',
-      category: 'Tabs',
-      title: 'Source Code & Split Diff Inspector',
-      subtitle: 'Read-only verified snapshots with Python syntax highlighting',
-      icon: <FileCode className="w-4 h-4 text-slate-400" />,
-      action: () => goToTabOrPage('evidence'),
-    },
-
-    // Changed Symbols
-    {
-      id: 'sym-serializer',
-      category: 'Changed Symbols',
-      title: 'EmployeeCreateSerializer',
-      subtitle: 'serializers.py:12 — department_id made optional with fallback',
-      icon: <Code2 className="w-4 h-4 text-cyan-400" />,
-      action: () => jumpToCode('serializers.py', 12),
-    },
-    {
-      id: 'sym-view',
-      category: 'Changed Symbols',
-      title: 'EmployeeCreateView',
-      subtitle: 'views.py:15 — Raised salary minimum threshold from $30k to $45k',
-      icon: <Code2 className="w-4 h-4 text-cyan-400" />,
-      action: () => jumpToCode('views.py', 15),
-    },
-    {
-      id: 'sym-model',
-      category: 'Changed Symbols',
-      title: 'Employee.status Field Default',
-      subtitle: 'models.py:20 — Changed default status from probation to active',
-      icon: <Code2 className="w-4 h-4 text-cyan-400" />,
-      action: () => jumpToCode('models.py', 20),
-    },
-    {
-      id: 'sym-payroll',
-      category: 'Changed Symbols',
-      title: 'PayrollService.calculate_payroll',
-      subtitle: 'services/payroll.py:18 — Tax deduction rate increased from 15% to 20%',
-      icon: <Code2 className="w-4 h-4 text-cyan-400" />,
-      action: () => jumpToCode('services/payroll.py', 18),
-    },
-    {
-      id: 'sym-ssn',
-      category: 'Changed Symbols',
-      title: 'legacy_format_ssn [Broken Reference]',
-      subtitle: 'services/reporting.py:14 — Function deleted in Head, caller raises NameError',
-      icon: <Code2 className="w-4 h-4 text-rose-400" />,
-      action: () => jumpToCode('services/reporting.py', 14),
-    },
-    {
-      id: 'sym-notify',
-      category: 'Changed Symbols',
-      title: 'send_notification (Dynamic Dispatch)',
-      subtitle: 'services/notifications.py:10 — Dynamic getattr calls require runtime inspection',
-      icon: <Code2 className="w-4 h-4 text-amber-400" />,
-      action: () => jumpToCode('services/notifications.py', 10),
-    },
-
-    // Predefined Scenarios
-    {
-      id: 'scen-dept',
-      category: 'Predefined Scenarios',
-      title: 'What happens if a request omits department_id now?',
-      subtitle: 'Traces execution branch from 400 Bad Request to unassigned fallback',
-      icon: <HelpCircle className="w-4 h-4 text-violet-400" />,
-      action: () => goToTabOrPage('scenarios'),
-    },
-    {
-      id: 'scen-salary',
-      category: 'Predefined Scenarios',
-      title: 'What happens if an employee salary is under $45,000?',
-      subtitle: 'Traces validation rejection in Head that previously succeeded in Base',
-      icon: <HelpCircle className="w-4 h-4 text-violet-400" />,
-      action: () => goToTabOrPage('scenarios'),
-    },
-    {
-      id: 'scen-event',
-      category: 'Predefined Scenarios',
-      title: 'What happens when an event notification triggers unknown handler?',
-      subtitle: 'Evaluates dynamic getattr dispatch failure and fallback logic',
-      icon: <HelpCircle className="w-4 h-4 text-violet-400" />,
-      action: () => goToTabOrPage('scenarios'),
-    },
-
-    // Quick Actions
-    {
-      id: 'act-demo',
-      category: 'Quick Actions',
-      title: 'Open BeaconWorks API Demo',
-      subtitle: 'Launch full interactive walkthrough with pre-seeded Django REST data',
-      icon: <Compass className="w-4 h-4 text-cyan-400" />,
-      action: () => {
-        onClose();
-        navigate('/demo');
+  const allItems: PaletteItem[] = useMemo(() => {
+    const items: PaletteItem[] = [
+      {
+        id: 'tab-scenarios',
+        category: 'Tabs',
+        title: 'Scenario Studio',
+        subtitle: 'Side-by-side execution trace simulator',
+        icon: <Split className="w-4 h-4 text-violet-400" />,
+        action: () => goToTabOrPage('scenarios'),
       },
-    },
-    {
-      id: 'act-dash',
-      category: 'Quick Actions',
-      title: 'Go to Workspaces Dashboard',
-      subtitle: 'Manage snapshot archives and view recent analyses',
-      icon: <Layers className="w-4 h-4 text-slate-400" />,
-      action: () => {
-        onClose();
-        navigate('/dashboard');
+      {
+        id: 'tab-deltas',
+        category: 'Tabs',
+        title: 'Behavior Delta Ledger',
+        subtitle: navigator ? `${navigator.counts.deltas} live deltas` : 'Behavioral changes between snapshots',
+        icon: <Layers className="w-4 h-4 text-cyan-400" />,
+        action: () => goToTabOrPage('deltas'),
       },
-    },
-  ];
+      {
+        id: 'tab-contracts',
+        category: 'Tabs',
+        title: 'Contract Surface Map',
+        subtitle: navigator ? `${navigator.counts.contracts} contract diffs` : 'Serializers, routes, models',
+        icon: <Cpu className="w-4 h-4 text-teal-400" />,
+        action: () => goToTabOrPage('contracts'),
+      },
+      {
+        id: 'tab-graph',
+        category: 'Tabs',
+        title: 'Impact Explorer',
+        subtitle: 'Dependency graph from the current analysis',
+        icon: <Network className="w-4 h-4 text-emerald-400" />,
+        action: () => goToTabOrPage('graph'),
+      },
+      {
+        id: 'tab-verification',
+        category: 'Tabs',
+        title: 'Verification Matrix',
+        subtitle: 'Sandbox execution against persisted cases',
+        icon: <CheckCircle2 className="w-4 h-4 text-teal-400" />,
+        action: () => goToTabOrPage('verification'),
+      },
+      {
+        id: 'tab-unknowns',
+        category: 'Tabs',
+        title: 'Unknowns Register',
+        subtitle: 'Dynamic calls and runtime gaps',
+        icon: <AlertTriangle className="w-4 h-4 text-amber-400" />,
+        action: () => goToTabOrPage('unknowns'),
+      },
+      {
+        id: 'tab-evidence',
+        category: 'Tabs',
+        title: 'Source Evidence',
+        subtitle: 'Live snapshot file contents',
+        icon: <FileCode className="w-4 h-4 text-slate-400" />,
+        action: () => goToTabOrPage('evidence'),
+      },
+    ];
 
-  // Filter items based on query
+    const liveDeltas = navigator?.deltas || [];
+    if (liveDeltas.length) {
+      liveDeltas.forEach((delta) => {
+        items.push({
+          id: `delta-${delta.id}`,
+          category: 'Changed Symbols',
+          title: delta.symbol.split('.').pop() || delta.title,
+          subtitle: `${delta.file_path}:${delta.line} — ${delta.title}`,
+          icon: <Code2 className="w-4 h-4 text-cyan-400" />,
+          action: () => jumpToCode(delta.file_path, delta.line),
+        });
+      });
+    } else {
+      items.push({
+        id: 'sym-serializer',
+        category: 'Changed Symbols',
+        title: 'EmployeeCreateSerializer',
+        subtitle: 'serializers.py:12 — department_id made optional with fallback',
+        icon: <Code2 className="w-4 h-4 text-cyan-400" />,
+        action: () => jumpToCode('serializers.py', 12),
+      });
+    }
+
+    (navigator?.scenarios || []).forEach((scenario) => {
+      items.push({
+        id: `scen-${scenario.id}`,
+        category: 'Live Scenarios',
+        title: scenario.question,
+        subtitle: scenario.target_symbol || scenario.status,
+        icon: <HelpCircle className="w-4 h-4 text-violet-400" />,
+        action: () => goToTabOrPage('scenarios'),
+      });
+    });
+
+    items.push(
+      {
+        id: 'act-demo',
+        category: 'Quick Actions',
+        title: 'Open BeaconWorks API Demo',
+        subtitle: 'Seed or open the live fixture analysis',
+        icon: <Compass className="w-4 h-4 text-cyan-400" />,
+        action: () => {
+          onClose();
+          navigate('/demo');
+        },
+      },
+      {
+        id: 'act-dash',
+        category: 'Quick Actions',
+        title: 'Go to Workspaces Dashboard',
+        subtitle: 'Manage snapshot archives and analyses',
+        icon: <Layers className="w-4 h-4 text-slate-400" />,
+        action: () => {
+          onClose();
+          navigate('/dashboard');
+        },
+      }
+    );
+
+    return items;
+  }, [navigator, liveAnalysisId]);
+
   const filteredItems = allItems.filter(
     (item) =>
       item.title.toLowerCase().includes(query.toLowerCase()) ||
@@ -245,7 +208,6 @@ export const CommandPalette: React.FC<Props> = ({
       item.category.toLowerCase().includes(query.toLowerCase())
   );
 
-  // Keyboard navigation
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'ArrowDown') {
       e.preventDefault();
@@ -255,9 +217,7 @@ export const CommandPalette: React.FC<Props> = ({
       setSelectedIndex((prev) => (prev - 1 + filteredItems.length) % Math.max(1, filteredItems.length));
     } else if (e.key === 'Enter') {
       e.preventDefault();
-      if (filteredItems[selectedIndex]) {
-        filteredItems[selectedIndex].action();
-      }
+      filteredItems[selectedIndex]?.action();
     } else if (e.key === 'Escape') {
       e.preventDefault();
       onClose();
@@ -267,13 +227,9 @@ export const CommandPalette: React.FC<Props> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center pt-16 sm:pt-24 px-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-150">
-      <div
-        className="relative w-full max-w-2xl rounded-2xl bg-[#0e1320] border border-slate-700/80 shadow-2xl overflow-hidden flex flex-col"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Search Input Bar */}
-        <div className="flex items-center px-4 py-3.5 border-b border-slate-800 bg-slate-900/60 gap-3">
+    <div className="fixed inset-0 z-50 flex items-start justify-center pt-16 sm:pt-24 px-4 bg-slate-950/80 backdrop-blur-sm">
+      <div className="relative w-full max-w-2xl rounded-2xl bg-[#0c1220] border border-white/10 shadow-2xl overflow-hidden flex flex-col">
+        <div className="flex items-center px-4 py-3.5 border-b border-white/10 bg-slate-900/60 gap-3">
           <Search className="w-5 h-5 text-cyan-400 shrink-0" />
           <input
             ref={inputRef}
@@ -287,20 +243,14 @@ export const CommandPalette: React.FC<Props> = ({
             placeholder="Type a symbol, scenario, or view (e.g. 'serializer', 'salary', 'graph')..."
             className="w-full bg-transparent text-sm text-slate-100 placeholder-slate-500 focus:outline-none"
           />
-          <button
-            onClick={onClose}
-            className="p-1 rounded text-slate-500 hover:text-slate-300 transition-colors cursor-pointer"
-          >
+          <button onClick={onClose} className="p-1 rounded text-slate-500 hover:text-slate-300">
             <X className="w-4 h-4" />
           </button>
         </div>
 
-        {/* Results List */}
         <div className="max-h-[420px] overflow-y-auto p-2 space-y-1">
           {filteredItems.length === 0 ? (
-            <div className="p-8 text-center text-slate-500 text-xs">
-              No matching symbols or commands found for "{query}".
-            </div>
+            <div className="p-8 text-center text-slate-500 text-xs">No matching symbols or commands found for "{query}".</div>
           ) : (
             filteredItems.map((item, index) => {
               const isSelected = index === selectedIndex;
@@ -309,61 +259,29 @@ export const CommandPalette: React.FC<Props> = ({
                   key={item.id}
                   onClick={() => item.action()}
                   onMouseEnter={() => setSelectedIndex(index)}
-                  className={`px-3 py-2.5 rounded-xl cursor-pointer flex items-center justify-between gap-3 transition-colors ${
-                    isSelected
-                      ? 'bg-cyan-950/70 border border-cyan-800/80 shadow-sm'
-                      : 'hover:bg-slate-900/50 border border-transparent'
+                  className={`px-3 py-2.5 rounded-xl cursor-pointer flex items-center justify-between gap-3 ${
+                    isSelected ? 'bg-cyan-950/70 border border-cyan-800/80' : 'hover:bg-slate-900/50 border border-transparent'
                   }`}
                 >
                   <div className="flex items-center gap-3 overflow-hidden">
-                    <div className="p-2 rounded-lg bg-slate-950 border border-slate-800/80 shrink-0">
-                      {item.icon}
-                    </div>
+                    <div className="p-2 rounded-lg bg-slate-950 border border-white/10 shrink-0">{item.icon}</div>
                     <div className="flex flex-col truncate">
                       <div className="flex items-center gap-2">
                         <span className={`text-xs font-semibold ${isSelected ? 'text-cyan-200' : 'text-slate-200'}`}>
                           {item.title}
                         </span>
-                        <span className="text-[10px] uppercase font-mono px-1.5 py-0.2 rounded bg-slate-900 text-slate-400 border border-slate-800">
+                        <span className="text-[10px] uppercase font-mono px-1.5 rounded bg-slate-900 text-slate-400 border border-slate-800">
                           {item.category}
                         </span>
                       </div>
-                      <span className="text-[11px] text-slate-400 truncate mt-0.5">
-                        {item.subtitle}
-                      </span>
+                      <span className="text-[11px] text-slate-400 truncate mt-0.5">{item.subtitle}</span>
                     </div>
                   </div>
-
-                  <ArrowRight
-                    className={`w-4 h-4 shrink-0 transition-transform ${
-                      isSelected ? 'text-cyan-400 translate-x-1' : 'text-slate-600'
-                    }`}
-                  />
+                  <ArrowRight className={`w-4 h-4 shrink-0 ${isSelected ? 'text-cyan-400 translate-x-1' : 'text-slate-600'}`} />
                 </div>
               );
             })
           )}
-        </div>
-
-        {/* Footer shortcuts hint */}
-        <div className="px-4 py-2.5 bg-slate-950 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-500">
-          <div className="flex items-center gap-4">
-            <span className="flex items-center gap-1">
-              <kbd className="px-1.5 py-0.5 rounded bg-slate-900 border border-slate-800 font-mono text-[10px] text-slate-400">↑</kbd>
-              <kbd className="px-1.5 py-0.5 rounded bg-slate-900 border border-slate-800 font-mono text-[10px] text-slate-400">↓</kbd>
-              <span>to navigate</span>
-            </span>
-            <span className="flex items-center gap-1">
-              <kbd className="px-1.5 py-0.5 rounded bg-slate-900 border border-slate-800 font-mono text-[10px] text-slate-400">↵</kbd>
-              <span>to select</span>
-            </span>
-            <span className="flex items-center gap-1">
-              <kbd className="px-1.5 py-0.5 rounded bg-slate-900 border border-slate-800 font-mono text-[10px] text-slate-400">esc</kbd>
-              <span>to close</span>
-            </span>
-          </div>
-
-          <span className="font-mono text-cyan-400/80 text-[10px]">DiffBeacon Navigator</span>
         </div>
       </div>
     </div>

@@ -10,14 +10,12 @@ import {
   ArrowRight,
   ShieldCheck,
   Loader2,
-  AlertCircle,
   FileCheck,
   Search,
   Sparkles,
-  RefreshCw,
-  Cpu,
-  Split,
-  Network,
+  GitPullRequest,
+  CheckCircle2,
+  AlertTriangle,
 } from 'lucide-react';
 import { api } from '../../lib/api';
 import { SnapshotUploadModal } from './SnapshotUploadModal';
@@ -30,6 +28,8 @@ export const Dashboard: React.FC = () => {
   const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState('');
   const [isSeedingDemo, setIsSeedingDemo] = useState(false);
+  const [newWorkspaceName, setNewWorkspaceName] = useState('');
+  const [isCreatingWorkspace, setIsCreatingWorkspace] = useState(false);
 
   const {
     data: workspaces,
@@ -51,12 +51,31 @@ export const Dashboard: React.FC = () => {
     queryKey: ['workspace-history', activeWorkspace?.id],
     queryFn: () => (activeWorkspace ? api.getWorkspaceHistory(activeWorkspace.id) : []),
     enabled: !!activeWorkspace,
+    refetchInterval: (query) =>
+      query.state.data?.some((run: any) => run.status === 'running' || run.status === 'queued') ? 2000 : false,
   });
 
   const { data: demoStatus, refetch: refetchDemo } = useQuery({
     queryKey: ['demo-status'],
     queryFn: api.getDemoStatus,
   });
+
+  const handleCreateWorkspace = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newWorkspaceName.trim()) return;
+    setIsCreatingWorkspace(true);
+    try {
+      const ws = await api.createWorkspace({ name: newWorkspaceName.trim(), description: 'Production workspace' });
+      setNewWorkspaceName('');
+      await refetchWorkspaces();
+      setSelectedWorkspaceId(ws.id);
+      toast.success('Workspace created', ws.name);
+    } catch (err: any) {
+      toast.error('Could not create workspace', err.message);
+    } finally {
+      setIsCreatingWorkspace(false);
+    }
+  };
 
   const handleLaunchDemo = async () => {
     setIsSeedingDemo(true);
@@ -99,29 +118,36 @@ export const Dashboard: React.FC = () => {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
       {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-800">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-[#1f2638]">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-100 flex items-center gap-2.5">
-            <Layers className="w-6 h-6 text-cyan-400" />
-            <span>Analysis Workspace Dashboard</span>
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-mono uppercase tracking-wider text-indigo-400 font-semibold">
+              Engineering Workspaces
+            </span>
+            <span className="text-slate-600">/</span>
+            <span className="text-xs text-slate-400 font-mono">AST Snapshots</span>
+          </div>
+          <h1 className="text-2xl font-bold tracking-tight text-white flex items-center gap-2.5 mt-1">
+            <Layers className="w-5 h-5 text-indigo-400" />
+            <span>Code-Change Workspaces</span>
           </h1>
-          <p className="mt-1 text-xs text-slate-400">
-            Track immutable change intelligence runs, inspect behavioral deltas, and run change scenario simulations.
+          <p className="mt-1 text-xs text-slate-400 max-w-xl">
+            Track deterministic AST snapshots, inspect behavioral deltas, compare DRF/OpenAPI contract surfaces, and execute isolated scenario verifications.
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5">
           <button
             onClick={handleLaunchDemo}
             disabled={isSeedingDemo}
-            className="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-cyan-800/80 text-cyan-300 font-semibold text-xs flex items-center gap-2 transition-colors cursor-pointer shadow-sm"
+            className="px-4 py-2 rounded-lg bg-[#121622] hover:bg-[#181e2e] border border-[#222a3d] text-indigo-300 font-medium text-xs flex items-center gap-2 transition-colors cursor-pointer shadow-sm"
           >
             {isSeedingDemo ? (
-              <Loader2 className="w-4 h-4 animate-spin text-cyan-400" />
+              <Loader2 className="w-3.5 h-3.5 animate-spin text-indigo-400" />
             ) : (
-              <Compass className="w-4 h-4 text-cyan-400" />
+              <Compass className="w-3.5 h-3.5 text-indigo-400" />
             )}
-            <span>{isSeedingDemo ? 'Seeding Demo...' : 'Launch BeaconWorks Demo'}</span>
+            <span>{isSeedingDemo ? 'Seeding Demo...' : 'Open BeaconWorks Demo'}</span>
           </button>
 
           <button
@@ -132,9 +158,9 @@ export const Dashboard: React.FC = () => {
               }
             }}
             disabled={!activeWorkspace}
-            className="px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-400 hover:to-teal-400 text-slate-950 font-bold text-xs flex items-center gap-2 shadow-lg shadow-cyan-500/20 transition-all cursor-pointer disabled:opacity-50"
+            className="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-xs flex items-center gap-2 transition-all cursor-pointer disabled:opacity-50 shadow-sm"
           >
-            <Plus className="w-4 h-4" />
+            <Plus className="w-3.5 h-3.5" />
             <span>New Snapshot Analysis</span>
           </button>
         </div>
@@ -142,127 +168,151 @@ export const Dashboard: React.FC = () => {
 
       {/* Overview Stat Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 space-y-1">
+        <div className="surface-card p-4 space-y-1 border-[#1c2233]">
           <div className="flex items-center justify-between text-slate-400 text-xs">
             <span>Active Workspaces</span>
-            <Layers className="w-4 h-4 text-cyan-400" />
+            <Layers className="w-4 h-4 text-indigo-400" />
           </div>
-          <div className="text-2xl font-extrabold text-slate-100 font-mono">
+          <div className="text-2xl font-bold text-white font-mono">
             {workspaces?.length || 1}
           </div>
           <div className="text-[11px] text-slate-400 font-sans">
-            Includes seeded demo repository
+            Configured repositories
           </div>
         </div>
 
-        <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 space-y-1">
+        <div className="surface-card p-4 space-y-1 border-[#1c2233]">
           <div className="flex items-center justify-between text-slate-400 text-xs">
-            <span>Total Analyses</span>
-            <FileCheck className="w-4 h-4 text-teal-400" />
+            <span>Completed Analyses</span>
+            <FileCheck className="w-4 h-4 text-emerald-400" />
           </div>
-          <div className="text-2xl font-extrabold text-slate-100 font-mono">
+          <div className="text-2xl font-bold text-white font-mono">
             {history?.length || 0}
           </div>
-          <div className="text-[11px] text-teal-400 font-sans">
-            Immutable snapshot runs
+          <div className="text-[11px] text-emerald-400 font-sans">
+            Immutable AST snapshots
           </div>
         </div>
 
-        <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 space-y-1">
+        <div className="surface-card p-4 space-y-1 border-[#1c2233]">
           <div className="flex items-center justify-between text-slate-400 text-xs">
             <span>Behavior Deltas</span>
             <Sparkles className="w-4 h-4 text-amber-400" />
           </div>
-          <div className="text-2xl font-extrabold text-amber-300 font-mono">
+          <div className="text-2xl font-bold text-amber-300 font-mono">
             {totalDeltas}
           </div>
           <div className="text-[11px] text-slate-400 font-sans">
-            Observed across snapshots
+            Observable changes detected
           </div>
         </div>
 
-        <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 space-y-1">
+        <div className="surface-card p-4 space-y-1 border-[#1c2233]">
           <div className="flex items-center justify-between text-slate-400 text-xs">
-            <span>Epistemic Guardrail</span>
-            <ShieldCheck className="w-4 h-4 text-emerald-400" />
+            <span>Contract Surfaces</span>
+            <ShieldCheck className="w-4 h-4 text-indigo-400" />
           </div>
-          <div className="text-2xl font-extrabold text-emerald-300 font-mono">
-            100%
+          <div className="text-2xl font-bold text-indigo-300 font-mono">
+            {totalContracts}
           </div>
-          <div className="text-[11px] text-emerald-400 font-sans">
-            Zero fabricated line citations
+          <div className="text-[11px] text-indigo-400 font-sans">
+            DRF & Model schemas mapped
           </div>
         </div>
       </div>
 
-      {/* Workspace Tabs */}
-      {workspaces && workspaces.length > 0 && (
-        <div className="flex items-center gap-2 overflow-x-auto pb-1">
-          <span className="text-xs text-slate-400 mr-2 font-medium">Workspaces:</span>
-          {workspaces.map((w) => (
+      {/* Workspace Switcher & Creator */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pt-2">
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 flex-1">
+          <span className="text-xs text-slate-400 mr-2 font-mono uppercase tracking-wider text-[11px]">Workspace:</span>
+          {workspaces?.map((w) => (
             <button
               key={w.id}
               onClick={() => setSelectedWorkspaceId(w.id)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer flex items-center gap-1.5 ${
                 activeWorkspace?.id === w.id
-                  ? 'bg-cyan-950/70 text-cyan-300 border border-cyan-800/80 font-bold shadow-sm'
-                  : 'bg-slate-900/60 text-slate-400 border border-slate-800 hover:text-slate-200'
+                  ? 'bg-indigo-950/70 text-indigo-200 border border-indigo-700/60 font-semibold shadow-sm'
+                  : 'bg-[#10141f] text-slate-400 border border-[#1d2334] hover:text-white'
               }`}
             >
-              {w.name} {w.is_demo && '(Demo)'}
+              <span>{w.name}</span>
+              {w.is_demo && (
+                <span className="text-[10px] font-mono text-indigo-400 bg-indigo-950 px-1 rounded border border-indigo-800/40">
+                  Demo
+                </span>
+              )}
+              {typeof w.analysis_count === 'number' && (
+                <span className="text-[10px] text-slate-500 font-mono">({w.analysis_count})</span>
+              )}
             </button>
           ))}
         </div>
-      )}
+
+        <form onSubmit={handleCreateWorkspace} className="flex items-center gap-2">
+          <input
+            value={newWorkspaceName}
+            onChange={(e) => setNewWorkspaceName(e.target.value)}
+            placeholder="New workspace name..."
+            className="px-3 py-1.5 rounded-lg bg-[#0e111a] border border-[#1f2638] text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 font-sans"
+          />
+          <button
+            type="submit"
+            disabled={isCreatingWorkspace || !newWorkspaceName.trim()}
+            className="px-3 py-1.5 rounded-lg bg-[#141824] hover:bg-[#1a2030] border border-[#232b3e] text-xs font-medium text-slate-200 disabled:opacity-50 cursor-pointer"
+          >
+            {isCreatingWorkspace ? 'Creating…' : 'Create'}
+          </button>
+        </form>
+      </div>
 
       {/* Analyses Table with Search */}
-      <div className="border border-slate-800 rounded-xl bg-slate-900/40 overflow-hidden shadow-2xl">
-        <div className="px-6 py-4 border-b border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div className="surface-card border-[#1f2638] overflow-hidden shadow-xl">
+        <div className="px-6 py-4 border-b border-[#1b2130] flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#0c0e15]">
           <div className="flex items-center gap-2">
-            <h2 className="text-sm font-semibold text-slate-200">Recent Analysis Runs</h2>
-            <span className="px-2 py-0.5 rounded text-[11px] font-mono bg-slate-800 text-slate-400">
+            <h2 className="text-sm font-semibold text-white">Recent Snapshot Analyses</h2>
+            <span className="px-2 py-0.5 rounded text-[11px] font-mono bg-[#161b27] text-slate-400 border border-[#232b3e]">
               {filteredHistory.length}
             </span>
           </div>
 
           {/* Search in History */}
-          <div className="relative w-full sm:w-64">
+          <div className="relative w-full sm:w-72">
             <Search className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search analysis runs..."
-              className="w-full pl-8 pr-3 py-1 rounded-lg bg-slate-950 border border-slate-800 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-cyan-500 font-mono"
+              placeholder="Filter by branch, status, or ID..."
+              className="w-full pl-8 pr-3 py-1.5 rounded-lg bg-[#090b10] border border-[#1e2537] text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500 font-mono"
             />
           </div>
         </div>
 
         {isHistoryLoading ? (
           <div className="p-16 text-center text-slate-400 flex flex-col items-center gap-3">
-            <Loader2 className="w-7 h-7 animate-spin text-cyan-400" />
-            <span className="text-xs">Loading analysis history...</span>
+            <Loader2 className="w-6 h-6 animate-spin text-indigo-400" />
+            <span className="text-xs font-mono">Loading analysis snapshots from database...</span>
           </div>
         ) : filteredHistory.length > 0 ? (
-          <div className="divide-y divide-slate-800/80 font-mono text-xs">
+          <div className="divide-y divide-[#171d2b] font-mono text-xs">
             {filteredHistory.map((run: any) => (
               <div
                 key={run.id}
                 onClick={() => navigate(`/analysis/${run.id}`)}
-                className="px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-slate-800/40 transition-colors cursor-pointer group"
+                className="px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-[#111522] transition-colors cursor-pointer group"
               >
                 <div className="space-y-1.5">
                   <div className="flex items-center gap-2.5 flex-wrap">
-                    <span className="font-semibold text-slate-200 group-hover:text-cyan-400 transition-colors text-sm">
+                    <span className="font-semibold text-slate-200 group-hover:text-indigo-400 transition-colors text-sm">
                       {run.base_snapshot_label} <span className="text-slate-500">→</span> {run.head_snapshot_label}
                     </span>
                     <span
                       className={`px-2 py-0.5 text-[10px] uppercase font-bold rounded ${
                         run.status === 'completed'
-                          ? 'bg-teal-950/60 text-teal-400 border border-teal-800/60'
+                          ? 'bg-emerald-950/70 text-emerald-300 border border-emerald-800/60'
                           : run.status === 'running'
-                          ? 'bg-cyan-950/60 text-cyan-400 border border-cyan-800/60 animate-pulse'
-                          : 'bg-rose-950/60 text-rose-400 border border-rose-800/60'
+                          ? 'bg-indigo-950/70 text-indigo-300 border border-indigo-800/60 animate-pulse'
+                          : 'bg-rose-950/70 text-rose-300 border border-rose-800/60'
                       }`}
                     >
                       {run.status}
@@ -282,26 +332,26 @@ export const Dashboard: React.FC = () => {
 
                 {/* Metric Badges */}
                 <div className="flex items-center gap-3 font-sans shrink-0">
-                  <div className="text-center px-3 py-1.5 rounded-lg bg-slate-950/90 border border-slate-800 min-w-[64px]">
+                  <div className="text-center px-3 py-1.5 rounded-lg bg-[#0e111a] border border-[#1e2537] min-w-[64px]">
                     <span className="text-[10px] text-slate-400 block font-medium">Deltas</span>
-                    <span className="text-xs font-bold text-cyan-400 font-mono">
+                    <span className="text-xs font-bold text-amber-300 font-mono">
                       {run.counts?.deltas ?? 0}
                     </span>
                   </div>
-                  <div className="text-center px-3 py-1.5 rounded-lg bg-slate-950/90 border border-slate-800 min-w-[64px]">
+                  <div className="text-center px-3 py-1.5 rounded-lg bg-[#0e111a] border border-[#1e2537] min-w-[64px]">
                     <span className="text-[10px] text-slate-400 block font-medium">Contracts</span>
-                    <span className="text-xs font-bold text-teal-400 font-mono">
+                    <span className="text-xs font-bold text-indigo-300 font-mono">
                       {run.counts?.contracts ?? 0}
                     </span>
                   </div>
-                  <div className="text-center px-3 py-1.5 rounded-lg bg-slate-950/90 border border-slate-800 min-w-[64px]">
+                  <div className="text-center px-3 py-1.5 rounded-lg bg-[#0e111a] border border-[#1e2537] min-w-[64px]">
                     <span className="text-[10px] text-slate-400 block font-medium">Unknowns</span>
-                    <span className="text-xs font-bold text-amber-400 font-mono">
+                    <span className="text-xs font-bold text-slate-300 font-mono">
                       {run.counts?.unknowns ?? 0}
                     </span>
                   </div>
 
-                  <ArrowRight className="w-4 h-4 text-slate-500 group-hover:text-cyan-400 group-hover:translate-x-1 transition-all ml-1" />
+                  <ArrowRight className="w-4 h-4 text-slate-500 group-hover:text-indigo-400 group-hover:translate-x-1 transition-all ml-1" />
                 </div>
               </div>
             ))}
@@ -310,14 +360,14 @@ export const Dashboard: React.FC = () => {
           <div className="p-16 text-center space-y-4">
             <FileCode2 className="w-10 h-10 text-slate-500 mx-auto" />
             <div>
-              <h3 className="text-sm font-semibold text-slate-300">No matching analyses</h3>
-              <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
-                {searchQuery ? `No analysis found matching "${searchQuery}".` : 'Upload a base and head source ZIP to run your first behavioral impact analysis.'}
+              <h3 className="text-sm font-semibold text-slate-200">No matching analyses</h3>
+              <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
+                {searchQuery ? `No analysis found matching "${searchQuery}".` : 'Upload base and head source ZIP archives to run your first behavioral impact analysis.'}
               </p>
             </div>
             <button
               onClick={() => setIsUploadModalOpen(true)}
-              className="px-4 py-2 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs inline-flex items-center gap-1.5 cursor-pointer"
+              className="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-xs inline-flex items-center gap-1.5 cursor-pointer"
             >
               <Plus className="w-4 h-4" />
               <span>Upload Snapshots</span>

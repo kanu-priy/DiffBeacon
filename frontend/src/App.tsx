@@ -27,7 +27,7 @@ export const App: React.FC = () => {
   return (
     <BrowserRouter>
       <ToastProvider>
-        <div className="min-h-screen flex flex-col bg-[#0b0f19] text-slate-100 selection:bg-cyan-500/30 selection:text-cyan-200">
+        <div className="min-h-screen flex flex-col text-slate-100">
           <Navbar onOpenCommandPalette={() => setIsCommandPaletteOpen(true)} />
 
           <CommandPalette
@@ -45,10 +45,10 @@ export const App: React.FC = () => {
             </Routes>
           </main>
 
-          <footer className="border-t border-slate-800/80 py-6 text-center text-xs text-slate-500">
+          <footer className="border-t border-white/10 py-6 text-center text-xs text-slate-500 bg-black/20">
             <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
               <span>DiffBeacon — See what a change touches.</span>
-              <span>Zero-Fabrication Code-Change Intelligence & Impact Analysis</span>
+              <span>Live pipeline · zero fabricated citations</span>
             </div>
           </footer>
         </div>

@@ -23,16 +23,11 @@ interface Props {
   initialLineRange?: [number, number];
 }
 
-// Known files in the project for instant switcher navigation
-const KNOWN_FILES = [
-  { path: 'serializers.py', label: 'serializers.py', change: 'modified', desc: 'EmployeeCreateSerializer (optional department_id)' },
-  { path: 'views.py', label: 'views.py', change: 'modified', desc: 'EmployeeCreateView (raised salary floor to $45k)' },
-  { path: 'models.py', label: 'models.py', change: 'modified', desc: 'Employee model (status default: active)' },
-  { path: 'services/payroll.py', label: 'services/payroll.py', change: 'modified', desc: 'PayrollService (tax rate shifted to 20%)' },
-  { path: 'services/reporting.py', label: 'services/reporting.py', change: 'modified', desc: 'Broken reference to deleted legacy_format_ssn' },
-  { path: 'services/notifications.py', label: 'services/notifications.py', change: 'modified', desc: 'Dynamic getattr event dispatch (unresolved static edge)' },
-  { path: 'urls.py', label: 'urls.py', change: 'unchanged', desc: 'DRF router & API route definitions' },
-  { path: 'tests/test_api.py', label: 'tests/test_api.py', change: 'modified', desc: 'Integration test suite' },
+const FALLBACK_FILES = [
+  { path: 'serializers.py', label: 'serializers.py', change: 'modified', desc: 'EmployeeCreateSerializer schema changes' },
+  { path: 'views.py', label: 'views.py', change: 'modified', desc: 'EmployeeCreateView validation & error handling' },
+  { path: 'models.py', label: 'models.py', change: 'modified', desc: 'Employee model field constraints' },
+  { path: 'services.py', label: 'services.py', change: 'modified', desc: 'Department resolver fallback logic' },
 ];
 
 const PYTHON_KEYWORDS = new Set([
@@ -111,6 +106,16 @@ export const EvidenceInspector: React.FC<Props> = ({
   }, [initialFilePath, initialLineRange]);
 
   // Fetch Base snapshot file content
+  const { data: fileIndex } = useQuery({
+    queryKey: ['analysis-files', analysisId],
+    queryFn: () => api.getAnalysisFiles(analysisId),
+    enabled: !!analysisId,
+  });
+
+  const switcherFiles = (fileIndex?.files || FALLBACK_FILES).filter((f) =>
+    (f.path || '').endsWith('.py')
+  ).slice(0, 18);
+
   const {
     data: baseFileData,
     isLoading: isBaseLoading,
@@ -192,8 +197,9 @@ export const EvidenceInspector: React.FC<Props> = ({
             <FileCode className="w-3.5 h-3.5 text-cyan-400" />
             <span>Files:</span>
           </span>
-          {KNOWN_FILES.map((f) => {
+          {(switcherFiles.length > 0 ? switcherFiles : FALLBACK_FILES).map((f: any) => {
             const isCurrent = filePath.endsWith(f.path) || f.path.endsWith(filePath);
+            const label = f.label || f.path.split('/').pop() || f.path;
             return (
               <button
                 key={f.path}
@@ -206,9 +212,9 @@ export const EvidenceInspector: React.FC<Props> = ({
                     ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-sm shadow-cyan-950 font-bold'
                     : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 border border-slate-800/50'
                 }`}
-                title={f.desc}
+                title={f.desc || f.path}
               >
-                <span>{f.label}</span>
+                <span>{label}</span>
                 {f.change === 'modified' && (
                   <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
                 )}

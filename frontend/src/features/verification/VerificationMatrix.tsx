@@ -147,7 +147,7 @@ def ${fnName}():
           <button
             onClick={handleRunAll}
             disabled={isRunningAll}
-            className="px-4 py-2 rounded-lg bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-400 hover:to-cyan-400 text-slate-950 font-bold text-xs flex items-center gap-2 shadow-lg shadow-teal-500/20 transition-all cursor-pointer disabled:opacity-50"
+            className="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-xs flex items-center gap-2 shadow-sm transition-all cursor-pointer disabled:opacity-50"
           >
             {isRunningAll ? (
               <>
@@ -165,7 +165,7 @@ def ${fnName}():
       </div>
 
       {/* Filter and Search Bar */}
-      <div className="p-3.5 rounded-xl bg-slate-900/50 border border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs">
+      <div className="surface-card p-3.5 border-[#1f2638] flex flex-wrap items-center justify-between gap-3 text-xs">
         {/* Search */}
         <div className="relative flex-1 min-w-[220px] max-w-sm">
           <Search className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -174,7 +174,7 @@ def ${fnName}():
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search test recommendations..."
-            className="w-full pl-8 pr-3 py-1.5 rounded-lg bg-slate-950 border border-slate-800 text-slate-200 placeholder-slate-500 text-xs focus:outline-none focus:border-cyan-500 font-mono"
+            className="w-full pl-8 pr-3 py-1.5 rounded-lg bg-[#0a0d14] border border-[#1b202e] text-slate-200 placeholder-slate-500 text-xs focus:outline-none focus:border-indigo-500 font-mono"
           />
         </div>
 
@@ -184,8 +184,8 @@ def ${fnName}():
             onClick={() => setCoverageFilter('all')}
             className={`px-2.5 py-1 rounded-md text-xs font-mono uppercase tracking-wider transition-colors cursor-pointer ${
               coverageFilter === 'all'
-                ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 font-bold'
-                : 'bg-slate-950 text-slate-400 hover:text-slate-200 border border-slate-800'
+                ? 'bg-indigo-950/70 text-indigo-300 border border-indigo-700/60 font-semibold'
+                : 'bg-[#0a0d14] text-slate-400 hover:text-white border border-[#1b202e]'
             }`}
           >
             All ({cases.length})
@@ -243,13 +243,13 @@ def ${fnName}():
               {/* Header */}
               <div className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-900/90 border-b border-slate-800/80 font-sans">
                 <div className="flex items-center gap-2.5">
-                  <span className="p-2 rounded-lg bg-slate-950 border border-slate-800">
-                    <Sparkles className="w-4 h-4 text-cyan-400" />
+                  <span className="p-2 rounded-lg bg-[#0a0d14] border border-[#1b202e]">
+                    <Sparkles className="w-4 h-4 text-indigo-400" />
                   </span>
                   <div>
-                    <h4 className="text-sm font-bold text-slate-100">{c.title}</h4>
+                    <h4 className="text-sm font-semibold text-white">{c.title}</h4>
                     {c.existing_test_ref ? (
-                      <span className="text-[11px] text-teal-400 font-mono">Matched: {c.existing_test_ref}</span>
+                      <span className="text-[11px] text-emerald-400 font-mono">Matched: {c.existing_test_ref}</span>
                     ) : (
                       <span className="text-[11px] text-amber-400 font-mono">Suggested Uncovered Scenario</span>
                     )}
@@ -259,17 +259,17 @@ def ${fnName}():
                 <div className="flex items-center gap-2 shrink-0">
                   {/* Status Badge */}
                   {status === 'passed' ? (
-                    <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-950 text-emerald-300 border border-emerald-700/80 flex items-center gap-1.5 shadow-sm">
+                    <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-950/70 text-emerald-300 border border-emerald-700/80 flex items-center gap-1.5 shadow-sm">
                       <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
                       <span>Runtime Verified</span>
                     </span>
                   ) : status === 'running' ? (
-                    <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-cyan-950 text-cyan-300 border border-cyan-700/80 flex items-center gap-1.5 animate-pulse">
-                      <Loader2 className="w-3.5 h-3.5 text-cyan-400 animate-spin" />
+                    <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-indigo-950 text-indigo-300 border border-indigo-700/80 flex items-center gap-1.5 animate-pulse">
+                      <Loader2 className="w-3.5 h-3.5 text-indigo-400 animate-spin" />
                       <span>Executing...</span>
                     </span>
                   ) : (
-                    <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-950 text-slate-400 border border-slate-800">
+                    <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-[#0a0d14] text-slate-400 border border-[#1b202e]">
                       Static Recommendation
                     </span>
                   )}

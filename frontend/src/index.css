@@ -6,30 +6,122 @@
   color-scheme: dark;
 }
 
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
 body {
   margin: 0;
-  background-color: #0a0d14;
+  background-color: #08090d;
+  background-image: 
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(99, 102, 241, 0.12), transparent),
+    radial-gradient(circle at 100% 100%, rgba(16, 185, 129, 0.04), transparent 40%);
+  background-attachment: fixed;
   color: #f1f5f9;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  letter-spacing: -0.01em;
+  font-family: 'Plus Jakarta Sans', Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  letter-spacing: -0.011em;
 }
 
-code, pre, .font-mono {
-  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+code,
+pre,
+.font-mono {
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  letter-spacing: -0.02em;
 }
 
-/* Developer workbench scrollbar */
+::selection {
+  background: rgba(99, 102, 241, 0.35);
+  color: #ffffff;
+}
+
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #0a0d14;
+  background: rgba(8, 9, 13, 0.5);
 }
 ::-webkit-scrollbar-thumb {
-  background: #1e2638;
-  border-radius: 3px;
+  background: #232838;
+  border-radius: 999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #2a354c;
+  background: #3b4259;
+}
+
+@layer components {
+  /* High-end architectural card */
+  .surface-card {
+    @apply rounded-xl border border-[#1f2537] bg-[#0e111a]/85 backdrop-blur-md shadow-[0_4px_24px_-4px_rgba(0,0,0,0.6),inset_0_1px_0_0_rgba(255,255,255,0.06)];
+  }
+
+  .surface-card-hover {
+    @apply transition-all duration-200 hover:border-[#2d364f] hover:bg-[#121622] hover:shadow-[0_8px_30px_-6px_rgba(0,0,0,0.7),inset_0_1px_0_0_rgba(255,255,255,0.09)];
+  }
+
+  .surface-subtle {
+    @apply rounded-lg border border-[#181d2a] bg-[#0c0e15];
+  }
+
+  /* Micro live indicator dot */
+  .live-dot {
+    @apply relative inline-flex h-2 w-2 shrink-0;
+  }
+  .live-dot::after {
+    content: '';
+    @apply absolute inset-0 rounded-full bg-emerald-500;
+    animation: beacon-pulse 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+  }
+  .live-dot::before {
+    content: '';
+    @apply relative z-10 h-2 w-2 rounded-full bg-emerald-400;
+  }
+
+  /* Blueprint micro grid */
+  .blueprint-grid {
+    background-image: radial-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+}
+
+@keyframes beacon-pulse {
+  0% { transform: scale(0.8); opacity: 0.9; }
+  100% { transform: scale(2.6); opacity: 0; }
+}
+
+@keyframes subtle-float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-4px); }
+}
+
+.animate-float {
+  animation: subtle-float 5s ease-in-out infinite;
+}
+
+/* React Flow canvas styling */
+.react-flow__minimap {
+  background: #090b10 !important;
+  border: 1px solid #1f2537 !important;
+  border-radius: 8px !important;
+}
+
+.react-flow__controls {
+  box-shadow: none !important;
+  border: 1px solid #1f2537;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.react-flow__controls-button {
+  background: #0d1017 !important;
+  border-bottom: 1px solid #1a2030 !important;
+  fill: #8b95a8 !important;
+}
+.react-flow__controls-button:hover {
+  background: #171c28 !important;
+  fill: #ffffff !important;
 }

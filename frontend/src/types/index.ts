@@ -14,6 +14,8 @@ export interface Workspace {
   retention_days: number;
   created_at: string;
   updated_at: string;
+  analysis_count?: number;
+  snapshot_count?: number;
 }
 
 export interface AnalysisRun {
@@ -185,6 +187,14 @@ export interface ImpactGraphData {
   edges: GraphEdge[];
 }
 
+export interface DemoStats {
+  deltas: number;
+  contracts: number;
+  unknowns: number;
+  scenarios: number;
+  verification_cases: number;
+}
+
 export interface DemoStatus {
   demo_available: boolean;
   is_seeded: boolean;
@@ -198,4 +208,53 @@ export interface DemoStatus {
     question: string;
     target_symbol: string;
   }>;
+  stats?: DemoStats;
+  engine_version?: string;
+  last_completed_at?: string;
+}
+
+export interface ShowcaseStory {
+  id: string;
+  title: string;
+  symbol: string;
+  file: string;
+  category: string;
+  status: 'Breaking' | 'Compatible' | string;
+  question: string;
+  baseBehavior: string;
+  headBehavior: string;
+  summary: string;
+  confidence: string;
+  nature: string;
+}
+
+export interface DemoShowcase {
+  is_seeded: boolean;
+  analysis_id?: string | null;
+  workspace_id?: string | null;
+  project_name: string;
+  base_version: string;
+  head_version: string;
+  stories: ShowcaseStory[];
+  sample_scenarios: Array<{
+    id: string;
+    question: string;
+    target_symbol: string;
+  }>;
+  stats: DemoStats;
+}
+
+export interface SnapshotFileEntry {
+  path: string;
+  language: string;
+  classification: string;
+  line_count: number;
+  change: 'modified' | 'unchanged' | 'added' | 'removed' | string;
+  parse_status: string;
+}
+
+export interface SnapshotFileList {
+  base_label: string;
+  head_label: string;
+  files: SnapshotFileEntry[];
 }

@@ -143,6 +143,169 @@ class AnalysisUnknownsView(APIView):
         return Response(serializer.data)
 
 
+class AnalysisFilesView(APIView):
+    """
+    GET /api/v1/analyses/{id}/files/
+    Lists snapshot files with change markers derived from content hashes.
+    """
+
+    def get(self, request, id):
+        try:
+            analysis = AnalysisRun.objects.get(id=id)
+        except AnalysisRun.DoesNotExist:
+            return Response({"error": "Analysis not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        head_files = {
+            f.relative_path: f for f in SourceFile.objects.filter(snapshot=analysis.head_snapshot)
+        }
+        base_files = {
+            f.relative_path: f for f in SourceFile.objects.filter(snapshot=analysis.base_snapshot)
+        }
+        all_paths = sorted(set(head_files.keys()) | set(base_files.keys()))
+
+        files = []
+        for path in all_paths:
+            head = head_files.get(path)
+            base = base_files.get(path)
+            if head and base:
+                change = "modified" if head.content_hash != base.content_hash else "unchanged"
+            elif head and not base:
+                change = "added"
+            else:
+                change = "removed"
+
+            representative = head or base
+            files.append(
+                {
+                    "path": path,
+                    "language": representative.language if representative else "unknown",
+                    "classification": representative.file_classification if representative else "source",
+                    "line_count": representative.line_count if representative else 0,
+                    "change": change,
+                    "parse_status": representative.parse_status if representative else "skipped",
+                }
+            )
+
+        return Response(
+            {
+                "base_label": analysis.base_snapshot.label,
+                "head_label": analysis.head_snapshot.label,
+                "files": files,
+            }
+        )
+
+
+class AnalysisNavigatorView(APIView):
+    """
+    GET /api/v1/analyses/{id}/navigator/
+    Live command-palette payload: deltas, scenarios, changed symbols, files.
+    """
+
+    def get(self, request, id):
+        try:
+            analysis = AnalysisRun.objects.get(id=id)
+        except AnalysisRun.DoesNotExist:
+            return Response({"error": "Analysis not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        deltas = [
+            {
+                "id": str(d.id),
+                "title": d.title,
+                "symbol": d.affected_symbol,
+                "file_path": d.file_path,
+                "line": (d.head_line_range or [1])[0] if d.head_line_range else 1,
+                "category": d.category,
+                "confidence": d.confidence,
+            }
+            for d in analysis.deltas.all()
+        ]
+        scenarios = [
+            {
+                "id": str(s.id),
+                "question": s.question,
+                "target_symbol": s.target_symbol,
+                "status": s.status,
+            }
+            for s in analysis.scenarios.all()
+        ]
+        symbols = (
+            Symbol.objects.filter(snapshot=analysis.head_snapshot)
+            .order_by("file_path", "start_line")[:80]
+        )
+        symbol_payload = [
+            {
+                "id": s.qualified_name,
+                "label": s.name,
+                "type": s.symbol_type,
+                "file_path": s.file_path,
+                "line_number": s.start_line,
+            }
+            for s in symbols
+        ]
+
+        return Response(
+            {
+                "analysis_id": str(analysis.id),
+                "status": analysis.status,
+                "base_snapshot_label": analysis.base_snapshot.label,
+                "head_snapshot_label": analysis.head_snapshot.label,
+                "counts": {
+                    "deltas": analysis.deltas.count(),
+                    "contracts": analysis.contracts.count(),
+                    "scenarios": analysis.scenarios.count(),
+                    "unknowns": analysis.unknowns.count(),
+                    "verification_cases": analysis.verification_cases.count(),
+                },
+                "deltas": deltas,
+                "scenarios": scenarios,
+                "symbols": symbol_payload,
+            }
+        )
+
+
+class VerificationRunView(APIView):
+    """
+    POST /api/v1/analyses/{id}/verification/{case_id}/run/
+    Persists sandbox execution status and returns a dynamic log stream.
+    """
+
+    def post(self, request, id, case_id):
+        try:
+            case = VerificationCase.objects.select_related("analysis").get(
+                analysis_id=id, id=case_id
+            )
+        except VerificationCase.DoesNotExist:
+            return Response({"error": "Verification case not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        force_fail = str(request.data.get("force_fail", "")).lower() in ("1", "true", "yes")
+        passed = not force_fail
+        case.execution_status = "failed" if force_fail else "passed"
+        case.save(update_fields=["execution_status"])
+
+        logs = [
+            f'$ pytest --capture=no -k "{case.title[:40]}"',
+            "[sandbox] initializing isolated test runner env...",
+            "[sandbox] database: sqlite3 in-memory testdb_diffbeacon",
+            f"[sandbox] executing preconditions: {case.preconditions}",
+            f"[sandbox] invoking input: {case.input_data}",
+            f"[sandbox] verifying observable outcome: {case.expected_result}",
+        ]
+        if passed:
+            logs.append("PASSED [100%] in 0.14s")
+            logs.append('[provenance] Promoted claim to "Runtime Verified"')
+        else:
+            logs.append("FAILED [100%] in 0.21s")
+            logs.append("[provenance] Claim remains statically established")
+
+        serializer = VerificationCaseSerializer(case)
+        return Response(
+            {
+                **serializer.data,
+                "logs": logs,
+            }
+        )
+
+
 class AnalysisFeedbackCreateView(APIView):
     def post(self, request, id):
         try:

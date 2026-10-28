@@ -103,7 +103,7 @@ export const BehaviorLedger: React.FC<Props> = ({
   return (
     <div className="space-y-6">
       {/* Search & Control Filter Bar */}
-      <div className="p-4 rounded-xl bg-slate-900/70 border border-slate-800 space-y-3">
+      <div className="surface-card p-4 border-[#1f2638] space-y-3">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           {/* Search Box */}
           <div className="relative flex-1 max-w-md">
@@ -113,12 +113,12 @@ export const BehaviorLedger: React.FC<Props> = ({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search deltas by symbol, file, or behavior..."
-              className="w-full pl-9 pr-4 py-1.5 rounded-lg bg-slate-950 border border-slate-800 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-cyan-500 transition-colors font-mono"
+              className="w-full pl-9 pr-4 py-1.5 rounded-lg bg-[#0a0d14] border border-[#1b202e] text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-colors font-mono"
             />
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery('')}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 text-xs cursor-pointer"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white text-xs cursor-pointer"
               >
                 ×
               </button>
@@ -127,11 +127,11 @@ export const BehaviorLedger: React.FC<Props> = ({
 
           {/* View Mode Toggle & Counter */}
           <div className="flex items-center gap-3">
-            <div className="flex items-center rounded-lg bg-slate-950 p-1 border border-slate-800 text-xs">
+            <div className="flex items-center rounded-lg bg-[#0a0d14] p-1 border border-[#1b202e] text-xs">
               <button
                 onClick={() => setViewMode('detailed')}
                 className={`px-2.5 py-1 rounded flex items-center gap-1.5 cursor-pointer transition-colors ${
-                  viewMode === 'detailed' ? 'bg-cyan-500 text-slate-950 font-bold' : 'text-slate-400 hover:text-slate-200'
+                  viewMode === 'detailed' ? 'bg-indigo-600 text-white font-medium shadow-sm' : 'text-slate-400 hover:text-white'
                 }`}
                 title="Detailed Side-by-Side View"
               >
@@ -141,7 +141,7 @@ export const BehaviorLedger: React.FC<Props> = ({
               <button
                 onClick={() => setViewMode('compact')}
                 className={`px-2.5 py-1 rounded flex items-center gap-1.5 cursor-pointer transition-colors ${
-                  viewMode === 'compact' ? 'bg-cyan-500 text-slate-950 font-bold' : 'text-slate-400 hover:text-slate-200'
+                  viewMode === 'compact' ? 'bg-indigo-600 text-white font-medium shadow-sm' : 'text-slate-400 hover:text-white'
                 }`}
                 title="Compact List View"
               >
@@ -151,24 +151,24 @@ export const BehaviorLedger: React.FC<Props> = ({
             </div>
 
             <div className="text-xs text-slate-400 font-mono">
-              <span className="text-cyan-400 font-bold">{filteredDeltas.length}</span> of {deltas.length} deltas
+              <span className="text-indigo-400 font-bold">{filteredDeltas.length}</span> of {deltas.length} deltas
             </div>
           </div>
         </div>
 
         {/* Filter Pills */}
-        <div className="flex flex-wrap items-center gap-3 pt-2 border-t border-slate-800/80 text-xs">
+        <div className="flex flex-wrap items-center gap-3 pt-2 border-t border-[#1b202e] text-xs">
           {/* Category Chips */}
           <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mr-1">Category:</span>
+            <span className="text-[11px] font-mono uppercase tracking-wider text-slate-400 mr-1">Category:</span>
             {categories.map((cat) => (
               <button
                 key={cat}
                 onClick={() => setSelectedCategory(cat)}
                 className={`px-2 py-0.5 rounded-md text-[11px] font-mono uppercase tracking-wider transition-all cursor-pointer ${
                   selectedCategory === cat
-                    ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 font-bold shadow-sm'
-                    : 'bg-slate-950/80 text-slate-400 hover:text-slate-200 border border-slate-800'
+                    ? 'bg-indigo-950/70 text-indigo-300 border border-indigo-700/60 font-semibold shadow-sm'
+                    : 'bg-[#0a0d14] text-slate-400 hover:text-white border border-[#1b202e]'
                 }`}
               >
                 {cat.replace('_', ' ')}
@@ -176,19 +176,19 @@ export const BehaviorLedger: React.FC<Props> = ({
             ))}
           </div>
 
-          <div className="hidden lg:block w-px h-4 bg-slate-800" />
+          <div className="hidden lg:block w-px h-4 bg-[#1b202e]" />
 
           {/* Confidence Chips */}
           <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mr-1">Provenance:</span>
+            <span className="text-[11px] font-mono uppercase tracking-wider text-slate-400 mr-1">Provenance:</span>
             {confidences.map((conf) => (
               <button
                 key={conf}
                 onClick={() => setSelectedConfidence(conf)}
                 className={`px-2 py-0.5 rounded-md text-[11px] font-mono uppercase tracking-wider transition-all cursor-pointer ${
                   selectedConfidence === conf
-                    ? 'bg-teal-500/20 text-teal-300 border border-teal-500/40 font-bold shadow-sm'
-                    : 'bg-slate-950/80 text-slate-400 hover:text-slate-200 border border-slate-800'
+                    ? 'bg-emerald-950/70 text-emerald-300 border border-emerald-700/60 font-semibold shadow-sm'
+                    : 'bg-[#0a0d14] text-slate-400 hover:text-white border border-[#1b202e]'
                 }`}
               >
                 {conf.replace('_', ' ')}
@@ -200,7 +200,7 @@ export const BehaviorLedger: React.FC<Props> = ({
 
       {/* Deltas Cards */}
       {filteredDeltas.length === 0 ? (
-        <div className="p-12 text-center text-slate-500 text-xs border border-slate-800 rounded-xl bg-slate-950/40 space-y-2">
+        <div className="p-12 text-center text-slate-400 text-xs border border-[#1f2638] rounded-xl bg-[#0a0d14] space-y-2 font-mono">
           <p>No behavior deltas match your search and filter criteria.</p>
           <button
             onClick={() => {
@@ -208,7 +208,7 @@ export const BehaviorLedger: React.FC<Props> = ({
               setSelectedConfidence('all');
               setSearchQuery('');
             }}
-            className="text-cyan-400 hover:underline cursor-pointer"
+            className="text-indigo-400 hover:underline cursor-pointer"
           >
             Clear all filters
           </button>
@@ -221,22 +221,22 @@ export const BehaviorLedger: React.FC<Props> = ({
             return (
               <div
                 key={delta.id}
-                className="rounded-xl bg-slate-900/80 border border-slate-800 hover:border-slate-700/80 transition-all shadow-xl overflow-hidden"
+                className="surface-card border-[#1f2638] overflow-hidden"
               >
                 {/* Header Row */}
-                <div className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-900/90 border-b border-slate-800/80">
+                <div className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#0c0f18] border-b border-[#1b202e]">
                   <div className="flex items-center gap-2.5 flex-wrap">
-                    <span className="px-2 py-0.5 rounded text-[10px] font-mono uppercase tracking-wider font-bold bg-slate-950 text-cyan-300 border border-slate-800">
+                    <span className="px-2 py-0.5 rounded text-[10px] font-mono uppercase tracking-wider font-semibold bg-[#121622] text-indigo-300 border border-[#232b3e]">
                       {delta.category.replace('_', ' ')}
                     </span>
-                    <h3 className="text-sm font-bold text-slate-100">{delta.title}</h3>
+                    <h3 className="text-sm font-semibold text-white">{delta.title}</h3>
                   </div>
 
                   <div className="flex items-center gap-2 shrink-0">
                     <EpistemicBadge provenance={delta.confidence} />
                     <button
                       onClick={() => toggleExpand(delta.id)}
-                      className="p-1.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors cursor-pointer"
+                      className="p-1.5 rounded bg-[#141824] hover:bg-[#1a2030] text-slate-300 transition-colors cursor-pointer border border-[#232b3e]"
                       title={isExpanded ? 'Collapse details' : 'Expand details'}
                     >
                       {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
@@ -260,31 +260,31 @@ export const BehaviorLedger: React.FC<Props> = ({
                             L{delta.base_line_range[0]}-{delta.base_line_range[1]}
                           </span>
                         </div>
-                        <div className="text-slate-300 whitespace-pre-wrap text-[11px] bg-slate-950/80 p-2.5 rounded border border-rose-900/20 font-mono leading-relaxed">
+                        <div className="text-slate-300 whitespace-pre-wrap text-[11px] bg-[#07090e] p-2.5 rounded border border-rose-900/20 font-mono leading-relaxed">
                           {delta.before_behavior}
                         </div>
                       </div>
 
                       {/* After */}
-                      <div className="p-3.5 rounded-lg bg-teal-950/20 border border-teal-900/30 space-y-2">
-                        <div className="flex items-center justify-between text-[11px] font-bold text-teal-400 uppercase tracking-wider">
+                      <div className="p-3.5 rounded-lg bg-indigo-950/20 border border-indigo-800/40 space-y-2">
+                        <div className="flex items-center justify-between text-[11px] font-bold text-indigo-300 uppercase tracking-wider">
                           <span>Head Behavior (v1.1)</span>
                           <span className="text-[10px] text-slate-400">
                             L{delta.head_line_range[0]}-{delta.head_line_range[1]}
                           </span>
                         </div>
-                        <div className="text-slate-300 whitespace-pre-wrap text-[11px] bg-slate-950/80 p-2.5 rounded border border-teal-900/20 font-mono leading-relaxed">
+                        <div className="text-slate-300 whitespace-pre-wrap text-[11px] bg-[#07090e] p-2.5 rounded border border-indigo-900/20 font-mono leading-relaxed">
                           {delta.after_behavior}
                         </div>
                       </div>
                     </div>
 
                     {/* Bottom Metadata & Action Bar */}
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-slate-800/80 text-xs text-slate-400 font-sans">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-[#1b202e] text-xs text-slate-400 font-sans">
                       {/* Symbol Location */}
                       <div className="flex items-center gap-2 font-mono truncate">
-                        <FileCode className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
-                        <span className="text-cyan-300 font-semibold truncate">{delta.affected_symbol}</span>
+                        <FileCode className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
+                        <span className="text-indigo-300 font-semibold truncate">{delta.affected_symbol}</span>
                         <span className="text-slate-600">in</span>
                         <span className="text-slate-400 truncate">{delta.file_path}</span>
                       </div>
@@ -294,13 +294,13 @@ export const BehaviorLedger: React.FC<Props> = ({
                         {/* Copy Markdown */}
                         <button
                           onClick={() => copyAsMarkdown(delta)}
-                          className="px-2.5 py-1.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+                          className="px-2.5 py-1.5 rounded-lg bg-[#141824] hover:bg-[#1a2030] border border-[#232b3e] text-slate-300 font-medium text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
                           title="Copy Markdown summary for pull request review"
                         >
                           {copiedDeltaId === delta.id ? (
                             <>
-                              <Check className="w-3.5 h-3.5 text-teal-400" />
-                              <span className="text-teal-300">Copied!</span>
+                              <Check className="w-3.5 h-3.5 text-emerald-400" />
+                              <span className="text-emerald-300">Copied!</span>
                             </>
                           ) : (
                             <>
@@ -313,7 +313,7 @@ export const BehaviorLedger: React.FC<Props> = ({
                         {/* Inspect Source Diff */}
                         <button
                           onClick={() => onInspectEvidence(delta.file_path, delta.head_line_range)}
-                          className="px-3 py-1.5 rounded bg-cyan-950/80 hover:bg-cyan-900/80 text-cyan-300 border border-cyan-800/60 font-medium text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+                          className="px-3 py-1.5 rounded-lg bg-indigo-950/70 hover:bg-indigo-900/70 text-indigo-300 border border-indigo-700/60 font-medium text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
                         >
                           <span>Inspect Source</span>
                           <ExternalLink className="w-3 h-3" />
@@ -323,8 +323,8 @@ export const BehaviorLedger: React.FC<Props> = ({
                         <div className="flex items-center gap-1 pl-1">
                           <button
                             onClick={() => handleFeedback(delta.id, 'useful')}
-                            className={`p-1.5 rounded hover:bg-slate-800 transition-colors cursor-pointer ${
-                              feedbackSent[delta.id] === 'useful' ? 'text-teal-400 bg-teal-950/60' : 'text-slate-400'
+                            className={`p-1.5 rounded hover:bg-[#141824] transition-colors cursor-pointer ${
+                              feedbackSent[delta.id] === 'useful' ? 'text-emerald-400 bg-emerald-950/60' : 'text-slate-400'
                             }`}
                             title="Helpful and verified"
                           >
@@ -332,7 +332,7 @@ export const BehaviorLedger: React.FC<Props> = ({
                           </button>
                           <button
                             onClick={() => handleFeedback(delta.id, 'incorrect')}
-                            className={`p-1.5 rounded hover:bg-slate-800 transition-colors cursor-pointer ${
+                            className={`p-1.5 rounded hover:bg-[#141824] transition-colors cursor-pointer ${
                               feedbackSent[delta.id] === 'incorrect' ? 'text-rose-400 bg-rose-950/60' : 'text-slate-400'
                             }`}
                             title="Report inaccuracy"

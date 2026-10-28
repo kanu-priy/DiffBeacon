@@ -8,30 +8,59 @@ export default {
     extend: {
       colors: {
         brand: {
-          50: '#eff6ff',
-          100: '#dbeafe',
-          200: '#bfdbfe',
-          300: '#93c5fd',
-          400: '#60a5fa',
-          500: '#3b82f6',
-          600: '#2563eb',
-          700: '#1d4ed8',
-          800: '#1e40af',
-          900: '#1e3a8a',
-          950: '#0f172a',
+          50: '#f5f5ff',
+          100: '#eceffe',
+          200: '#dadffd',
+          300: '#bac4fb',
+          400: '#949ef7',
+          500: '#6366f1', // Electric iris / indigo
+          600: '#4f46e5',
+          700: '#4338ca',
+          800: '#3730a3',
+          900: '#312e81',
+          950: '#1e1b4b',
         },
         surface: {
-          deep: '#0a0d14',
-          card: '#111622',
-          cardHover: '#161d2d',
-          border: '#1e2638',
-          borderSubtle: '#171e2c',
+          deep: '#07080b',
+          base: '#0c0e14',
+          card: '#12151e',
+          cardHover: '#171b26',
+          raised: '#1c212f',
+          border: '#212738',
+          borderSubtle: '#181d2a',
+        },
+        signal: {
+          verified: '#10b981',
+          inferred: '#6366f1',
+          warning: '#f59e0b',
+          breaking: '#f43f5e',
+          unknown: '#94a3b8',
         }
       },
       fontFamily: {
-        sans: ['"Inter"', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+        sans: ['"Plus Jakarta Sans"', 'Inter', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
         mono: ['"JetBrains Mono"', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
-      }
+      },
+      boxShadow: {
+        'glow-brand': '0 0 24px -4px rgba(99, 102, 241, 0.25)',
+        'glow-subtle': '0 0 40px -10px rgba(99, 102, 241, 0.12)',
+        'card': '0 4px 20px -2px rgba(0, 0, 0, 0.5), inset 0 1px 0 0 rgba(255, 255, 255, 0.05)',
+        'elevated': '0 12px 36px -4px rgba(0, 0, 0, 0.7), inset 0 1px 0 0 rgba(255, 255, 255, 0.08)',
+      },
+      keyframes: {
+        'fade-up': {
+          '0%': { opacity: '0', transform: 'translateY(10px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+        'shimmer-pulse': {
+          '0%, 100%': { opacity: '0.4' },
+          '50%': { opacity: '0.8' },
+        }
+      },
+      animation: {
+        'fade-up': 'fade-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) both',
+        'pulse-subtle': 'shimmer-pulse 3s ease-in-out infinite',
+      },
     },
   },
   plugins: [],

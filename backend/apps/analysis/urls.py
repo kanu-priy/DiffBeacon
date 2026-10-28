@@ -9,6 +9,9 @@ from .views import (
     AnalysisEvidenceView,
     AnalysisUnknownsView,
     AnalysisFeedbackCreateView,
+    AnalysisFilesView,
+    AnalysisNavigatorView,
+    VerificationRunView,
     SourceFileContentView,
 )
 
@@ -19,8 +22,11 @@ urlpatterns = [
     path("analyses/<uuid:id>/contracts/", AnalysisContractsView.as_view(), name="analysis-contracts"),
     path("analyses/<uuid:id>/impact-graph/", AnalysisImpactGraphView.as_view(), name="analysis-impact-graph"),
     path("analyses/<uuid:id>/verification/", AnalysisVerificationView.as_view(), name="analysis-verification"),
+    path("analyses/<uuid:id>/verification/<uuid:case_id>/run/", VerificationRunView.as_view(), name="analysis-verification-run"),
     path("analyses/<uuid:id>/evidence/", AnalysisEvidenceView.as_view(), name="analysis-evidence"),
     path("analyses/<uuid:id>/unknowns/", AnalysisUnknownsView.as_view(), name="analysis-unknowns"),
     path("analyses/<uuid:id>/feedback/", AnalysisFeedbackCreateView.as_view(), name="analysis-feedback"),
     path("analyses/<uuid:id>/file-content/", SourceFileContentView.as_view(), name="analysis-file-content"),
+    path("analyses/<uuid:id>/files/", AnalysisFilesView.as_view(), name="analysis-files"),
+    path("analyses/<uuid:id>/navigator/", AnalysisNavigatorView.as_view(), name="analysis-navigator"),
 ]

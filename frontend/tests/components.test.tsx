@@ -2,9 +2,19 @@ import { describe, it, expect, vi } from 'vitest';
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { EpistemicBadge } from '../src/components/EpistemicBadge';
 import { Navbar } from '../src/components/Navbar';
 import { CommandPalette } from '../src/components/CommandPalette';
+
+const renderWithProviders = (ui: React.ReactNode) => {
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return render(
+    <QueryClientProvider client={client}>
+      <BrowserRouter>{ui}</BrowserRouter>
+    </QueryClientProvider>
+  );
+};
 
 describe('EpistemicBadge Component', () => {
   it('renders Statically Established badge with correct label and style', () => {
@@ -54,11 +64,7 @@ describe('Navbar Component', () => {
 describe('CommandPalette Component', () => {
   it('renders search input and responds to queries when open', () => {
     const handleClose = vi.fn();
-    render(
-      <BrowserRouter>
-        <CommandPalette isOpen={true} onClose={handleClose} />
-      </BrowserRouter>
-    );
+    renderWithProviders(<CommandPalette isOpen={true} onClose={handleClose} />);
 
     const input = screen.getByPlaceholderText(/Type a symbol, scenario, or view/i);
     expect(input).toBeDefined();
@@ -69,11 +75,7 @@ describe('CommandPalette Component', () => {
   });
 
   it('does not render when isOpen is false', () => {
-    render(
-      <BrowserRouter>
-        <CommandPalette isOpen={false} onClose={() => {}} />
-      </BrowserRouter>
-    );
+    renderWithProviders(<CommandPalette isOpen={false} onClose={() => {}} />);
 
     expect(screen.queryByPlaceholderText(/Type a symbol, scenario, or view/i)).toBeNull();
   });

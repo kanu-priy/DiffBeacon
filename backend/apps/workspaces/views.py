@@ -32,18 +32,44 @@ class DemoStatusView(APIView):
                 workspace=demo_ws, status="completed"
             ).first()
 
-        sample_scenarios = [
-            {
-                "id": "scenario-missing-dept",
-                "question": "What happens if a request omits department_id now?",
-                "target_symbol": "api.serializers.EmployeeCreateSerializer",
-            },
-            {
-                "id": "scenario-salary-bounds",
-                "question": "How does salary validation behave between versions?",
-                "target_symbol": "api.services.payroll.validate_compensation",
-            },
-        ]
+        sample_scenarios = []
+        stats = {
+            "deltas": 0,
+            "contracts": 0,
+            "unknowns": 0,
+            "scenarios": 0,
+            "verification_cases": 0,
+        }
+        if latest_analysis:
+            stats = {
+                "deltas": latest_analysis.deltas.count(),
+                "contracts": latest_analysis.contracts.count(),
+                "unknowns": latest_analysis.unknowns.count(),
+                "scenarios": latest_analysis.scenarios.count(),
+                "verification_cases": latest_analysis.verification_cases.count(),
+            }
+            sample_scenarios = [
+                {
+                    "id": str(s.id),
+                    "question": s.question,
+                    "target_symbol": s.target_symbol,
+                }
+                for s in latest_analysis.scenarios.all()[:8]
+            ]
+
+        if not sample_scenarios:
+            sample_scenarios = [
+                {
+                    "id": "scenario-missing-dept",
+                    "question": "What happens if a request omits department_id now?",
+                    "target_symbol": "api.serializers.EmployeeCreateSerializer",
+                },
+                {
+                    "id": "scenario-salary-bounds",
+                    "question": "How does salary validation behave between versions?",
+                    "target_symbol": "api.services.payroll.validate_compensation",
+                },
+            ]
 
         return Response(
             {
@@ -51,10 +77,99 @@ class DemoStatusView(APIView):
                 "is_seeded": demo_ws is not None and latest_analysis is not None,
                 "workspace_id": str(demo_ws.id) if demo_ws else None,
                 "analysis_id": str(latest_analysis.id) if latest_analysis else None,
-                "project_name": "BeaconWorks API",
-                "base_version": "v1.0-baseline",
-                "head_version": "v1.1-department-update",
+                "project_name": demo_ws.name if demo_ws else "BeaconWorks API",
+                "base_version": latest_analysis.base_snapshot.label if latest_analysis else "v1.0-baseline",
+                "head_version": latest_analysis.head_snapshot.label if latest_analysis else "v1.1-department-update",
                 "sample_scenarios": sample_scenarios,
+                "stats": stats,
+                "engine_version": latest_analysis.engine_version if latest_analysis else None,
+                "last_completed_at": latest_analysis.completed_at.isoformat() if latest_analysis and latest_analysis.completed_at else None,
+            }
+        )
+
+
+class DemoShowcaseView(APIView):
+    """
+    GET /api/v1/demo/showcase/
+    Live change stories assembled from the latest completed demo analysis.
+    """
+
+    BREAKING_CATEGORIES = {"deleted_symbol", "validation", "permission"}
+
+    def get(self, request):
+        demo_ws = Workspace.objects.filter(is_demo=True).first()
+        analysis = None
+        if demo_ws:
+            analysis = AnalysisRun.objects.filter(
+                workspace=demo_ws, status="completed"
+            ).first()
+
+        if not analysis:
+            return Response(
+                {
+                    "is_seeded": False,
+                    "analysis_id": None,
+                    "workspace_id": str(demo_ws.id) if demo_ws else None,
+                    "project_name": "BeaconWorks API",
+                    "base_version": "v1.0-baseline",
+                    "head_version": "v1.1-department-update",
+                    "stories": [],
+                    "sample_scenarios": [],
+                    "stats": {
+                        "deltas": 0,
+                        "contracts": 0,
+                        "unknowns": 0,
+                        "scenarios": 0,
+                        "verification_cases": 0,
+                    },
+                }
+            )
+
+        stories = []
+        for delta in analysis.deltas.all()[:8]:
+            stories.append(
+                {
+                    "id": str(delta.id),
+                    "title": delta.title,
+                    "symbol": delta.affected_symbol,
+                    "file": delta.file_path,
+                    "category": delta.category,
+                    "status": "Breaking" if delta.category in self.BREAKING_CATEGORIES else "Compatible",
+                    "question": f"What happens in {delta.affected_symbol.split('.')[-1]} after this change?",
+                    "baseBehavior": delta.before_behavior,
+                    "headBehavior": delta.after_behavior,
+                    "summary": delta.summary,
+                    "confidence": delta.confidence,
+                    "nature": delta.category.replace("_", " ").title(),
+                }
+            )
+
+        sample_scenarios = [
+            {
+                "id": str(s.id),
+                "question": s.question,
+                "target_symbol": s.target_symbol,
+            }
+            for s in analysis.scenarios.all()[:8]
+        ]
+
+        return Response(
+            {
+                "is_seeded": True,
+                "analysis_id": str(analysis.id),
+                "workspace_id": str(demo_ws.id) if demo_ws else None,
+                "project_name": demo_ws.name if demo_ws else "BeaconWorks API",
+                "base_version": analysis.base_snapshot.label,
+                "head_version": analysis.head_snapshot.label,
+                "stories": stories,
+                "sample_scenarios": sample_scenarios,
+                "stats": {
+                    "deltas": analysis.deltas.count(),
+                    "contracts": analysis.contracts.count(),
+                    "unknowns": analysis.unknowns.count(),
+                    "scenarios": analysis.scenarios.count(),
+                    "verification_cases": analysis.verification_cases.count(),
+                },
             }
         )
 

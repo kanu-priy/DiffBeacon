@@ -33,11 +33,11 @@ export const ContractMap: React.FC<Props> = ({ contracts, onInspectEvidence }) =
   const getContractIcon = (type: string) => {
     switch (type) {
       case 'drf_serializer':
-        return <Cpu className="w-4 h-4 text-cyan-400" />;
+        return <Cpu className="w-4 h-4 text-indigo-400" />;
       case 'django_model':
-        return <Database className="w-4 h-4 text-teal-400" />;
+        return <Database className="w-4 h-4 text-indigo-300" />;
       case 'api_route':
-        return <Network className="w-4 h-4 text-violet-400" />;
+        return <Network className="w-4 h-4 text-emerald-400" />;
       default:
         return <Cpu className="w-4 h-4 text-slate-400" />;
     }
@@ -236,7 +236,7 @@ export const ContractMap: React.FC<Props> = ({ contracts, onInspectEvidence }) =
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search contracts (e.g. EmployeeCreateSerializer)..."
-              className="w-full pl-8 pr-3 py-1.5 rounded-lg bg-slate-950 border border-slate-800 text-slate-200 placeholder-slate-500 text-xs focus:outline-none focus:border-cyan-500 font-mono"
+              className="w-full pl-8 pr-3 py-1.5 rounded-lg bg-[#0a0d14] border border-[#1b202e] text-slate-200 placeholder-slate-500 text-xs focus:outline-none focus:border-indigo-500 font-mono"
             />
           </div>
 
@@ -248,8 +248,8 @@ export const ContractMap: React.FC<Props> = ({ contracts, onInspectEvidence }) =
                 onClick={() => setTypeFilter(type)}
                 className={`px-2.5 py-1 rounded-md text-xs font-mono uppercase tracking-wider transition-colors cursor-pointer ${
                   typeFilter === type
-                    ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 font-bold'
-                    : 'bg-slate-950 text-slate-400 hover:text-slate-200 border border-slate-800'
+                    ? 'bg-indigo-950/70 text-indigo-300 border border-indigo-700/60 font-semibold'
+                    : 'bg-[#0a0d14] text-slate-400 hover:text-white border border-[#1b202e]'
                 }`}
               >
                 {type === 'drf_serializer' ? 'Serializers' : type === 'django_model' ? 'Models' : type === 'api_route' ? 'Routes' : 'All Types'}
@@ -259,11 +259,11 @@ export const ContractMap: React.FC<Props> = ({ contracts, onInspectEvidence }) =
         </div>
 
         {/* View Format Toggle (Visual Diff vs JSON) */}
-        <div className="flex items-center rounded-lg bg-slate-950 p-1 border border-slate-800 text-xs">
+        <div className="flex items-center rounded-lg bg-[#0a0d14] p-1 border border-[#1b202e] text-xs">
           <button
             onClick={() => setViewFormat('visual')}
             className={`px-2.5 py-1 rounded flex items-center gap-1.5 cursor-pointer transition-colors ${
-              viewFormat === 'visual' ? 'bg-cyan-500 text-slate-950 font-bold' : 'text-slate-400 hover:text-slate-200'
+              viewFormat === 'visual' ? 'bg-indigo-600 text-white font-medium shadow-sm' : 'text-slate-400 hover:text-white'
             }`}
           >
             <ListTree className="w-3.5 h-3.5" />
@@ -272,7 +272,7 @@ export const ContractMap: React.FC<Props> = ({ contracts, onInspectEvidence }) =
           <button
             onClick={() => setViewFormat('json')}
             className={`px-2.5 py-1 rounded flex items-center gap-1.5 cursor-pointer transition-colors ${
-              viewFormat === 'json' ? 'bg-cyan-500 text-slate-950 font-bold' : 'text-slate-400 hover:text-slate-200'
+              viewFormat === 'json' ? 'bg-indigo-600 text-white font-medium shadow-sm' : 'text-slate-400 hover:text-white'
             }`}
           >
             <Code2 className="w-3.5 h-3.5" />
