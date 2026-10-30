@@ -4,7 +4,6 @@ import { useQuery } from '@tanstack/react-query';
 import {
   Layers,
   Plus,
-  Compass,
   FileCode2,
   Calendar,
   ArrowRight,
@@ -27,7 +26,6 @@ export const Dashboard: React.FC = () => {
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState('');
-  const [isSeedingDemo, setIsSeedingDemo] = useState(false);
   const [newWorkspaceName, setNewWorkspaceName] = useState('');
   const [isCreatingWorkspace, setIsCreatingWorkspace] = useState(false);
 
@@ -55,11 +53,6 @@ export const Dashboard: React.FC = () => {
       query.state.data?.some((run: any) => run.status === 'running' || run.status === 'queued') ? 2000 : false,
   });
 
-  const { data: demoStatus, refetch: refetchDemo } = useQuery({
-    queryKey: ['demo-status'],
-    queryFn: api.getDemoStatus,
-  });
-
   const handleCreateWorkspace = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newWorkspaceName.trim()) return;
@@ -74,27 +67,6 @@ export const Dashboard: React.FC = () => {
       toast.error('Could not create workspace', err.message);
     } finally {
       setIsCreatingWorkspace(false);
-    }
-  };
-
-  const handleLaunchDemo = async () => {
-    setIsSeedingDemo(true);
-    try {
-      if (demoStatus?.is_seeded && demoStatus.analysis_id) {
-        toast.info('Opening BeaconWorks Demo Workspace', 'Loading seeded Change Story...');
-        navigate(`/analysis/${demoStatus.analysis_id}`);
-      } else {
-        toast.info('Seeding BeaconWorks API v1.0 & v1.1', 'Extracting fixtures and building AST graph...');
-        const res = await api.seedDemoWorkspace();
-        refetchDemo();
-        refetchWorkspaces();
-        toast.success('Demo Workspace Ready', 'Loaded BeaconWorks API analysis snapshot.');
-        navigate(`/analysis/${res.analysis_id}`);
-      }
-    } catch (err: any) {
-      toast.error('Failed to launch demo', err.message);
-    } finally {
-      setIsSeedingDemo(false);
     }
   };
 
@@ -137,19 +109,6 @@ export const Dashboard: React.FC = () => {
 
         <div className="db-actions">
           <button
-            onClick={handleLaunchDemo}
-            disabled={isSeedingDemo}
-            className="db-button db-button-secondary"
-          >
-            {isSeedingDemo ? (
-              <Loader2 className="w-3.5 h-3.5 animate-spin text-indigo-400" />
-            ) : (
-              <Compass className="w-3.5 h-3.5 text-indigo-400" />
-            )}
-            <span>{isSeedingDemo ? 'Seeding Demo...' : 'Open BeaconWorks Demo'}</span>
-          </button>
-
-          <button
             onClick={() => {
               if (activeWorkspace) {
                 setSelectedWorkspaceId(activeWorkspace.id);
@@ -188,11 +147,6 @@ export const Dashboard: React.FC = () => {
               }`}
             >
               <span>{w.name}</span>
-              {w.is_demo && (
-                <span className="text-[10px] font-mono text-indigo-400 bg-indigo-950 px-1 rounded border border-indigo-800/40">
-                  Demo
-                </span>
-              )}
               {typeof w.analysis_count === 'number' && (
                 <span className="text-[10px] text-slate-500 font-mono">({w.analysis_count})</span>
               )}

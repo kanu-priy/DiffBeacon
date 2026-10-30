@@ -4,6 +4,7 @@ from pathlib import Path
 from django.conf import settings
 from rest_framework import status
 from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.generics import RetrieveDestroyAPIView
@@ -21,14 +22,14 @@ class SnapshotUploadView(APIView):
     """
 
     parser_classes = [MultiPartParser, FormParser]
+    permission_classes = [IsAuthenticated]
 
     def post(self, request, workspace_id):
-        try:
-            workspace = Workspace.objects.get(id=workspace_id)
-        except Workspace.DoesNotExist:
+        workspace = Workspace.objects.filter(id=workspace_id, owner=request.user).first()
+        if not workspace:
             return Response(
-                {"error": "Workspace not found."},
-                status=status.HTTP_404_NOT_FOUND,
+                {"error": "You do not have access to this workspace."},
+                status=status.HTTP_403_FORBIDDEN,
             )
 
         if "archive" not in request.FILES:

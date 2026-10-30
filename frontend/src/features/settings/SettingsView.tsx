@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../../lib/api';
 import { useToast } from '../../components/Toast';
@@ -25,6 +25,11 @@ import {
   Globe,
 } from 'lucide-react';
 
+const normalizeProviderId = (value?: string) => {
+  if (!value) return 'mock';
+  return value.toLowerCase() === 'deterministic_mock' ? 'mock' : value.toLowerCase();
+};
+
 export const SettingsView: React.FC = () => {
   const toast = useToast();
   const [activeTab, setActiveTab] = useState<'providers' | 'integrations' | 'security' | 'health'>('providers');
@@ -44,6 +49,14 @@ export const SettingsView: React.FC = () => {
     queryKey: ['provider-settings'],
     queryFn: api.getProviderSettings,
   });
+
+  const activeProviderId = normalizeProviderId(providerSettings?.active_provider || 'mock');
+
+  useEffect(() => {
+    if (providerSettings?.active_provider) {
+      setSelectedProvider(activeProviderId);
+    }
+  }, [providerSettings, activeProviderId]);
 
   const handleTestProvider = async (providerId: string) => {
     setTestingProvider(providerId);
@@ -140,9 +153,11 @@ export const SettingsView: React.FC = () => {
             
             <div className="grid grid-cols-1 gap-3 font-sans">
               {providerSettings?.providers?.map((p: any) => {
-                const isSelected = selectedProvider === p.id;
-                const result = testResults[p.id];
-                const isTesting = testingProvider === p.id;
+                const normalizedId = normalizeProviderId(p.id);
+                const isSelected = selectedProvider === normalizedId;
+                const isActiveProvider = activeProviderId === normalizedId;
+                const result = testResults[normalizedId];
+                const isTesting = testingProvider === normalizedId;
 
                 return (
                   <div
@@ -164,9 +179,9 @@ export const SettingsView: React.FC = () => {
                               Cloud Provider
                             </span>
                           )}
-                          {p.id === 'mock' && (
+                          {isActiveProvider && (
                             <span className="px-2 py-0.2 rounded text-[10px] font-mono bg-[#141824] text-slate-300 border border-[#232b3e]">
-                              Active Default
+                              Active Provider
                             </span>
                           )}
                         </div>
@@ -175,7 +190,7 @@ export const SettingsView: React.FC = () => {
 
                       <div className="flex items-center gap-2 shrink-0">
                         <button
-                          onClick={() => handleTestProvider(p.id)}
+                          onClick={() => handleTestProvider(normalizedId)}
                           disabled={isTesting}
                           className="px-3 py-1.5 rounded-lg bg-[#141824] hover:bg-[#1a2030] border border-[#232b3e] text-xs font-mono text-slate-200 flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50"
                         >
@@ -194,8 +209,8 @@ export const SettingsView: React.FC = () => {
 
                         <button
                           onClick={() => {
-                            setSelectedProvider(p.id);
-                            toast.success(`Active Provider Changed`, `Set primary reasoning engine to ${p.name}`);
+                            setSelectedProvider(normalizedId);
+                            toast.success(`Primary Provider Changed`, `Set reasoning engine to ${p.name}`);
                           }}
                           className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
                             isSelected

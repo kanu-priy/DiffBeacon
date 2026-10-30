@@ -392,7 +392,7 @@ class ProviderSettingsView(APIView):
     """
     def get(self, request):
         return Response({
-            "active_provider": "deterministic_mock",
+            "active_provider": "mock",
             "fallback_mode": "deterministic_fixture",
             "secret_redaction_enabled": True,
             "telemetry_enabled": False,

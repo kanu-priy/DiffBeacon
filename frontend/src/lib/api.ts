@@ -14,12 +14,34 @@ import {
 } from '../types';
 
 const API_BASE = '/api/v1';
+const AUTH_TOKEN_KEY = 'diffbeacon-auth-token';
+const AUTH_USER_KEY = 'diffbeacon-auth-user';
+
+export interface AuthUser {
+  id: string;
+  username: string;
+  email: string;
+  first_name?: string;
+  last_name?: string;
+}
+
+export interface AuthTokens {
+  access: string;
+  refresh: string;
+  user: AuthUser;
+}
+
+function getToken(): string | null {
+  return localStorage.getItem(AUTH_TOKEN_KEY);
+}
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  const token = getToken();
   const res = await fetch(`${API_BASE}${path}`, {
     ...init,
     headers: {
       ...(init?.body instanceof FormData ? {} : { 'Content-Type': 'application/json' }),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...(init?.headers || {}),
     },
   });
@@ -43,6 +65,16 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export const api = {
+  registerUser: (payload: { username: string; email: string; password: string; password_confirm: string }) =>
+    request<AuthTokens>('/auth/register/', { method: 'POST', body: JSON.stringify(payload) }),
+  loginUser: (payload: { username: string; password: string }) =>
+    request<AuthTokens>('/auth/login/', { method: 'POST', body: JSON.stringify(payload) }),
+  getCurrentUser: () => request<AuthUser>('/auth/me/'),
+  logout: () => {
+    localStorage.removeItem(AUTH_TOKEN_KEY);
+    localStorage.removeItem(AUTH_USER_KEY);
+  },
+
   getDemoStatus: () => request<DemoStatus>('/demo/'),
   getDemoShowcase: () => request<DemoShowcase>('/demo/showcase/'),
   seedDemoWorkspace: () =>

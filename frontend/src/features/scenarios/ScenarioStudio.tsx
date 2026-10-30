@@ -66,17 +66,7 @@ export const ScenarioStudio: React.FC<Props> = ({ analysisId, onInspectLine }) =
     },
   });
 
-  const { data: demoStatus } = useQuery({
-    queryKey: ['demo-status'],
-    queryFn: api.getDemoStatus,
-  });
-
-  const starterQuestions =
-    demoStatus?.sample_scenarios?.map((s) => s.question).filter(Boolean).slice(0, 6) || [
-      'What happens if a request omits department_id now?',
-      'How does salary validation behave between versions?',
-      'What is different in the old and new execution paths?',
-    ];
+  const starterQuestions: string[] = [];
 
   const maxSteps = Math.max(
     activeScenario?.traces?.base?.length || 0,

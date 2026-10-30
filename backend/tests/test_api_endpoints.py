@@ -74,3 +74,16 @@ def test_demo_status_and_seed_endpoint():
         content_type="application/json",
     )
     assert fb_res.status_code == 201
+
+
+@pytest.mark.django_db
+def test_provider_settings_are_consistent():
+    client = Client()
+    res = client.get("/api/v1/settings/providers/")
+    assert res.status_code == 200
+
+    data = res.json()
+    provider_ids = {provider["id"] for provider in data["providers"]}
+    assert data["active_provider"] in provider_ids
+    assert data["active_provider"] == "mock"
+    assert "mock" in provider_ids

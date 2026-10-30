@@ -69,14 +69,14 @@ export const CommandPalette: React.FC<Props> = ({
     onClose();
     if (onSelectTab) onSelectTab(tabName);
     else if (liveAnalysisId) navigate(`/analysis/${liveAnalysisId}`);
-    else navigate('/demo');
+    else navigate('/dashboard');
   };
 
   const jumpToCode = (filePath: string, line: number) => {
     onClose();
     if (onInspectSymbol) onInspectSymbol(filePath, line);
     else if (liveAnalysisId) navigate(`/analysis/${liveAnalysisId}`);
-    else navigate('/demo');
+    else navigate('/dashboard');
   };
 
   const allItems: PaletteItem[] = useMemo(() => {
@@ -173,30 +173,17 @@ export const CommandPalette: React.FC<Props> = ({
       });
     });
 
-    items.push(
-      {
-        id: 'act-demo',
-        category: 'Quick Actions',
-        title: 'Open BeaconWorks API Demo',
-        subtitle: 'Seed or open the live fixture analysis',
-        icon: <Compass className="w-4 h-4 text-cyan-400" />,
-        action: () => {
-          onClose();
-          navigate('/demo');
-        },
+    items.push({
+      id: 'act-dash',
+      category: 'Quick Actions',
+      title: 'Open workspaces dashboard',
+      subtitle: 'Manage your own snapshots and analyses',
+      icon: <Layers className="w-4 h-4 text-slate-400" />,
+      action: () => {
+        onClose();
+        navigate('/dashboard');
       },
-      {
-        id: 'act-dash',
-        category: 'Quick Actions',
-        title: 'Go to Workspaces Dashboard',
-        subtitle: 'Manage snapshot archives and analyses',
-        icon: <Layers className="w-4 h-4 text-slate-400" />,
-        action: () => {
-          onClose();
-          navigate('/dashboard');
-        },
-      }
-    );
+    });
 
     return items;
   }, [navigator, liveAnalysisId]);

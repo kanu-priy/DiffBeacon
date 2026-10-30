@@ -1,21 +1,106 @@
-import os
 import io
+import os
+import re
 import zipfile
-import shutil
 from pathlib import Path
+
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.http import HttpResponse
-from rest_framework import status
+from rest_framework import serializers, status
+from rest_framework.exceptions import PermissionDenied
+from rest_framework.generics import ListCreateAPIView, RetrieveAPIView
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.generics import ListCreateAPIView, RetrieveAPIView
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from rest_framework_simplejwt.tokens import RefreshToken
 
-from .models import Workspace
-from .serializers import WorkspaceSerializer
-from apps.snapshots.models import SourceSnapshot, SourceFile
+from apps.analysis.engine import AnalysisPipelineEngine
 from apps.analysis.models import AnalysisRun
 from apps.ingestion.archiver import SafeArchiveExtractor
-from apps.analysis.engine import AnalysisPipelineEngine
+from apps.snapshots.models import SourceFile, SourceSnapshot
+from .models import Workspace
+from .serializers import WorkspaceSerializer
+
+User = get_user_model()
+
+
+def serialize_user(user):
+    return {
+        "id": str(user.id),
+        "username": user.username,
+        "email": user.email,
+        "first_name": user.first_name,
+        "last_name": user.last_name,
+    }
+
+
+class DiffBeaconTokenObtainPairSerializer(TokenObtainPairSerializer):
+    def validate(self, attrs):
+        data = super().validate(attrs)
+        data["user"] = serialize_user(self.user)
+        return data
+
+
+class UserRegistrationSerializer(serializers.Serializer):
+    username = serializers.CharField(max_length=150)
+    email = serializers.EmailField()
+    password = serializers.CharField(write_only=True, min_length=8)
+    password_confirm = serializers.CharField(write_only=True, min_length=8)
+
+    def validate(self, attrs):
+        if attrs["password"] != attrs["password_confirm"]:
+            raise serializers.ValidationError({"password": "Passwords do not match."})
+
+        if User.objects.filter(username__iexact=attrs["username"]).exists():
+            raise serializers.ValidationError({"username": "This username is already in use."})
+
+        if User.objects.filter(email__iexact=attrs["email"]).exists():
+            raise serializers.ValidationError({"email": "This email is already in use."})
+
+        return attrs
+
+
+class RegisterView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = UserRegistrationSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        payload = serializer.validated_data
+
+        user = User.objects.create_user(
+            username=payload["username"],
+            email=payload["email"],
+            password=payload["password"],
+        )
+
+        refresh = RefreshToken.for_user(user)
+        return Response(
+            {
+                "refresh": str(refresh),
+                "access": str(refresh.access_token),
+                "user": serialize_user(user),
+            },
+            status=status.HTTP_201_CREATED,
+        )
+
+
+class LoginView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = DiffBeaconTokenObtainPairSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        return Response(serializer.validated_data, status=status.HTTP_200_OK)
+
+
+class MeView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        return Response(serialize_user(request.user))
 
 
 class DemoStatusView(APIView):
@@ -24,6 +109,8 @@ class DemoStatusView(APIView):
     Returns whether demo is seeded and lists sample scenarios.
     """
 
+    permission_classes = [AllowAny]
+
     def get(self, request):
         fixtures_dir = getattr(settings, "FIXTURES_DIR", None)
         demo_available = fixtures_dir and Path(fixtures_dir).exists()
@@ -31,18 +118,10 @@ class DemoStatusView(APIView):
         demo_ws = Workspace.objects.filter(is_demo=True).first()
         latest_analysis = None
         if demo_ws:
-            latest_analysis = AnalysisRun.objects.filter(
-                workspace=demo_ws, status="completed"
-            ).first()
+            latest_analysis = AnalysisRun.objects.filter(workspace=demo_ws, status="completed").first()
 
         sample_scenarios = []
-        stats = {
-            "deltas": 0,
-            "contracts": 0,
-            "unknowns": 0,
-            "scenarios": 0,
-            "verification_cases": 0,
-        }
+        stats = {"deltas": 0, "contracts": 0, "unknowns": 0, "scenarios": 0, "verification_cases": 0}
         if latest_analysis:
             stats = {
                 "deltas": latest_analysis.deltas.count(),
@@ -51,14 +130,7 @@ class DemoStatusView(APIView):
                 "scenarios": latest_analysis.scenarios.count(),
                 "verification_cases": latest_analysis.verification_cases.count(),
             }
-            sample_scenarios = [
-                {
-                    "id": str(s.id),
-                    "question": s.question,
-                    "target_symbol": s.target_symbol,
-                }
-                for s in latest_analysis.scenarios.all()[:8]
-            ]
+            sample_scenarios = [{"id": str(s.id), "question": s.question, "target_symbol": s.target_symbol} for s in latest_analysis.scenarios.all()[:8]]
 
         if not sample_scenarios:
             sample_scenarios = [
@@ -97,15 +169,14 @@ class DemoShowcaseView(APIView):
     Live change stories assembled from the latest completed demo analysis.
     """
 
+    permission_classes = [AllowAny]
     BREAKING_CATEGORIES = {"deleted_symbol", "validation", "permission"}
 
     def get(self, request):
         demo_ws = Workspace.objects.filter(is_demo=True).first()
         analysis = None
         if demo_ws:
-            analysis = AnalysisRun.objects.filter(
-                workspace=demo_ws, status="completed"
-            ).first()
+            analysis = AnalysisRun.objects.filter(workspace=demo_ws, status="completed").first()
 
         if not analysis:
             return Response(
@@ -118,13 +189,7 @@ class DemoShowcaseView(APIView):
                     "head_version": "v1.1-department-update",
                     "stories": [],
                     "sample_scenarios": [],
-                    "stats": {
-                        "deltas": 0,
-                        "contracts": 0,
-                        "unknowns": 0,
-                        "scenarios": 0,
-                        "verification_cases": 0,
-                    },
+                    "stats": {"deltas": 0, "contracts": 0, "unknowns": 0, "scenarios": 0, "verification_cases": 0},
                 }
             )
 
@@ -147,14 +212,7 @@ class DemoShowcaseView(APIView):
                 }
             )
 
-        sample_scenarios = [
-            {
-                "id": str(s.id),
-                "question": s.question,
-                "target_symbol": s.target_symbol,
-            }
-            for s in analysis.scenarios.all()[:8]
-        ]
+        sample_scenarios = [{"id": str(s.id), "question": s.question, "target_symbol": s.target_symbol} for s in analysis.scenarios.all()[:8]]
 
         return Response(
             {
@@ -184,17 +242,15 @@ class DemoSeedView(APIView):
     on the BeaconWorks API fixtures.
     """
 
+    permission_classes = [AllowAny]
+
     def post(self, request):
         fixtures_base = Path(settings.FIXTURES_DIR) / "base"
         fixtures_head = Path(settings.FIXTURES_DIR) / "head"
 
         if not fixtures_base.exists() or not fixtures_head.exists():
-            return Response(
-                {"error": "Fixture directories base/head not found on server."},
-                status=status.HTTP_404_NOT_FOUND,
-            )
+            return Response({"error": "Fixture directories base/head not found on server."}, status=status.HTTP_404_NOT_FOUND)
 
-        # Create or retrieve Demo Workspace
         workspace, _ = Workspace.objects.get_or_create(
             slug="beaconworks-api-demo",
             defaults={
@@ -206,7 +262,6 @@ class DemoSeedView(APIView):
 
         extractor = SafeArchiveExtractor()
 
-        # Ingest Base Snapshot
         base_manifest = extractor.scan_directory(str(fixtures_base))
         base_snap = SourceSnapshot.objects.create(
             workspace=workspace,
@@ -227,7 +282,6 @@ class DemoSeedView(APIView):
                 parse_status=m["parse_status"],
             )
 
-        # Ingest Head Snapshot
         head_manifest = extractor.scan_directory(str(fixtures_head))
         head_snap = SourceSnapshot.objects.create(
             workspace=workspace,
@@ -248,7 +302,6 @@ class DemoSeedView(APIView):
                 parse_status=m["parse_status"],
             )
 
-        # Create Analysis Run
         analysis = AnalysisRun.objects.create(
             workspace=workspace,
             base_snapshot=base_snap,
@@ -257,7 +310,6 @@ class DemoSeedView(APIView):
             ai_provider_name=getattr(settings, "LLM_PROVIDER", "mock"),
         )
 
-        # Run Analysis Pipeline synchronously for demo seed
         engine = AnalysisPipelineEngine()
         completed_analysis = engine.run_analysis(str(analysis.id))
 
@@ -279,20 +331,31 @@ class DemoSeedView(APIView):
 
 
 class WorkspaceListCreateView(ListCreateAPIView):
-    queryset = Workspace.objects.all()
     serializer_class = WorkspaceSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return Workspace.objects.filter(owner=self.request.user)
 
     def perform_create(self, serializer):
         name = serializer.validated_data["name"]
-        import re
         slug = re.sub(r"[^a-zA-Z0-9]+", "-", name).strip("-").lower()
-        serializer.save(slug=slug)
+        serializer.save(owner=self.request.user, slug=slug)
 
 
 class WorkspaceDetailView(RetrieveAPIView):
-    queryset = Workspace.objects.all()
     serializer_class = WorkspaceSerializer
+    permission_classes = [IsAuthenticated]
     lookup_field = "id"
+
+    def get_queryset(self):
+        return Workspace.objects.all()
+
+    def get_object(self):
+        obj = Workspace.objects.filter(id=self.kwargs["id"]).first()
+        if obj is None or obj.owner != self.request.user:
+            raise PermissionDenied("You do not have access to this workspace.")
+        return obj
 
 
 class WorkspaceHistoryView(APIView):
@@ -301,8 +364,14 @@ class WorkspaceHistoryView(APIView):
     Returns immutable historical analysis runs for this workspace.
     """
 
+    permission_classes = [IsAuthenticated]
+
     def get(self, request, id):
-        analyses = AnalysisRun.objects.filter(workspace_id=id).order_by("-created_at")
+        workspace = Workspace.objects.filter(id=id, owner=request.user).first()
+        if not workspace:
+            raise PermissionDenied("You do not have access to this workspace.")
+
+        analyses = AnalysisRun.objects.filter(workspace=workspace).order_by("-created_at")
         history_list = []
         for a in analyses:
             history_list.append(
@@ -330,6 +399,8 @@ class DemoSampleArchiveDownloadView(APIView):
     Streams a dynamically created ZIP archive of the BeaconWorks API fixtures.
     """
 
+    permission_classes = [AllowAny]
+
     def get(self, request):
         version = request.query_params.get("version", "base").lower()
         if version not in ("base", "head"):
@@ -337,10 +408,7 @@ class DemoSampleArchiveDownloadView(APIView):
 
         target_dir = Path(settings.FIXTURES_DIR) / version
         if not target_dir.exists():
-            return Response(
-                {"error": f"Fixtures directory for {version} not found."},
-                status=status.HTTP_404_NOT_FOUND,
-            )
+            return Response({"error": f"Fixtures directory for {version} not found."}, status=status.HTTP_404_NOT_FOUND)
 
         buffer = io.BytesIO()
         with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:

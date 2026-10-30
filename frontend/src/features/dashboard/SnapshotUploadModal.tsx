@@ -7,9 +7,6 @@ import {
   ShieldCheck,
   CheckCircle2,
   Loader2,
-  Download,
-  Sparkles,
-  ArrowRight,
   GitPullRequest,
   Key,
   Globe,
@@ -37,7 +34,6 @@ export const SnapshotUploadModal: React.FC<Props> = ({
   const [headFile, setHeadFile] = useState<File | null>(null);
   const [baseLabel, setBaseLabel] = useState('v1.0-base');
   const [headLabel, setHeadLabel] = useState('v1.1-head');
-  const [isFetchingSamples, setIsFetchingSamples] = useState(false);
 
   // GitHub Mode State
   const [prReference, setPrReference] = useState('');
@@ -50,40 +46,6 @@ export const SnapshotUploadModal: React.FC<Props> = ({
   const [error, setError] = useState<string | null>(null);
 
   if (!isOpen) return null;
-
-  const handleQuickFillSample = async () => {
-    setIsFetchingSamples(true);
-    setError(null);
-    try {
-      const [baseRes, headRes] = await Promise.all([
-        fetch('/api/v1/demo/sample-archive/?version=base'),
-        fetch('/api/v1/demo/sample-archive/?version=head'),
-      ]);
-
-      if (!baseRes.ok || !headRes.ok) {
-        throw new Error('Could not fetch sample archives from server.');
-      }
-
-      const baseBlob = await baseRes.blob();
-      const headBlob = await headRes.blob();
-
-      const sampleBaseFile = new File([baseBlob], 'beaconworks-base-v1.0.zip', {
-        type: 'application/zip',
-      });
-      const sampleHeadFile = new File([headBlob], 'beaconworks-head-v1.1.zip', {
-        type: 'application/zip',
-      });
-
-      setBaseFile(sampleBaseFile);
-      setHeadFile(sampleHeadFile);
-      setBaseLabel('beaconworks-v1.0');
-      setHeadLabel('beaconworks-v1.1');
-    } catch (err: any) {
-      setError(err.message || 'Failed to load sample archives.');
-    } finally {
-      setIsFetchingSamples(false);
-    }
-  };
 
   const handleZipSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -223,39 +185,7 @@ export const SnapshotUploadModal: React.FC<Props> = ({
 
         {/* TAB 1: ZIP ARCHIVES */}
         {ingestMode === 'zip' && (
-          <>
-            {/* Quick Sample Helper Banner */}
-            <div className="mt-4 p-3 rounded-xl bg-[#111624] border border-[#212b40] flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-              <div className="space-y-0.5">
-                <div className="font-semibold text-slate-200 flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
-                  <span>Testing without ZIP files?</span>
-                </div>
-                <p className="text-[11px] text-slate-400">
-                  Load our pre-packaged BeaconWorks API baseline and head change archives.
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={handleQuickFillSample}
-                disabled={isFetchingSamples || isUploading}
-                className="px-3 py-1.5 rounded-lg bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/40 text-indigo-300 font-mono text-xs flex items-center justify-center gap-1.5 shrink-0 transition-colors cursor-pointer disabled:opacity-50"
-              >
-                {isFetchingSamples ? (
-                  <>
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    <span>Loading…</span>
-                  </>
-                ) : (
-                  <>
-                    <span>Quick-Fill Sample ZIPs</span>
-                    <ArrowRight className="w-3 h-3" />
-                  </>
-                )}
-              </button>
-            </div>
-
-            <form onSubmit={handleZipSubmit} className="mt-4 space-y-4">
+          <form onSubmit={handleZipSubmit} className="mt-4 space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {/* Base Snapshot File */}
                 <div className="p-4 rounded-xl border border-[#1e2537] bg-[#090c13] space-y-3">
@@ -292,16 +222,6 @@ export const SnapshotUploadModal: React.FC<Props> = ({
                     </span>
                   </label>
 
-                  <div className="text-right">
-                    <a
-                      href="/api/v1/demo/sample-archive/?version=base"
-                      download="beaconworks-base-v1.0.zip"
-                      className="text-[11px] text-slate-500 hover:text-indigo-400 font-mono inline-flex items-center gap-1 transition-colors"
-                    >
-                      <Download className="w-3 h-3" />
-                      <span>Download sample Base ZIP</span>
-                    </a>
-                  </div>
                 </div>
 
                 {/* Head Snapshot File */}
@@ -339,16 +259,6 @@ export const SnapshotUploadModal: React.FC<Props> = ({
                     </span>
                   </label>
 
-                  <div className="text-right">
-                    <a
-                      href="/api/v1/demo/sample-archive/?version=head"
-                      download="beaconworks-head-v1.1.zip"
-                      className="text-[11px] text-slate-500 hover:text-indigo-400 font-mono inline-flex items-center gap-1 transition-colors"
-                    >
-                      <Download className="w-3 h-3" />
-                      <span>Download sample Head ZIP</span>
-                    </a>
-                  </div>
                 </div>
               </div>
 
@@ -393,7 +303,6 @@ export const SnapshotUploadModal: React.FC<Props> = ({
                 </button>
               </div>
             </form>
-          </>
         )}
 
         {/* TAB 2: GITHUB PULL REQUEST */}
