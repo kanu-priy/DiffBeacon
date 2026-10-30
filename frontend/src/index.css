@@ -6,37 +6,25 @@
   color-scheme: dark;
 }
 
-html,
-body,
-#root {
+html, body, #root {
   min-height: 100%;
 }
 
 body {
   margin: 0;
-  background-color: #030712;
-  background-image: 
-    radial-gradient(ellipse 90% 60% at 50% -25%, rgba(6, 182, 212, 0.22), transparent 70%),
-    radial-gradient(circle 800px at 95% 20%, rgba(139, 92, 246, 0.18), transparent 60%),
-    radial-gradient(circle 600px at 5% 75%, rgba(16, 185, 129, 0.12), transparent 50%),
-    radial-gradient(circle at 50% 120%, rgba(6, 182, 212, 0.15), transparent 70%);
-  background-attachment: fixed;
-  color: #f8fafc;
-  font-family: 'Plus Jakarta Sans', Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background-color: #000000;
+  color: #fafafa;
+  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  letter-spacing: -0.012em;
 }
 
-code,
-pre,
-.font-mono {
-  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  letter-spacing: -0.02em;
+code, pre, .font-mono {
+  font-family: ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, monospace;
 }
 
 ::selection {
-  background: rgba(6, 182, 212, 0.4);
+  background: rgba(59, 130, 246, 0.35);
   color: #ffffff;
 }
 
@@ -45,122 +33,108 @@ pre,
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: rgba(3, 7, 18, 0.7);
+  background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #1e293b;
-  border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: #333;
+  border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #0ea5e9;
+  background: #555;
 }
 
 @layer components {
-  /* High-end radiant architectural card */
+  /* Clean card — no glow, no glass, just structure */
+  .card,
   .surface-card {
-    @apply rounded-2xl border border-cyan-500/20 bg-[#080e22]/85 backdrop-blur-xl shadow-[0_8px_32px_0_rgba(0,0,0,0.5),inset_0_1px_0_0_rgba(255,255,255,0.08)];
-    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    @apply rounded-lg border border-[#222] bg-[#0a0a0a];
   }
 
+  .card-hover,
   .surface-card-hover {
-    @apply hover:border-cyan-400/50 hover:bg-[#0c1535]/95 hover:shadow-[0_12px_44px_-8px_rgba(6,182,212,0.25),inset_0_1px_0_0_rgba(255,255,255,0.15)] hover:-translate-y-0.5;
+    @apply hover:border-[#333] hover:bg-[#111] transition-colors duration-150;
   }
 
-  .surface-subtle {
-    @apply rounded-xl border border-slate-800/80 bg-[#070b1a]/90;
+  .card-interactive {
+    @apply card card-hover cursor-pointer;
   }
 
-  /* Radiant Glow Accent Pills */
-  .badge-cyan {
-    @apply px-2.5 py-0.5 rounded-full text-xs font-mono font-semibold bg-cyan-950/80 text-cyan-300 border border-cyan-500/40 shadow-[0_0_14px_-2px_rgba(6,182,212,0.4)];
+  /* Buttons */
+  .btn-primary {
+    @apply px-4 py-2 rounded-lg bg-[#3b82f6] hover:bg-[#2563eb] active:bg-[#1d4ed8] text-white text-sm font-medium transition-colors duration-150;
   }
 
-  .badge-violet {
-    @apply px-2.5 py-0.5 rounded-full text-xs font-mono font-semibold bg-violet-950/80 text-violet-300 border border-violet-500/40 shadow-[0_0_14px_-2px_rgba(139,92,246,0.35)];
+  .btn-secondary {
+    @apply px-4 py-2 rounded-lg bg-[#1a1a1a] hover:bg-[#222] border border-[#333] text-[#fafafa] text-sm font-medium transition-colors duration-150;
   }
 
-  .badge-emerald {
-    @apply px-2.5 py-0.5 rounded-full text-xs font-mono font-semibold bg-emerald-950/80 text-emerald-300 border border-emerald-500/40 shadow-[0_0_14px_-2px_rgba(16,185,129,0.35)];
+  .btn-ghost {
+    @apply px-3 py-1.5 rounded-lg hover:bg-[#1a1a1a] text-[#a1a1a1] hover:text-[#fafafa] text-sm transition-colors duration-150;
   }
 
-  .badge-rose {
-    @apply px-2.5 py-0.5 rounded-full text-xs font-mono font-semibold bg-rose-950/80 text-rose-300 border border-rose-500/40 shadow-[0_0_14px_-2px_rgba(244,63,94,0.35)];
+  /* Badge */
+  .badge {
+    @apply inline-flex items-center px-2 py-0.5 rounded text-xs font-medium;
   }
 
-  /* Micro live indicator dot with hyper-glow */
-  .live-dot {
-    @apply relative inline-flex h-2.5 w-2.5 shrink-0;
-  }
-  .live-dot::after {
-    content: '';
-    @apply absolute inset-0 rounded-full bg-cyan-400;
-    animation: beacon-pulse 1.8s cubic-bezier(0, 0, 0.2, 1) infinite;
-  }
-  .live-dot::before {
-    content: '';
-    @apply relative z-10 h-2.5 w-2.5 rounded-full bg-cyan-300 shadow-[0_0_8px_#22d3ee];
+  .badge-blue {
+    @apply badge bg-blue-500/15 text-blue-400 border border-blue-500/25;
   }
 
-  /* Blueprint micro grid with glowing stars */
-  .blueprint-grid {
-    background-image: 
-      radial-gradient(rgba(6, 182, 212, 0.15) 1px, transparent 1px),
-      radial-gradient(rgba(139, 92, 246, 0.1) 1px, transparent 1px);
-    background-size: 32px 32px, 64px 64px;
-    background-position: 0 0, 16px 16px;
+  .badge-green {
+    @apply badge bg-green-500/15 text-green-400 border border-green-500/25;
   }
 
-  /* Radiant CTA Button */
-  .btn-primary-radiant {
-    @apply relative overflow-hidden rounded-xl bg-gradient-to-r from-cyan-500 via-teal-400 to-indigo-500 text-slate-950 font-bold px-6 py-3 shadow-[0_0_30px_-4px_rgba(6,182,212,0.6)] hover:shadow-[0_0_40px_0px_rgba(6,182,212,0.8)] hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 cursor-pointer flex items-center justify-center gap-2;
+  .badge-red {
+    @apply badge bg-red-500/15 text-red-400 border border-red-500/25;
   }
 
-  .btn-secondary-radiant {
-    @apply relative rounded-xl bg-[#091129] hover:bg-[#0f1b40] border border-cyan-500/30 hover:border-cyan-400 text-slate-100 font-semibold px-6 py-3 transition-all duration-200 cursor-pointer flex items-center justify-center gap-2 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.5)];
+  .badge-yellow {
+    @apply badge bg-yellow-500/15 text-yellow-400 border border-yellow-500/25;
   }
 
-  /* Shimmering Top Border */
-  .glow-border-top {
-    position: relative;
+  .badge-neutral {
+    @apply badge bg-[#1a1a1a] text-[#a1a1a1] border border-[#333];
   }
-  .glow-border-top::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 10%;
-    right: 10%;
-    height: 1px;
-    background: linear-gradient(90deg, transparent, rgba(6, 182, 212, 0.8), rgba(139, 92, 246, 0.8), transparent);
+
+  /* Code block */
+  .code-block {
+    @apply rounded-lg bg-[#0a0a0a] border border-[#222] p-4 font-mono text-sm overflow-x-auto;
+  }
+
+  /* Diff lines */
+  .diff-add {
+    @apply bg-green-500/10 text-green-300 border-l-2 border-green-500 pl-3;
+  }
+
+  .diff-del {
+    @apply bg-red-500/10 text-red-300 border-l-2 border-red-500 pl-3;
+  }
+
+  .diff-context {
+    @apply text-[#666] pl-3 border-l-2 border-transparent;
   }
 }
 
-@keyframes beacon-pulse {
-  0% { transform: scale(0.8); opacity: 0.95; }
-  100% { transform: scale(3); opacity: 0; }
-}
-
-/* React Flow canvas styling */
+/* React Flow canvas */
 .react-flow__minimap {
-  background: #060b1b !important;
-  border: 1px solid rgba(6, 182, 212, 0.25) !important;
-  border-radius: 12px !important;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6) !important;
+  background: #0a0a0a !important;
+  border: 1px solid #222 !important;
+  border-radius: 8px !important;
 }
 
 .react-flow__controls {
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6) !important;
-  border: 1px solid rgba(6, 182, 212, 0.25) !important;
-  border-radius: 12px !important;
+  border: 1px solid #222 !important;
+  border-radius: 8px !important;
   overflow: hidden;
 }
 
 .react-flow__controls-button {
-  background: #091129 !important;
-  border-bottom: 1px solid #142044 !important;
-  fill: #94a3b8 !important;
+  background: #111 !important;
+  border-bottom: 1px solid #222 !important;
+  fill: #a1a1a1 !important;
 }
 .react-flow__controls-button:hover {
-  background: #101c44 !important;
-  fill: #38bdf8 !important;
+  background: #1a1a1a !important;
+  fill: #fafafa !important;
 }

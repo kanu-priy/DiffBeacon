@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Layers, Compass, Search, ShieldCheck, Terminal, Sparkles, Activity } from 'lucide-react';
+import { Layers, Compass, Search, Settings, Terminal, Activity } from 'lucide-react';
 
 interface Props {
   onOpenCommandPalette?: () => void;
@@ -9,87 +9,63 @@ interface Props {
 export const Navbar: React.FC<Props> = ({ onOpenCommandPalette }) => {
   const location = useLocation();
 
-  const isActive = (path: string) =>
+  const linkClass = (path: string) =>
     location.pathname === path
-      ? 'text-cyan-300 bg-cyan-950/70 border-cyan-500/50 shadow-[0_0_15px_-3px_rgba(6,182,212,0.35)] font-semibold'
-      : 'text-slate-300 hover:text-white hover:bg-[#0c1635] border-transparent';
+      ? 'text-white bg-[#1a1a1a] border-[#333]'
+      : 'text-[#a1a1a1] hover:text-white hover:bg-[#111] border-transparent';
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-cyan-500/20 bg-[#040817]/85 backdrop-blur-2xl transition-all">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+    <header className="sticky top-0 z-40 w-full border-b border-[#222] bg-[#000]/95 backdrop-blur-sm">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between gap-4">
         {/* Brand */}
-        <Link to="/" className="flex items-center gap-3 group shrink-0">
-          <div className="relative flex items-center justify-center w-9 h-9 rounded-xl bg-gradient-to-br from-cyan-500 to-indigo-600 text-slate-950 font-mono font-black text-base shadow-[0_0_20px_-3px_rgba(6,182,212,0.6)] group-hover:scale-105 transition-transform">
-            <span className="relative z-10 text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">Δ</span>
-            <div className="absolute inset-0 rounded-xl bg-cyan-400 blur-sm opacity-40 group-hover:opacity-75 transition-opacity" />
+        <Link to="/" className="flex items-center gap-2.5 shrink-0 group">
+          <div className="w-7 h-7 rounded-md bg-[#3b82f6] flex items-center justify-center font-mono font-bold text-white text-sm">
+            Δ
           </div>
-          <div className="flex flex-col">
-            <div className="flex items-center gap-2">
-              <span className="font-extrabold text-base tracking-tight text-white group-hover:text-cyan-300 transition-colors">
-                DiffBeacon
-              </span>
-              <span className="px-2 py-0.5 text-[9px] font-mono uppercase tracking-wider bg-cyan-950/90 text-cyan-300 border border-cyan-500/40 rounded-full shadow-[0_0_10px_rgba(6,182,212,0.3)] font-bold">
-                v1.4
-              </span>
-            </div>
-            <span className="text-[10px] text-cyan-400/80 font-mono leading-none tracking-tight">
-              Behavioral Impact Intelligence
-            </span>
-          </div>
+          <span className="font-semibold text-sm text-white tracking-tight">
+            DiffBeacon
+          </span>
+          <span className="px-1.5 py-0.5 text-[10px] font-mono text-[#666] border border-[#333] rounded bg-[#111]">
+            v2.0
+          </span>
         </Link>
 
-        {/* Global Quick Search (Cmd+K) */}
+        {/* Search */}
         <button
           onClick={onOpenCommandPalette}
-          className="hidden md:flex items-center gap-2.5 px-3.5 py-1.5 rounded-xl bg-[#091129]/80 hover:bg-[#0f1b40] border border-cyan-500/20 hover:border-cyan-400/50 text-xs text-slate-300 transition-all w-64 lg:w-80 group cursor-pointer shadow-sm"
+          className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[#222] bg-[#0a0a0a] hover:border-[#333] text-xs text-[#666] w-64 lg:w-72 cursor-pointer transition-colors"
         >
-          <Search className="w-3.5 h-3.5 text-cyan-400 group-hover:text-cyan-300 group-hover:scale-110 transition-all shrink-0" />
-          <span className="truncate text-slate-400 group-hover:text-slate-200">Search symbols, diffs, AST...</span>
-          <kbd className="ml-auto font-mono text-[10px] text-cyan-300 bg-[#060c20] px-2 py-0.5 rounded-lg border border-cyan-500/30 shadow-inner">
+          <Search className="w-3.5 h-3.5 shrink-0" />
+          <span className="truncate">Search files, symbols...</span>
+          <kbd className="ml-auto font-mono text-[10px] text-[#555] bg-[#111] px-1.5 py-0.5 rounded border border-[#222]">
             ⌘K
           </kbd>
         </button>
 
-        {/* Navigation & Live Status */}
-        <div className="flex items-center gap-3">
-          <nav className="flex items-center gap-1.5 text-xs">
-            <Link
-              to="/dashboard"
-              className={`px-3 py-1.5 rounded-xl border transition-all flex items-center gap-1.5 ${isActive('/dashboard') || isActive('/app/dashboard')}`}
-            >
+        {/* Nav */}
+        <div className="flex items-center gap-1.5">
+          <nav className="flex items-center gap-1 text-xs font-medium">
+            <Link to="/dashboard" className={`px-2.5 py-1.5 rounded-md border flex items-center gap-1.5 transition-colors ${linkClass('/dashboard')}`}>
               <Layers className="w-3.5 h-3.5" />
-              <span>Workspaces</span>
+              <span className="hidden sm:inline">Workspaces</span>
             </Link>
-            <Link
-              to="/languages"
-              className={`px-3 py-1.5 rounded-xl border transition-all flex items-center gap-1.5 ${isActive('/languages') || isActive('/app/languages')}`}
-            >
+            <Link to="/demo" className={`px-2.5 py-1.5 rounded-md border flex items-center gap-1.5 transition-colors ${linkClass('/demo')}`}>
+              <Compass className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Analyzer</span>
+            </Link>
+            <Link to="/languages" className={`px-2.5 py-1.5 rounded-md border flex items-center gap-1.5 transition-colors ${linkClass('/languages')}`}>
               <Terminal className="w-3.5 h-3.5" />
-              <span>Languages</span>
+              <span className="hidden sm:inline">Languages</span>
             </Link>
-            <Link
-              to="/demo"
-              className={`px-3.5 py-1.5 rounded-xl border transition-all flex items-center gap-1.5 ${isActive('/demo')}`}
-            >
-              <Compass className="w-3.5 h-3.5 text-cyan-400 animate-spin-slow" />
-              <span className="bg-gradient-to-r from-cyan-300 to-indigo-300 bg-clip-text text-transparent font-bold">
-                Live Demo
-              </span>
-            </Link>
-            <Link
-              to="/settings"
-              className={`px-2.5 py-1.5 rounded-xl border transition-all flex items-center gap-1.5 ${isActive('/settings') || isActive('/app/settings')}`}
-              title="Settings & AI Providers"
-            >
-              <ShieldCheck className="w-3.5 h-3.5" />
-              <span>Settings</span>
+            <Link to="/settings" className={`px-2.5 py-1.5 rounded-md border flex items-center gap-1.5 transition-colors ${linkClass('/settings')}`}>
+              <Settings className="w-3.5 h-3.5" />
             </Link>
           </nav>
 
-          <div className="hidden lg:flex items-center gap-2 pl-3 border-l border-cyan-500/20 text-[11px] font-mono">
-            <div className="flex items-center gap-2 bg-[#081028] px-3 py-1.5 rounded-xl border border-cyan-500/30 shadow-[0_0_15px_-4px_rgba(6,182,212,0.3)]">
-              <span className="live-dot" />
-              <span className="text-cyan-200 font-semibold tracking-tight">AST Engine Active</span>
+          <div className="hidden lg:flex items-center gap-2 pl-2.5 ml-1.5 border-l border-[#222]">
+            <div className="flex items-center gap-1.5 text-[11px] font-mono text-[#666]">
+              <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
+              <span>Engine ready</span>
             </div>
           </div>
         </div>
