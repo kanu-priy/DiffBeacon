@@ -11,15 +11,15 @@ export const Navbar: React.FC<Props> = ({ onOpenCommandPalette }) => {
 
   const linkClass = (path: string) =>
     location.pathname === path
-      ? 'text-white bg-[#1a1a1a] border-[#333]'
-      : 'text-[#a1a1a1] hover:text-white hover:bg-[#111] border-transparent';
+      ? 'text-[#e8f3d0] bg-[#19231c] border-[#354638]'
+      : 'text-[#969f96] hover:text-white hover:bg-[#101410] border-transparent';
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-[#222] bg-[#000]/95 backdrop-blur-sm">
+    <header className="sticky top-0 z-40 w-full border-b border-[#202720] bg-[#090c09]/95 backdrop-blur-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between gap-4">
         {/* Brand */}
         <Link to="/" className="flex items-center gap-2.5 shrink-0 group">
-          <div className="w-7 h-7 rounded-md bg-[#3b82f6] flex items-center justify-center font-mono font-bold text-white text-sm">
+          <div className="w-7 h-7 rounded-lg bg-[#d6fa64] flex items-center justify-center font-mono font-bold text-[#18211c] text-sm">
             Δ
           </div>
           <span className="font-semibold text-sm text-white tracking-tight">
@@ -33,7 +33,7 @@ export const Navbar: React.FC<Props> = ({ onOpenCommandPalette }) => {
         {/* Search */}
         <button
           onClick={onOpenCommandPalette}
-          className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[#222] bg-[#0a0a0a] hover:border-[#333] text-xs text-[#666] w-64 lg:w-72 cursor-pointer transition-colors"
+            className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full border border-[#273027] bg-[#101410] hover:border-[#3b493b] text-xs text-[#858f85] w-64 lg:w-72 cursor-pointer transition-colors"
         >
           <Search className="w-3.5 h-3.5 shrink-0" />
           <span className="truncate">Search files, symbols...</span>
