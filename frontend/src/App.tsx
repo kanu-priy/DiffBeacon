@@ -9,6 +9,7 @@ import { DemoWorkspace } from './features/dashboard/DemoWorkspace';
 import { AnalysisWorkspace } from './features/changes/AnalysisWorkspace';
 import { LanguageRegistryView } from './features/languages/LanguageRegistryView';
 import { SettingsView } from './features/settings/SettingsView';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 export const App: React.FC = () => {
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
@@ -38,24 +39,26 @@ export const App: React.FC = () => {
           />
 
           <main className="flex-1">
-            <Routes>
-              <Route path="/" element={<LandingPage />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/app/dashboard" element={<Dashboard />} />
-              <Route path="/app/workspaces" element={<Dashboard />} />
-              <Route path="/demo" element={<DemoWorkspace />} />
-              <Route path="/languages" element={<LanguageRegistryView />} />
-              <Route path="/app/languages" element={<LanguageRegistryView />} />
-              <Route path="/settings" element={<SettingsView />} />
-              <Route path="/app/settings" element={<SettingsView />} />
-              <Route path="/app/settings/providers" element={<SettingsView />} />
-              <Route path="/app/settings/security" element={<SettingsView />} />
-              <Route path="/analysis/:id" element={<AnalysisWorkspace />} />
-              <Route path="/analysis/:id/:subtab" element={<AnalysisWorkspace />} />
-              <Route path="/app/analyses/:id" element={<AnalysisWorkspace />} />
-              <Route path="/app/analyses/:id/:subtab" element={<AnalysisWorkspace />} />
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
+            <ErrorBoundary fallbackTitle="Page View Incident Detected">
+              <Routes>
+                <Route path="/" element={<LandingPage />} />
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/app/dashboard" element={<Dashboard />} />
+                <Route path="/app/workspaces" element={<Dashboard />} />
+                <Route path="/demo" element={<DemoWorkspace />} />
+                <Route path="/languages" element={<LanguageRegistryView />} />
+                <Route path="/app/languages" element={<LanguageRegistryView />} />
+                <Route path="/settings" element={<SettingsView />} />
+                <Route path="/app/settings" element={<SettingsView />} />
+                <Route path="/app/settings/providers" element={<SettingsView />} />
+                <Route path="/app/settings/security" element={<SettingsView />} />
+                <Route path="/analysis/:id" element={<AnalysisWorkspace />} />
+                <Route path="/analysis/:id/:subtab" element={<AnalysisWorkspace />} />
+                <Route path="/app/analyses/:id" element={<AnalysisWorkspace />} />
+                <Route path="/app/analyses/:id/:subtab" element={<AnalysisWorkspace />} />
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Routes>
+            </ErrorBoundary>
           </main>
 
           <footer className="border-t border-white/10 py-6 text-center text-xs text-slate-500 bg-black/20">

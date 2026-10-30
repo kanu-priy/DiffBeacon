@@ -145,6 +145,23 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ provider }),
     }),
+
+  analyzeGitHubPR: (payload: { workspace_id?: string; pr_reference: string; token?: string }) =>
+    request<AnalysisRun>('/integrations/github/analyze-pr/', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+
+  getSystemHealth: () =>
+    request<{
+      status: string;
+      version: string;
+      checks: {
+        database: string;
+        storage: string;
+        ai_provider: { name: string; deterministic_fallback_ready: boolean };
+      };
+    }>('/health/'),
 };
 
 export interface NavigatorPayload {

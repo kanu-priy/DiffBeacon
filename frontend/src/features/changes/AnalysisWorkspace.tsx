@@ -10,6 +10,7 @@ import { VerificationMatrix } from '../verification/VerificationMatrix';
 import { UnknownsRegister } from '../unknowns/UnknownsRegister';
 import { EvidenceInspector } from '../evidence/EvidenceInspector';
 import { HistoryView } from '../history/HistoryView';
+import { ErrorBoundary } from '../../components/ErrorBoundary';
 import {
   Layers,
   Split,
@@ -234,61 +235,63 @@ export const AnalysisWorkspace: React.FC = () => {
 
       {/* Tab Panels */}
       <div>
-        {activeTab === 'scenarios' && (
-          <ScenarioStudio
-            analysisId={analysis.id}
-            onInspectLine={handleInspectLine}
-          />
-        )}
+        <ErrorBoundary fallbackTitle="Workspace Tab Incident Detected">
+          {activeTab === 'scenarios' && (
+            <ScenarioStudio
+              analysisId={analysis.id}
+              onInspectLine={handleInspectLine}
+            />
+          )}
 
-        {activeTab === 'deltas' && (
-          <BehaviorLedger
-            deltas={deltas}
-            analysisId={analysis.id}
-            onInspectEvidence={handleInspectEvidence}
-            onNavigateToGraph={() => setActiveTab('graph')}
-          />
-        )}
+          {activeTab === 'deltas' && (
+            <BehaviorLedger
+              deltas={deltas}
+              analysisId={analysis.id}
+              onInspectEvidence={handleInspectEvidence}
+              onNavigateToGraph={() => setActiveTab('graph')}
+            />
+          )}
 
-        {activeTab === 'contracts' && (
-          <ContractMap
-            contracts={contracts}
-            onInspectEvidence={handleInspectEvidence}
-          />
-        )}
+          {activeTab === 'contracts' && (
+            <ContractMap
+              contracts={contracts}
+              onInspectEvidence={handleInspectEvidence}
+            />
+          )}
 
-        {activeTab === 'graph' && (
-          <ImpactExplorer
-            analysisId={analysis.id}
-            onInspectNode={handleInspectLine}
-          />
-        )}
+          {activeTab === 'graph' && (
+            <ImpactExplorer
+              analysisId={analysis.id}
+              onInspectNode={handleInspectLine}
+            />
+          )}
 
-        {activeTab === 'verification' && (
-          <VerificationMatrix cases={verificationCases} />
-        )}
+          {activeTab === 'verification' && (
+            <VerificationMatrix cases={verificationCases} />
+          )}
 
-        {activeTab === 'unknowns' && (
-          <UnknownsRegister
-            unknowns={unknowns}
-            onInspectLine={handleInspectLine}
-          />
-        )}
+          {activeTab === 'unknowns' && (
+            <UnknownsRegister
+              unknowns={unknowns}
+              onInspectLine={handleInspectLine}
+            />
+          )}
 
-        {activeTab === 'evidence' && (
-          <EvidenceInspector
-            analysisId={analysis.id}
-            initialFilePath={inspectorFilePath}
-            initialLineRange={inspectorLineRange}
-          />
-        )}
+          {activeTab === 'evidence' && (
+            <EvidenceInspector
+              analysisId={analysis.id}
+              initialFilePath={inspectorFilePath}
+              initialLineRange={inspectorLineRange}
+            />
+          )}
 
-        {activeTab === 'history' && (
-          <HistoryView
-            workspaceId={analysis.workspace}
-            currentAnalysisId={analysis.id}
-          />
-        )}
+          {activeTab === 'history' && (
+            <HistoryView
+              workspaceId={analysis.workspace}
+              currentAnalysisId={analysis.id}
+            />
+          )}
+        </ErrorBoundary>
       </div>
     </div>
   );
