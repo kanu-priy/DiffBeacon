@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
@@ -17,6 +17,7 @@ import {
   Copy,
   Check,
   Play,
+  Pause,
   RotateCcw,
   ShieldCheck,
   ChevronRight,
@@ -32,9 +33,162 @@ import {
   Workflow,
   Radio,
   Flame,
+  Gauge,
+  Sliders,
+  Maximize2,
+  RefreshCw,
 } from 'lucide-react';
 import { api } from '../../lib/api';
 import { EpistemicBadge } from '../../components/EpistemicBadge';
+
+// Dynamic interactive canvas component for the hero background
+const HeroInteractiveMesh: React.FC = () => {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    let animationFrameId: number;
+    let width = (canvas.width = canvas.parentElement?.clientWidth || 1200);
+    let height = (canvas.height = canvas.parentElement?.clientHeight || 600);
+
+    const handleResize = () => {
+      if (!canvas || !canvas.parentElement) return;
+      width = canvas.width = canvas.parentElement.clientWidth;
+      height = canvas.height = canvas.parentElement.clientHeight;
+    };
+    window.addEventListener('resize', handleResize);
+
+    const mouse = { x: -1000, y: -1000, active: false };
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const rect = canvas.getBoundingClientRect();
+      mouse.x = e.clientX - rect.left;
+      mouse.y = e.clientY - rect.top;
+      mouse.active = true;
+    };
+
+    const handleMouseLeave = () => {
+      mouse.active = false;
+    };
+
+    canvas.addEventListener('mousemove', handleMouseMove);
+    canvas.addEventListener('mouseleave', handleMouseLeave);
+
+    // Node definitions representing AST tokens in memory
+    const labels = [
+      'AST:Call', 'drf:Serializer', 'openapi:v3', 'def:execute_payment',
+      'arg:idempotency', 'db:SELECT', 'node:worker', 'ref:verifyToken',
+      'sym:Charge', 'type:PaymentIntent', 'kafka:event', 'route:POST /api'
+    ];
+
+    const particleCount = 28;
+    const particles = Array.from({ length: particleCount }, (_, i) => ({
+      x: Math.random() * width,
+      y: Math.random() * height,
+      vx: (Math.random() - 0.5) * 0.7,
+      vy: (Math.random() - 0.5) * 0.7,
+      radius: Math.random() * 2 + 1.8,
+      label: labels[i % labels.length],
+      isSpecial: i % 4 === 0,
+    }));
+
+    const render = () => {
+      ctx.clearRect(0, 0, width, height);
+
+      // Draw faint connections between close nodes
+      for (let i = 0; i < particles.length; i++) {
+        for (let j = i + 1; j < particles.length; j++) {
+          const dx = particles[i].x - particles[j].x;
+          const dy = particles[i].y - particles[j].y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+
+          if (dist < 130) {
+            const alpha = (1 - dist / 130) * 0.25;
+            ctx.beginPath();
+            ctx.moveTo(particles[i].x, particles[i].y);
+            ctx.lineTo(particles[j].x, particles[j].y);
+            ctx.strokeStyle = particles[i].isSpecial || particles[j].isSpecial
+              ? `rgba(6, 182, 212, ${alpha})`
+              : `rgba(139, 92, 246, ${alpha * 0.8})`;
+            ctx.lineWidth = 1;
+            ctx.stroke();
+          }
+        }
+      }
+
+      // Draw interactive connections to cursor
+      if (mouse.active) {
+        for (let i = 0; i < particles.length; i++) {
+          const dx = particles[i].x - mouse.x;
+          const dy = particles[i].y - mouse.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+
+          if (dist < 160) {
+            const alpha = (1 - dist / 160) * 0.45;
+            ctx.beginPath();
+            ctx.moveTo(particles[i].x, particles[i].y);
+            ctx.lineTo(mouse.x, mouse.y);
+            ctx.strokeStyle = `rgba(34, 211, 238, ${alpha})`;
+            ctx.lineWidth = 1.2;
+            ctx.stroke();
+
+            // Subtle attraction force toward mouse
+            particles[i].vx -= dx * 0.0003;
+            particles[i].vy -= dy * 0.0003;
+          }
+        }
+      }
+
+      // Update and draw each particle
+      particles.forEach((p) => {
+        p.x += p.vx;
+        p.y += p.vy;
+
+        // Bounce gently off borders
+        if (p.x < 10 || p.x > width - 10) p.vx *= -1;
+        if (p.y < 10 || p.y > height - 10) p.vy *= -1;
+
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+        ctx.fillStyle = p.isSpecial ? '#22d3ee' : '#a78bfa';
+        ctx.shadowColor = p.isSpecial ? '#06b6d4' : '#8b5cf6';
+        ctx.shadowBlur = p.isSpecial ? 8 : 4;
+        ctx.fill();
+        ctx.shadowBlur = 0;
+
+        // Draw micro label on selected nodes
+        if (p.isSpecial) {
+          ctx.font = '9px monospace';
+          ctx.fillStyle = 'rgba(148, 163, 184, 0.7)';
+          ctx.fillText(p.label, p.x + 6, p.y + 3);
+        }
+      });
+
+      animationFrameId = requestAnimationFrame(render);
+    };
+
+    render();
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      canvas.removeEventListener('mousemove', handleMouseMove);
+      canvas.removeEventListener('mouseleave', handleMouseLeave);
+      cancelAnimationFrame(animationFrameId);
+    };
+  }, []);
+
+  return (
+    <canvas
+      ref={canvasRef}
+      className="absolute inset-0 pointer-events-auto opacity-75 transition-opacity duration-700"
+      style={{ touchAction: 'none' }}
+    />
+  );
+};
 
 interface InteractivePR {
   id: string;
@@ -281,14 +435,18 @@ export const LandingPage: React.FC = () => {
   const [activeStepIndex, setActiveStepIndex] = useState(0);
   const [copiedInstall, setCopiedInstall] = useState(false);
   const [isPlayingTrace, setIsPlayingTrace] = useState(false);
+  const [playbackSpeed, setPlaybackSpeed] = useState<number>(1);
+  const [selectedGraphNodeIndex, setSelectedGraphNodeIndex] = useState<number>(0);
 
   const currentPr = INTERACTIVE_PRS[selectedPrIndex];
   const currentStep = currentPr.steps[activeStepIndex] || currentPr.steps[0];
+  const selectedNode = currentPr.graphNodes[selectedGraphNodeIndex] || currentPr.graphNodes[0];
 
   // Auto-play trace stepping when user clicks "Play Trace"
   useEffect(() => {
     let timer: any;
     if (isPlayingTrace) {
+      const interval = Math.max(800, 2400 / playbackSpeed);
       timer = setInterval(() => {
         setActiveStepIndex((prev) => {
           if (prev >= currentPr.steps.length - 1) {
@@ -297,10 +455,10 @@ export const LandingPage: React.FC = () => {
           }
           return prev + 1;
         });
-      }, 2400);
+      }, interval);
     }
     return () => clearInterval(timer);
-  }, [isPlayingTrace, currentPr.steps.length]);
+  }, [isPlayingTrace, currentPr.steps.length, playbackSpeed]);
 
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null);
 
@@ -324,18 +482,28 @@ export const LandingPage: React.FC = () => {
       <div className="pointer-events-none absolute top-[50rem] -right-20 h-[30rem] w-[30rem] rounded-full bg-emerald-500/10 blur-[130px]" />
 
       {/* HERO SECTION */}
-      <section className="relative max-w-6xl mx-auto px-4 pt-20 pb-16 text-center space-y-8 animate-fade-up">
-        {/* Release Pill with Radar Scan Effect */}
-        <div className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-[#08122c]/90 border border-cyan-500/40 text-slate-200 text-xs font-mono shadow-[0_0_24px_-4px_rgba(6,182,212,0.4)] backdrop-blur-md">
-          <span className="live-dot" />
-          <span className="text-cyan-300 font-bold tracking-tight">DiffBeacon v1.4</span>
-          <span className="text-cyan-500/50">|</span>
-          <span className="text-slate-200 font-medium">Deterministic Behavioral Blast Radius Engine</span>
-          <ArrowRight className="w-3.5 h-3.5 text-cyan-400 ml-1" />
+      <section className="relative max-w-6xl mx-auto px-4 pt-16 pb-16 text-center space-y-8 animate-fade-up overflow-hidden rounded-3xl border border-cyan-500/20 bg-gradient-to-b from-[#050b1f]/90 via-[#070d24]/70 to-[#020512]/90 backdrop-blur-2xl shadow-[0_20px_80px_-20px_rgba(6,182,212,0.25)]">
+        {/* Interactive Constellation Mesh in Background */}
+        <HeroInteractiveMesh />
+
+        {/* Live Telemetry Top Pill */}
+        <div className="relative z-10 flex flex-wrap items-center justify-center gap-3">
+          <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-[#08122c]/90 border border-cyan-500/40 text-slate-200 text-xs font-mono shadow-[0_0_24px_-4px_rgba(6,182,212,0.4)] backdrop-blur-md">
+            <span className="live-dot" />
+            <span className="text-cyan-300 font-bold tracking-tight">DiffBeacon v1.4</span>
+            <span className="text-cyan-500/50">|</span>
+            <span className="text-slate-200 font-medium">Deterministic Behavioral Blast Radius Engine</span>
+            <ArrowRight className="w-3.5 h-3.5 text-cyan-400 ml-1" />
+          </div>
+
+          <div className="hidden sm:inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#09153a]/80 border border-violet-500/30 text-[11px] font-mono text-violet-300">
+            <span className="w-2 h-2 rounded-full bg-violet-400 animate-ping" />
+            <span>Interactive Mesh: Move cursor to explore AST nodes</span>
+          </div>
         </div>
 
         {/* Main Headline */}
-        <div className="space-y-5 max-w-4xl mx-auto">
+        <div className="relative z-10 space-y-5 max-w-4xl mx-auto">
           <h1 className="text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-tight text-white leading-[1.06]">
             Your diff shows what changed.{' '}
             <span className="block mt-2 bg-gradient-to-r from-cyan-400 via-teal-300 to-indigo-400 bg-clip-text text-transparent drop-shadow-[0_4px_24px_rgba(6,182,212,0.3)]">
@@ -348,7 +516,7 @@ export const LandingPage: React.FC = () => {
         </div>
 
         {/* Action CTAs */}
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-3">
+        <div className="relative z-10 flex flex-col sm:flex-row items-center justify-center gap-4 pt-2">
           <button
             onClick={() => navigate('/demo')}
             className="btn-primary-radiant w-full sm:w-auto"
@@ -369,7 +537,7 @@ export const LandingPage: React.FC = () => {
           {/* Quick install pill */}
           <button
             onClick={handleCopyInstall}
-            className="w-full sm:w-auto px-4 py-3 rounded-xl bg-[#091129] hover:bg-[#0f1b40] border border-cyan-500/30 hover:border-cyan-400/60 text-xs font-mono text-slate-200 transition-all flex items-center justify-center gap-2 cursor-pointer group shadow-sm"
+            className="w-full sm:w-auto px-4 py-3 rounded-xl bg-[#091129]/90 hover:bg-[#0f1b40] border border-cyan-500/30 hover:border-cyan-400/60 text-xs font-mono text-slate-200 transition-all flex items-center justify-center gap-2 cursor-pointer group shadow-sm backdrop-blur-md"
           >
             <span className="text-cyan-400 font-bold">$</span>
             <span>pip install diffbeacon</span>
@@ -382,7 +550,7 @@ export const LandingPage: React.FC = () => {
         </div>
 
         {/* Metrics Guarantee Bar */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5 max-w-4xl mx-auto pt-6">
+        <div className="relative z-10 grid grid-cols-2 md:grid-cols-4 gap-3.5 max-w-4xl mx-auto pt-4">
           {[
             { label: 'Zero Hallucinations', value: '100% AST Grounded', sub: 'Every claim links to exact line numbers', border: 'border-cyan-500/30' },
             { label: 'Contract Invariants', value: 'DRF & OpenAPI Native', sub: 'Automated schema diff classification', border: 'border-violet-500/30' },
@@ -398,7 +566,7 @@ export const LandingPage: React.FC = () => {
         </div>
 
         {/* Multi-Language Capability Preview Bar */}
-        <div className="max-w-4xl mx-auto p-3.5 rounded-2xl bg-[#081028]/90 border border-cyan-500/30 shadow-[0_4px_24px_-4px_rgba(6,182,212,0.2)] flex flex-col sm:flex-row items-center justify-between gap-3 text-xs backdrop-blur-md">
+        <div className="relative z-10 max-w-4xl mx-auto p-3.5 rounded-2xl bg-[#081028]/90 border border-cyan-500/30 shadow-[0_4px_24px_-4px_rgba(6,182,212,0.2)] flex flex-col sm:flex-row items-center justify-between gap-3 text-xs backdrop-blur-md">
           <div className="flex items-center gap-2.5 text-slate-300 font-mono text-[11px] flex-wrap justify-center sm:justify-start">
             <span className="text-cyan-300 font-bold flex items-center gap-1.5">
               <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
@@ -514,26 +682,44 @@ export const LandingPage: React.FC = () => {
             </div>
 
             {activeTab === 'scenario' && (
-              <button
-                onClick={() => setIsPlayingTrace(!isPlayingTrace)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-mono font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
-                  isPlayingTrace
-                    ? 'bg-rose-950 text-rose-300 border border-rose-700 shadow-[0_0_15px_rgba(244,63,94,0.4)]'
-                    : 'bg-cyan-950/80 text-cyan-300 border border-cyan-500/50 hover:bg-cyan-900/60 shadow-[0_0_15px_rgba(6,182,212,0.3)]'
-                }`}
-              >
-                {isPlayingTrace ? (
-                  <>
-                    <RotateCcw className="w-3 h-3 animate-spin" />
-                    <span>Pause Playback</span>
-                  </>
-                ) : (
-                  <>
-                    <Play className="w-3 h-3 fill-cyan-400 text-cyan-400" />
-                    <span>Play Trace Sequence</span>
-                  </>
-                )}
-              </button>
+              <div className="flex items-center gap-2">
+                {/* Playback speed toggle */}
+                <div className="flex items-center bg-[#091129] rounded-lg p-0.5 border border-cyan-500/20 text-[11px] font-mono">
+                  <button
+                    onClick={() => setPlaybackSpeed(1)}
+                    className={`px-2 py-0.5 rounded ${playbackSpeed === 1 ? 'bg-cyan-500/30 text-cyan-200 font-bold' : 'text-slate-400 hover:text-slate-200'}`}
+                  >
+                    1x
+                  </button>
+                  <button
+                    onClick={() => setPlaybackSpeed(2)}
+                    className={`px-2 py-0.5 rounded ${playbackSpeed === 2 ? 'bg-cyan-500/30 text-cyan-200 font-bold' : 'text-slate-400 hover:text-slate-200'}`}
+                  >
+                    2x
+                  </button>
+                </div>
+
+                <button
+                  onClick={() => setIsPlayingTrace(!isPlayingTrace)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-mono font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
+                    isPlayingTrace
+                      ? 'bg-rose-950 text-rose-300 border border-rose-700 shadow-[0_0_15px_rgba(244,63,94,0.4)]'
+                      : 'bg-cyan-950/80 text-cyan-300 border border-cyan-500/50 hover:bg-cyan-900/60 shadow-[0_0_15px_rgba(6,182,212,0.3)]'
+                  }`}
+                >
+                  {isPlayingTrace ? (
+                    <>
+                      <Pause className="w-3 h-3 fill-rose-300 text-rose-300" />
+                      <span>Pause Trace</span>
+                    </>
+                  ) : (
+                    <>
+                      <Play className="w-3 h-3 fill-cyan-400 text-cyan-400" />
+                      <span>Play Trace Sequence</span>
+                    </>
+                  )}
+                </button>
+              </div>
             )}
           </div>
 
@@ -545,24 +731,38 @@ export const LandingPage: React.FC = () => {
                 <div className="p-2.5 rounded-xl bg-cyan-950 border border-cyan-500/50 text-cyan-300 shrink-0 shadow-[0_0_15px_-3px_rgba(6,182,212,0.5)]">
                   <Split className="w-5 h-5" />
                 </div>
-                <div>
-                  <div className="text-[11px] font-mono uppercase tracking-wider text-cyan-400 font-bold">
-                    Developer Behavioral Hypothesis
+                <div className="flex-1">
+                  <div className="text-[11px] font-mono uppercase tracking-wider text-cyan-400 font-bold flex items-center justify-between">
+                    <span>Developer Behavioral Hypothesis</span>
+                    <span className="text-[10px] text-slate-400 font-normal">Active Scenario</span>
                   </div>
                   <div className="text-base font-bold text-white mt-0.5">"{currentPr.question}"</div>
                   <div className="text-xs text-slate-300 mt-1 leading-relaxed">{currentPr.summary}</div>
                 </div>
               </div>
 
-              {/* Step Navigation Pill Stepper */}
-              <div className="space-y-2">
-                <div className="text-xs font-mono text-slate-300 flex items-center justify-between">
-                  <span>Execution Trace Steps (Click to inspect):</span>
-                  <span className="text-cyan-400 font-bold">
-                    Step {activeStepIndex + 1} of {currentPr.steps.length}
+              {/* Dynamic Timeline Scrubber Bar */}
+              <div className="p-4 rounded-xl bg-[#091129] border border-cyan-500/20 space-y-3">
+                <div className="flex items-center justify-between text-xs font-mono">
+                  <div className="flex items-center gap-2">
+                    <Sliders className="w-3.5 h-3.5 text-cyan-400" />
+                    <span className="text-slate-200 font-bold">Execution Scrubber Timeline:</span>
+                  </div>
+                  <span className="text-cyan-300 font-bold">
+                    Frame {activeStepIndex + 1} / {currentPr.steps.length}
                   </span>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+
+                {/* Animated Progress Track */}
+                <div className="relative h-2 w-full bg-slate-900 rounded-full overflow-hidden border border-slate-800">
+                  <div
+                    className="absolute top-0 left-0 h-full bg-gradient-to-r from-cyan-500 to-indigo-500 transition-all duration-300"
+                    style={{ width: `${((activeStepIndex + 1) / currentPr.steps.length) * 100}%` }}
+                  />
+                </div>
+
+                {/* Step Navigation Pill Stepper */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1">
                   {currentPr.steps.map((st, idx) => (
                     <button
                       key={st.number}
@@ -656,32 +856,146 @@ export const LandingPage: React.FC = () => {
 
           {/* TAB 3: BLAST RADIUS GRAPH */}
           {activeTab === 'graph' && (
-            <div className="p-6 bg-[#070d1e] space-y-4">
-              <div className="text-xs font-mono text-slate-300 flex items-center justify-between">
-                <span>Call-Graph Provenance (Affected Consumers):</span>
-                <span className="badge-cyan text-[10px]">{currentPr.graphNodes.length} Nodes Indexed</span>
+            <div className="p-6 bg-[#070d1e] space-y-5">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs font-mono">
+                <div className="flex items-center gap-2 text-slate-300">
+                  <Network className="w-4 h-4 text-cyan-400" />
+                  <span className="font-bold text-white">Interactive Blast Radius Topology</span>
+                  <span className="text-slate-500">•</span>
+                  <span className="text-slate-400">Click any node to inspect provenance & ripple</span>
+                </div>
+                <div className="flex items-center gap-3 text-[11px]">
+                  <span className="flex items-center gap-1.5 text-amber-300">
+                    <span className="w-2 h-2 rounded-full bg-amber-400" /> Modified Node
+                  </span>
+                  <span className="flex items-center gap-1.5 text-cyan-300">
+                    <span className="w-2 h-2 rounded-full bg-cyan-400" /> Affected Caller
+                  </span>
+                  <span className="flex items-center gap-1.5 text-slate-400">
+                    <span className="w-2 h-2 rounded-full bg-slate-500" /> Unaffected
+                  </span>
+                </div>
               </div>
-              <div className="surface-card p-6 border-cyan-500/30 bg-[#050b1c] grid grid-cols-1 sm:grid-cols-5 gap-3">
-                {currentPr.graphNodes.map((gn) => (
-                  <div
-                    key={gn.id}
-                    className={`p-3.5 rounded-xl border text-left transition-all ${
-                      gn.status === 'modified'
-                        ? 'bg-amber-950/50 border-amber-500/70 text-amber-200 shadow-[0_0_15px_-3px_rgba(245,158,11,0.4)]'
-                        : gn.status === 'affected'
-                        ? 'bg-cyan-950/50 border-cyan-500/70 text-cyan-200 shadow-[0_0_15px_-3px_rgba(6,182,212,0.4)]'
-                        : 'bg-[#0a122e] border-slate-800 text-slate-400'
-                    }`}
-                  >
-                    <div className="text-[9px] font-mono uppercase font-bold tracking-wider opacity-75">{gn.type}</div>
-                    <div className="text-xs font-bold mt-1 truncate text-white">{gn.label}</div>
-                    <div className="text-[10px] font-mono uppercase mt-1">
-                      {gn.status === 'modified' && '⚡ Modified'}
-                      {gn.status === 'affected' && '↳ Affected'}
-                      {gn.status === 'unaffected' && '✓ Untouched'}
-                    </div>
+
+              {/* Dynamic Animated Topology SVG Canvas */}
+              <div className="relative w-full h-[260px] rounded-2xl border border-cyan-500/25 bg-[#030712] overflow-hidden flex items-center justify-center p-4">
+                <div className="absolute inset-0 bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:20px_20px] opacity-35" />
+
+                {/* Animated Connecting Bezier Lines */}
+                <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 800 260">
+                  <path
+                    d="M 160 130 C 260 130, 280 65, 380 65"
+                    stroke="#06b6d4"
+                    strokeWidth="2"
+                    fill="none"
+                    strokeDasharray="6,4"
+                    className="opacity-70 animate-pulse"
+                  />
+                  <path
+                    d="M 160 130 C 260 130, 280 130, 380 130"
+                    stroke="#f59e0b"
+                    strokeWidth="2.5"
+                    fill="none"
+                    strokeDasharray="6,4"
+                    className="opacity-80 animate-pulse"
+                  />
+                  <path
+                    d="M 160 130 C 260 130, 280 195, 380 195"
+                    stroke="#06b6d4"
+                    strokeWidth="2"
+                    fill="none"
+                    strokeDasharray="6,4"
+                    className="opacity-70 animate-pulse"
+                  />
+                  <path
+                    d="M 380 130 C 480 130, 520 95, 620 95"
+                    stroke="#8b5cf6"
+                    strokeWidth="2"
+                    fill="none"
+                    strokeDasharray="6,4"
+                    className="opacity-60"
+                  />
+                  <path
+                    d="M 380 130 C 480 130, 520 165, 620 165"
+                    stroke="#10b981"
+                    strokeWidth="2"
+                    fill="none"
+                    strokeDasharray="6,4"
+                    className="opacity-60"
+                  />
+                </svg>
+
+                {/* Interactive Node Buttons Positioned on Canvas */}
+                <div className="relative z-10 w-full flex items-center justify-between max-w-3xl px-4">
+                  {currentPr.graphNodes.map((gn, idx) => {
+                    const isSelected = selectedGraphNodeIndex === idx;
+                    return (
+                      <button
+                        key={gn.id}
+                        onClick={() => setSelectedGraphNodeIndex(idx)}
+                        className={`p-3 rounded-xl border text-left transition-all duration-200 cursor-pointer shadow-lg hover:scale-105 ${
+                          isSelected
+                            ? 'ring-2 ring-cyan-400 scale-105 z-20 ' +
+                              (gn.status === 'modified'
+                                ? 'bg-amber-950/90 border-amber-400 text-amber-200 shadow-amber-500/30'
+                                : gn.status === 'affected'
+                                ? 'bg-cyan-950/90 border-cyan-400 text-cyan-200 shadow-cyan-500/30'
+                                : 'bg-[#0e193d] border-cyan-400 text-slate-200 shadow-cyan-500/30')
+                            : gn.status === 'modified'
+                            ? 'bg-amber-950/60 border-amber-500/50 text-amber-200 hover:border-amber-400'
+                            : gn.status === 'affected'
+                            ? 'bg-cyan-950/60 border-cyan-500/50 text-cyan-200 hover:border-cyan-400'
+                            : 'bg-[#0a122e]/80 border-slate-800 text-slate-400 hover:border-slate-700'
+                        }`}
+                      >
+                        <div className="flex items-center gap-1.5 text-[9px] font-mono uppercase font-bold tracking-wider">
+                          <span
+                            className={`w-2 h-2 rounded-full ${
+                              gn.status === 'modified'
+                                ? 'bg-amber-400 animate-ping'
+                                : gn.status === 'affected'
+                                ? 'bg-cyan-400 animate-pulse'
+                                : 'bg-slate-500'
+                            }`}
+                          />
+                          <span>{gn.type}</span>
+                        </div>
+                        <div className="text-xs font-bold mt-1 text-white truncate max-w-[130px]">{gn.label}</div>
+                        <div className="text-[10px] font-mono uppercase mt-1">
+                          {gn.status === 'modified' && '⚡ Origin Node'}
+                          {gn.status === 'affected' && '↳ Affected'}
+                          {gn.status === 'unaffected' && '✓ Untouched'}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Dynamic Node Detail Inspector Card */}
+              <div className="surface-card p-4 border-cyan-500/30 bg-[#08112a] flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-mono uppercase tracking-wider text-cyan-400 font-bold">Selected Node Provenance:</span>
+                    <span className="font-mono font-bold text-white text-xs">{selectedNode.label}</span>
+                    <span className="px-2 py-0.5 rounded text-[10px] font-mono uppercase font-bold bg-[#0c1b42] text-cyan-300 border border-cyan-500/40">
+                      {selectedNode.type}
+                    </span>
                   </div>
-                ))}
+                  <p className="text-slate-300 text-xs">
+                    {selectedNode.status === 'modified'
+                      ? 'Root cause definition: AST function body and parameters modified directly in this PR.'
+                      : selectedNode.status === 'affected'
+                      ? 'Downstream consumer: Directly imports or invokes the modified symbol. Requires contract regression check.'
+                      : 'Independent module: Isolated by module boundary and unaffected by proposed signature updates.'}
+                  </p>
+                </div>
+                <button
+                  onClick={() => navigate('/demo')}
+                  className="px-3.5 py-1.5 rounded-lg bg-cyan-950/80 hover:bg-cyan-900/90 text-cyan-300 border border-cyan-500/40 text-xs font-mono font-semibold shrink-0 transition-colors cursor-pointer"
+                >
+                  Explore in Graph Studio →
+                </button>
               </div>
             </div>
           )}
