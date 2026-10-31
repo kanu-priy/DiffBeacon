@@ -38,6 +38,12 @@ def serialize_user(user):
 
 class DiffBeaconTokenObtainPairSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
+        username_or_email = attrs.get("username")
+        if username_or_email and "@" in username_or_email:
+            matched_user = User.objects.filter(email__iexact=username_or_email).first()
+            if matched_user:
+                attrs["username"] = matched_user.username
+
         data = super().validate(attrs)
         data["user"] = serialize_user(self.user)
         return data

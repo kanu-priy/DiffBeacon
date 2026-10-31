@@ -34,6 +34,13 @@ def test_user_registration_and_login_flow():
     )
     assert login_res.status_code == 200, login_res.content
 
+    email_login_res = client.post(
+        "/api/v1/auth/login/",
+        {"username": "demo@example.com", "password": "StrongPass123!"},
+        format="json",
+    )
+    assert email_login_res.status_code == 200, email_login_res.content
+
     token = login_res.json()["access"]
     client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
 
@@ -51,6 +58,27 @@ def test_user_registration_and_login_flow():
     visible = client.get("/api/v1/workspaces/")
     assert visible.status_code == 200, visible.content
     assert any(item["name"] == "My Workspace" for item in visible.json())
+
+
+@pytest.mark.django_db
+def test_registration_requires_matching_passwords():
+    client = APIClient()
+
+    response = client.post(
+        "/api/v1/auth/register/",
+        {
+            "email": "new@example.com",
+            "username": "newuser",
+            "password": "StrongPass123!",
+            "password_confirm": "DifferentPass456!",
+        },
+        format="json",
+    )
+
+    assert response.status_code == 400, response.content
+    payload = response.json()
+    assert "password" in payload
+    assert "Passwords do not match." in payload["password"]
 
 
 @pytest.mark.django_db
