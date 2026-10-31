@@ -246,7 +246,7 @@ export const ImpactExplorer: React.FC<Props> = ({ analysisId, onInspectNode }) =
                   : 'text-slate-400 hover:text-white'
               }`}
             >
-              Head Version (v1.1)
+              Updated Version
             </button>
             <button
               onClick={() => {
@@ -259,7 +259,7 @@ export const ImpactExplorer: React.FC<Props> = ({ analysisId, onInspectNode }) =
                   : 'text-slate-400 hover:text-white'
               }`}
             >
-              Base Version (v1.0)
+              Baseline Version
             </button>
           </div>
 

@@ -32,8 +32,8 @@ export const SnapshotUploadModal: React.FC<Props> = ({
   // ZIP Mode State
   const [baseFile, setBaseFile] = useState<File | null>(null);
   const [headFile, setHeadFile] = useState<File | null>(null);
-  const [baseLabel, setBaseLabel] = useState('v1.0-base');
-  const [headLabel, setHeadLabel] = useState('v1.1-head');
+  const [baseLabel, setBaseLabel] = useState('baseline-archive');
+  const [headLabel, setHeadLabel] = useState('updated-archive');
 
   // GitHub Mode State
   const [prReference, setPrReference] = useState('');
@@ -192,14 +192,14 @@ export const SnapshotUploadModal: React.FC<Props> = ({
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5 font-mono">
                       <FileArchive className="w-3.5 h-3.5 text-slate-400" />
-                      <span>Base Version (v1.0)</span>
+                      <span>Baseline Snapshot</span>
                     </span>
                     {baseFile && <CheckCircle2 className="w-4 h-4 text-emerald-400" />}
                   </div>
 
                   <input
                     type="text"
-                    placeholder="Label (e.g. main-v1.0)"
+                    placeholder="Label (e.g. main-baseline)"
                     value={baseLabel}
                     onChange={(e) => setBaseLabel(e.target.value)}
                     className="w-full text-xs px-2.5 py-1.5 rounded-lg bg-[#0e121c] border border-[#232b3e] text-slate-200 focus:outline-none focus:border-indigo-500 font-mono"
@@ -229,14 +229,14 @@ export const SnapshotUploadModal: React.FC<Props> = ({
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-bold uppercase tracking-wider text-indigo-300 flex items-center gap-1.5 font-mono">
                       <FileArchive className="w-3.5 h-3.5 text-indigo-400" />
-                      <span>Head Version (v1.1)</span>
+                      <span>Updated Snapshot</span>
                     </span>
                     {headFile && <CheckCircle2 className="w-4 h-4 text-emerald-400" />}
                   </div>
 
                   <input
                     type="text"
-                    placeholder="Label (e.g. PR-102-head)"
+                    placeholder="Label (e.g. feature-branch)"
                     value={headLabel}
                     onChange={(e) => setHeadLabel(e.target.value)}
                     className="w-full text-xs px-2.5 py-1.5 rounded-lg bg-[#0e121c] border border-[#232b3e] text-slate-200 focus:outline-none focus:border-indigo-500 font-mono"

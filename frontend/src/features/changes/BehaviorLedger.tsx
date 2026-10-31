@@ -86,8 +86,8 @@ export const BehaviorLedger: React.FC<Props> = ({
 **Symbol:** \`${delta.affected_symbol}\` in \`${delta.file_path}\`
 **Epistemic Provenance:** ${delta.confidence.replace('_', ' ')}
 
-- **Before (v1.0):** ${delta.before_behavior}
-- **After (v1.1):** ${delta.after_behavior}
+- **Before:** ${delta.before_behavior}
+- **After:** ${delta.after_behavior}
 - **Summary:** ${delta.summary}
 `;
     navigator.clipboard.writeText(md);
@@ -255,7 +255,7 @@ export const BehaviorLedger: React.FC<Props> = ({
                       {/* Before */}
                       <div className="p-3.5 rounded-lg bg-rose-950/20 border border-rose-900/30 space-y-2">
                         <div className="flex items-center justify-between text-[11px] font-bold text-rose-400 uppercase tracking-wider">
-                          <span>Base Behavior (v1.0)</span>
+                          <span>Baseline Behavior</span>
                           <span className="text-[10px] text-slate-400">
                             L{delta.base_line_range[0]}-{delta.base_line_range[1]}
                           </span>
@@ -268,7 +268,7 @@ export const BehaviorLedger: React.FC<Props> = ({
                       {/* After */}
                       <div className="p-3.5 rounded-lg bg-indigo-950/20 border border-indigo-800/40 space-y-2">
                         <div className="flex items-center justify-between text-[11px] font-bold text-indigo-300 uppercase tracking-wider">
-                          <span>Head Behavior (v1.1)</span>
+                          <span>Updated Behavior</span>
                           <span className="text-[10px] text-slate-400">
                             L{delta.head_line_range[0]}-{delta.head_line_range[1]}
                           </span>

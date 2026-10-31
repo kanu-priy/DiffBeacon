@@ -61,9 +61,9 @@ export const DemoWorkspace: React.FC = () => {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-[#1b2130]">
           <div>
             <div className="text-xs font-mono uppercase tracking-wider text-indigo-400 font-semibold">Snapshot Comparison</div>
-            <h2 className="text-lg font-semibold text-white mt-1">BeaconWorks v1.0 → v1.1</h2>
+            <h2 className="text-lg font-semibold text-white mt-1">BeaconWorks baseline → updated analysis</h2>
             <p className="text-xs text-slate-400 font-mono mt-0.5">
-              Base: <code className="text-slate-300">v1.0-baseline</code> | Head: <code className="text-indigo-400">v1.1-department-update</code>
+              Base: <code className="text-slate-300">baseline</code> | Head: <code className="text-indigo-400">updated-change-set</code>
             </p>
           </div>
 

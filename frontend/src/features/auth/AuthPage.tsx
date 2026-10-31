@@ -79,12 +79,12 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="mb-1 block text-xs uppercase tracking-[0.2em] text-[#717d74] font-mono">Username</label>
+            <label className="mb-1 block text-xs uppercase tracking-[0.2em] text-[#717d74] font-mono">Username or email</label>
             <input
               value={form.username}
               onChange={(e) => handleChange('username', e.target.value)}
               className="w-full rounded-xl border border-[#253128] bg-[#0d120f] px-3 py-2.5 text-sm text-white outline-none transition focus:border-[#4b7b5d]"
-              placeholder="your_username"
+              placeholder="your_username or name@company.com"
               required
             />
           </div>

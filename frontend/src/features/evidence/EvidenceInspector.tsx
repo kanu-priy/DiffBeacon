@@ -273,18 +273,18 @@ export const EvidenceInspector: React.FC<Props> = ({
               className={`px-2.5 py-1 rounded font-medium cursor-pointer transition-colors ${
                 viewMode === 'head_only' ? 'bg-cyan-500 text-slate-950 font-bold' : 'text-slate-400 hover:text-slate-200'
               }`}
-              title="Show Head (v1.1) only"
+              title="Show updated version only"
             >
-              Head Only
+              Updated Only
             </button>
             <button
               onClick={() => setViewMode('base_only')}
               className={`px-2.5 py-1 rounded font-medium cursor-pointer transition-colors ${
                 viewMode === 'base_only' ? 'bg-cyan-500 text-slate-950 font-bold' : 'text-slate-400 hover:text-slate-200'
               }`}
-              title="Show Base (v1.0) only"
+              title="Show baseline version only"
             >
-              Base Only
+              Baseline Only
             </button>
           </div>
         </div>
@@ -351,12 +351,12 @@ export const EvidenceInspector: React.FC<Props> = ({
           {/* Split Mode */}
           {viewMode === 'split' && (
             <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-slate-800">
-              {/* Left Column: Base (v1.0) */}
+              {/* Left Column: Baseline */}
               <div className="flex flex-col h-[600px]">
                 <div className="px-4 py-2 bg-slate-900/90 border-b border-slate-800 flex items-center justify-between text-xs font-sans">
                   <div className="flex items-center gap-2">
                     <span className="w-2.5 h-2.5 rounded-full bg-slate-500" />
-                    <span className="font-semibold text-slate-300">Base Version (v1.0)</span>
+                    <span className="font-semibold text-slate-300">Baseline Version</span>
                     <span className="text-slate-500 text-[11px] font-mono">({baseLines.length} lines)</span>
                   </div>
                   <span className="text-[11px] text-slate-500">Read-Only AST</span>
@@ -407,12 +407,12 @@ export const EvidenceInspector: React.FC<Props> = ({
                 </div>
               </div>
 
-              {/* Right Column: Head (v1.1) */}
+              {/* Right Column: Updated */}
               <div className="flex flex-col h-[600px]">
                 <div className="px-4 py-2 bg-slate-900/90 border-b border-slate-800 flex items-center justify-between text-xs font-sans">
                   <div className="flex items-center gap-2">
                     <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse" />
-                    <span className="font-semibold text-cyan-200">Head Version (v1.1)</span>
+                    <span className="font-semibold text-cyan-200">Updated Version</span>
                     <span className="text-slate-500 text-[11px] font-mono">({headLines.length} lines)</span>
                   </div>
                   <span className="text-[11px] text-cyan-400 font-mono">Verified Citations</span>

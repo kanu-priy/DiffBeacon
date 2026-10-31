@@ -343,7 +343,7 @@ export const ContractMap: React.FC<Props> = ({ contracts, onInspectEvidence }) =
                 {/* Schema Diff: Visual or JSON */}
                 <div className="border border-slate-800 rounded-lg bg-slate-950 overflow-hidden">
                   <div className="px-3.5 py-2 bg-slate-900/80 border-b border-slate-800 flex items-center justify-between text-[11px] font-mono text-slate-400">
-                    <span>SCHEMA FIELD DIFF (Base v1.0 → Head v1.1)</span>
+                    <span>SCHEMA FIELD DIFF (Baseline → Updated)</span>
                     <span className="text-slate-500">Property Comparisons</span>
                   </div>
 

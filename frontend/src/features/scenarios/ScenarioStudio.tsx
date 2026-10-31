@@ -382,7 +382,7 @@ ${activeScenario.impact_summary}
             <div className="p-5 rounded-xl bg-slate-900/80 border border-slate-800 space-y-4">
               <div className="flex items-center justify-between pb-2 border-b border-slate-800 font-sans">
                 <span className="text-xs font-bold text-rose-400 uppercase tracking-wider">
-                  Before Path (Base v1.0)
+                  Before Path (Baseline)
                 </span>
                 <span className="text-[10px] text-slate-400 font-mono">
                   {activeScenario.traces?.base?.length || 0} Steps
@@ -445,7 +445,7 @@ ${activeScenario.impact_summary}
             <div className="p-5 rounded-xl bg-slate-900/80 border border-slate-800 space-y-4">
               <div className="flex items-center justify-between pb-2 border-b border-slate-800 font-sans">
                 <span className="text-xs font-bold text-indigo-400 uppercase tracking-wider">
-                  After Path (Head v1.1)
+                  After Path (Updated)
                 </span>
                 <span className="text-[10px] text-slate-400 font-mono">
                   {activeScenario.traces?.head?.length || 0} Steps

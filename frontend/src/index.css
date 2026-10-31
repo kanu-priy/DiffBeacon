@@ -34,6 +34,7 @@ body {
   font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  animation: pageLoad 0.65s ease-out both;
 }
 
 #root {
@@ -44,6 +45,7 @@ body {
   position: relative;
   overflow: hidden;
   background: linear-gradient(180deg, rgba(5, 9, 8, 0.88), rgba(6, 11, 9, 0.96));
+  animation: pageLoad 0.7s ease-out both;
 }
 
 .ambient {
@@ -106,6 +108,17 @@ code, pre, .font-mono {
   100% { transform: translate3d(30px, 18px, 0) scale(1.15); }
 }
 
+@keyframes pageLoad {
+  0% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 @keyframes floatIn {
   from {
     opacity: 0;
@@ -117,12 +130,22 @@ code, pre, .font-mono {
   }
 }
 
+@keyframes softGlow {
+  0%, 100% {
+    box-shadow: 0 18px 35px rgba(3, 8, 6, 0.24), 0 0 0 rgba(143, 230, 169, 0);
+  }
+  50% {
+    box-shadow: 0 18px 35px rgba(3, 8, 6, 0.25), 0 0 18px rgba(143, 230, 169, 0.12);
+  }
+}
+
 @layer components {
   .card,
   .surface-card {
     @apply rounded-2xl border border-[rgba(148,163,184,0.18)] bg-[linear-gradient(180deg,rgba(17,23,22,0.9),rgba(9,13,12,0.96))];
     box-shadow: 0 18px 35px rgba(3, 8, 6, 0.24);
     backdrop-filter: blur(10px);
+    animation: floatIn 0.45s ease-out both;
   }
 
   .card-hover,
@@ -133,9 +156,10 @@ code, pre, .font-mono {
 
   .card-hover:hover,
   .surface-card-hover:hover {
-    transform: translateY(-2px);
+    transform: translateY(-2px) scale(1.005);
     border-color: rgba(143, 230, 169, 0.35);
-    box-shadow: 0 22px 45px rgba(3, 8, 6, 0.32);
+    box-shadow: 0 22px 45px rgba(3, 8, 6, 0.32), 0 0 20px rgba(143, 230, 169, 0.08);
+    animation: softGlow 2.6s ease-in-out infinite;
   }
 
   .card-interactive {
@@ -146,12 +170,13 @@ code, pre, .font-mono {
     @apply px-4 py-2.5 rounded-xl text-sm font-medium text-[#07110b] transition-all duration-200 ease-out;
     background: linear-gradient(135deg, var(--brand-strong), var(--brand));
     box-shadow: 0 12px 24px rgba(143, 230, 169, 0.28);
+    animation: softGlow 3s ease-in-out infinite;
   }
 
   .btn-primary:hover {
     filter: brightness(1.04);
-    transform: translateY(-1px);
-    box-shadow: 0 16px 28px rgba(143, 230, 169, 0.32);
+    transform: translateY(-1px) scale(1.01);
+    box-shadow: 0 16px 28px rgba(143, 230, 169, 0.32), 0 0 18px rgba(143, 230, 169, 0.18);
   }
 
   .btn-secondary {
@@ -216,6 +241,15 @@ code, pre, .font-mono {
   .animate-fade-up,
   .animate-fade-in {
     animation: floatIn 0.45s ease-out both;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
 

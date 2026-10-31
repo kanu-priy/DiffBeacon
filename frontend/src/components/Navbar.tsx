@@ -27,9 +27,6 @@ export const Navbar: React.FC<Props> = ({ onOpenCommandPalette, isAuthenticated,
               Δ
             </div>
             <span className="font-semibold text-sm text-white tracking-tight">DiffBeacon</span>
-            <span className="px-1.5 py-0.5 text-[10px] font-mono text-[#666] border border-[#333] rounded bg-[#111]">
-              v2.0
-            </span>
           </Link>
           <div className="hidden sm:block text-[10px] uppercase tracking-[0.18em] text-[#7e8c7d] font-mono">
             Behavioral Change Intelligence
