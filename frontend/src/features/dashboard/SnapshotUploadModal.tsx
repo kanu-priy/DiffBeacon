@@ -19,6 +19,7 @@ interface Props {
   isOpen: boolean;
   onClose: () => void;
   onAnalysisCreated: (analysisId: string) => void;
+  initialMode?: 'zip' | 'github';
 }
 
 export const SnapshotUploadModal: React.FC<Props> = ({
@@ -26,8 +27,16 @@ export const SnapshotUploadModal: React.FC<Props> = ({
   isOpen,
   onClose,
   onAnalysisCreated,
+  initialMode = 'zip',
 }) => {
-  const [ingestMode, setIngestMode] = useState<'zip' | 'github'>('zip');
+  const [ingestMode, setIngestMode] = useState<'zip' | 'github'>(initialMode);
+
+  React.useEffect(() => {
+    if (isOpen) {
+      setIngestMode(initialMode);
+      setError(null);
+    }
+  }, [initialMode, isOpen]);
 
   // ZIP Mode State
   const [baseFile, setBaseFile] = useState<File | null>(null);
@@ -118,11 +127,11 @@ export const SnapshotUploadModal: React.FC<Props> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in font-sans">
-      <div className="relative w-full max-w-2xl bg-[#0c0f17] border border-[#1e2537] rounded-2xl shadow-2xl p-6 overflow-hidden">
+      <div className="relative w-full max-w-2xl bg-[#0b100d] border border-[#1d2b22] rounded-2xl shadow-2xl p-6 overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between pb-4 border-b border-[#1b2130]">
           <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-lg bg-indigo-950/70 border border-indigo-800/60 text-indigo-400">
+            <div className="p-2 rounded-lg bg-emerald-950/70 border border-emerald-800/60 text-emerald-400">
               <Upload className="w-5 h-5" />
             </div>
             <div>
@@ -151,8 +160,8 @@ export const SnapshotUploadModal: React.FC<Props> = ({
             }}
             className={`flex-1 py-2 px-3 rounded-lg text-xs font-medium flex items-center justify-center gap-2 transition-all cursor-pointer border ${
               ingestMode === 'zip'
-                ? 'bg-indigo-950/70 text-indigo-200 border-indigo-700/60 font-semibold shadow-sm'
-                : 'bg-[#101420] text-slate-400 border-[#1f2638] hover:text-white'
+                ? 'bg-emerald-950/70 text-emerald-200 border-emerald-700/60 font-semibold shadow-sm'
+                : 'bg-[#0d1412] text-slate-400 border-[#21372e] hover:text-white'
             }`}
           >
             <FileArchive className="w-3.5 h-3.5" />
@@ -167,8 +176,8 @@ export const SnapshotUploadModal: React.FC<Props> = ({
             }}
             className={`flex-1 py-2 px-3 rounded-lg text-xs font-medium flex items-center justify-center gap-2 transition-all cursor-pointer border ${
               ingestMode === 'github'
-                ? 'bg-indigo-950/70 text-indigo-200 border-indigo-700/60 font-semibold shadow-sm'
-                : 'bg-[#101420] text-slate-400 border-[#1f2638] hover:text-white'
+                ? 'bg-emerald-950/70 text-emerald-200 border-emerald-700/60 font-semibold shadow-sm'
+                : 'bg-[#0d1412] text-slate-400 border-[#21372e] hover:text-white'
             }`}
           >
             <GitPullRequest className="w-3.5 h-3.5" />
@@ -202,10 +211,10 @@ export const SnapshotUploadModal: React.FC<Props> = ({
                     placeholder="Label (e.g. main-baseline)"
                     value={baseLabel}
                     onChange={(e) => setBaseLabel(e.target.value)}
-                    className="w-full text-xs px-2.5 py-1.5 rounded-lg bg-[#0e121c] border border-[#232b3e] text-slate-200 focus:outline-none focus:border-indigo-500 font-mono"
+                    className="w-full text-xs px-2.5 py-1.5 rounded-lg bg-[#0e121c] border border-[#21372e] text-slate-200 focus:outline-none focus:border-emerald-500 font-mono"
                   />
 
-                  <label className="block border-2 border-dashed border-[#232b3e] hover:border-indigo-500/60 rounded-lg p-4 text-center cursor-pointer transition-colors bg-[#0e121c]/50">
+                  <label className="block border-2 border-dashed border-[#21372e] hover:border-emerald-500/60 rounded-lg p-4 text-center cursor-pointer transition-colors bg-[#0e121c]/50">
                     <input
                       type="file"
                       accept=".zip"
@@ -227,8 +236,8 @@ export const SnapshotUploadModal: React.FC<Props> = ({
                 {/* Head Snapshot File */}
                 <div className="p-4 rounded-xl border border-[#1e2537] bg-[#090c13] space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold uppercase tracking-wider text-indigo-300 flex items-center gap-1.5 font-mono">
-                      <FileArchive className="w-3.5 h-3.5 text-indigo-400" />
+                    <span className="text-xs font-bold uppercase tracking-wider text-emerald-300 flex items-center gap-1.5 font-mono">
+                      <FileArchive className="w-3.5 h-3.5 text-emerald-400" />
                       <span>Updated Snapshot</span>
                     </span>
                     {headFile && <CheckCircle2 className="w-4 h-4 text-emerald-400" />}
@@ -239,10 +248,10 @@ export const SnapshotUploadModal: React.FC<Props> = ({
                     placeholder="Label (e.g. feature-branch)"
                     value={headLabel}
                     onChange={(e) => setHeadLabel(e.target.value)}
-                    className="w-full text-xs px-2.5 py-1.5 rounded-lg bg-[#0e121c] border border-[#232b3e] text-slate-200 focus:outline-none focus:border-indigo-500 font-mono"
+                    className="w-full text-xs px-2.5 py-1.5 rounded-lg bg-[#0e121c] border border-[#21372e] text-slate-200 focus:outline-none focus:border-emerald-500 font-mono"
                   />
 
-                  <label className="block border-2 border-dashed border-[#232b3e] hover:border-indigo-500/60 rounded-lg p-4 text-center cursor-pointer transition-colors bg-[#0e121c]/50">
+                  <label className="block border-2 border-dashed border-[#21372e] hover:border-emerald-500/60 rounded-lg p-4 text-center cursor-pointer transition-colors bg-[#0e121c]/50">
                     <input
                       type="file"
                       accept=".zip"
@@ -287,7 +296,7 @@ export const SnapshotUploadModal: React.FC<Props> = ({
                 <button
                   type="submit"
                   disabled={isUploading || !baseFile || !headFile}
-                  className="px-5 py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white font-semibold text-xs shadow-md transition-all flex items-center gap-2 cursor-pointer shadow-[0_0_16px_-4px_rgba(99,102,241,0.5)]"
+                  className="px-5 py-2.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 disabled:opacity-40 text-[#07110b] font-semibold text-xs shadow-md transition-all flex items-center gap-2 cursor-pointer shadow-[0_0_16px_-4px_rgba(110,231,183,0.5)]"
                 >
                   {isUploading ? (
                     <>
@@ -319,7 +328,7 @@ export const SnapshotUploadModal: React.FC<Props> = ({
                   placeholder="https://github.com/owner/repo/pull/123 or owner/repo#123"
                   value={prReference}
                   onChange={(e) => setPrReference(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 text-xs rounded-lg bg-[#0e121c] border border-[#232b3e] text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 font-mono"
+                  className="w-full pl-9 pr-3 py-2 text-xs rounded-lg bg-[#0e121c] border border-[#21372e] text-slate-100 placeholder-slate-500 focus:outline-none focus:border-emerald-500 font-mono"
                 />
               </div>
 
@@ -328,7 +337,7 @@ export const SnapshotUploadModal: React.FC<Props> = ({
                 <button
                   type="button"
                   onClick={() => setShowTokenInput(!showTokenInput)}
-                  className="text-indigo-400 hover:text-indigo-300 font-mono flex items-center gap-1 cursor-pointer"
+                  className="text-emerald-400 hover:text-emerald-300 font-mono flex items-center gap-1 cursor-pointer"
                 >
                   <Key className="w-3 h-3" />
                   <span>{showTokenInput ? 'Hide Token' : 'Add Personal Access Token'}</span>
@@ -345,7 +354,7 @@ export const SnapshotUploadModal: React.FC<Props> = ({
                     placeholder="ghp_xxxxxxxxxxxxxxxxxxxx (optional for public repos)"
                     value={githubToken}
                     onChange={(e) => setGithubToken(e.target.value)}
-                    className="w-full px-3 py-1.5 text-xs rounded-lg bg-[#0e121c] border border-[#232b3e] text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 font-mono"
+                    className="w-full px-3 py-1.5 text-xs rounded-lg bg-[#0e121c] border border-[#21372e] text-slate-100 placeholder-slate-500 focus:outline-none focus:border-emerald-500 font-mono"
                   />
                   <p className="text-[10px] text-slate-500">
                     Only requires `repo:read` scope. DiffBeacon processes tokens ephemerally in-memory and never logs or stores credentials.
@@ -380,7 +389,7 @@ export const SnapshotUploadModal: React.FC<Props> = ({
               <button
                 type="submit"
                 disabled={isUploading || !prReference.trim()}
-                className="px-5 py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white font-semibold text-xs shadow-md transition-all flex items-center gap-2 cursor-pointer shadow-[0_0_16px_-4px_rgba(99,102,241,0.5)]"
+                className="px-5 py-2.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 disabled:opacity-40 text-[#07110b] font-semibold text-xs shadow-md transition-all flex items-center gap-2 cursor-pointer shadow-[0_0_16px_-4px_rgba(110,231,183,0.5)]"
               >
                 {isUploading ? (
                   <>

@@ -52,6 +52,7 @@ export const App: React.FC = () => {
   const handleAuthSuccess = (payload: AuthTokens) => {
     setAuthToken(payload.access);
     setAuthUser(payload.user);
+    localStorage.setItem(AUTH_TOKEN_KEY, payload.access);
     localStorage.setItem(AUTH_USER_KEY, JSON.stringify(payload.user));
   };
 

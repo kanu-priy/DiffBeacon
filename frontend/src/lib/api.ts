@@ -35,6 +35,46 @@ function getToken(): string | null {
   return localStorage.getItem(AUTH_TOKEN_KEY);
 }
 
+function formatErrorMessage(data: unknown, fallback: string): string {
+  if (data == null) return fallback;
+
+  if (typeof data === 'string') return data;
+
+  if (Array.isArray(data)) {
+    const flattened = data
+      .flatMap((item) => {
+        if (typeof item === 'string') return [item];
+        if (item && typeof item === 'object') return [formatErrorMessage(item, fallback)];
+        return [];
+      })
+      .filter(Boolean);
+
+    return flattened.length > 0 ? flattened.join(' ') : fallback;
+  }
+
+  if (typeof data === 'object') {
+    const entries = Object.entries(data as Record<string, unknown>);
+    const messages = entries.flatMap(([key, value]) => {
+      if (Array.isArray(value)) {
+        return value
+          .map((item) => (typeof item === 'string' ? item : formatErrorMessage(item, key)))
+          .filter(Boolean);
+      }
+
+      if (value && typeof value === 'object') {
+        const nested = formatErrorMessage(value, key);
+        return nested ? [nested] : [];
+      }
+
+      return value != null ? [String(value)] : [];
+    });
+
+    return messages.length > 0 ? messages.join(' ') : fallback;
+  }
+
+  return String(data);
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const token = getToken();
   const res = await fetch(`${API_BASE}${path}`, {
@@ -57,8 +97,8 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   }
 
   if (!res.ok) {
-    const message = data?.error || data?.detail || res.statusText || 'Request failed';
-    throw new Error(typeof message === 'string' ? message : JSON.stringify(message));
+    const message = formatErrorMessage(data, res.statusText || 'Request failed');
+    throw new Error(message);
   }
 
   return data as T;

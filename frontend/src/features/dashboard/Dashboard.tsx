@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
@@ -24,6 +24,7 @@ export const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const toast = useToast();
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [uploadModalMode, setUploadModalMode] = useState<'zip' | 'github'>('zip');
   const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState('');
   const [newWorkspaceName, setNewWorkspaceName] = useState('');
@@ -37,6 +38,17 @@ export const Dashboard: React.FC = () => {
     queryKey: ['workspaces'],
     queryFn: api.getWorkspaces,
   });
+
+  useEffect(() => {
+    if (!workspaces || workspaces.length === 0) {
+      setSelectedWorkspaceId('');
+      return;
+    }
+
+    if (!selectedWorkspaceId || !workspaces.some((workspace) => workspace.id === selectedWorkspaceId)) {
+      setSelectedWorkspaceId(workspaces[0].id);
+    }
+  }, [workspaces, selectedWorkspaceId]);
 
   const activeWorkspace =
     workspaces?.find((w) => w.id === selectedWorkspaceId) || workspaces?.[0];
@@ -110,10 +122,14 @@ export const Dashboard: React.FC = () => {
         <div className="db-actions">
           <button
             onClick={() => {
-              if (activeWorkspace) {
-                setSelectedWorkspaceId(activeWorkspace.id);
-                setIsUploadModalOpen(true);
+              if (!activeWorkspace) {
+                toast.error('Create a workspace first', 'You need a workspace before running a snapshot analysis.');
+                return;
               }
+
+              setSelectedWorkspaceId(activeWorkspace.id);
+              setUploadModalMode('zip');
+              setIsUploadModalOpen(true);
             }}
             disabled={!activeWorkspace}
             className="db-button db-button-primary"
@@ -121,12 +137,30 @@ export const Dashboard: React.FC = () => {
             <Plus className="w-3.5 h-3.5" />
             <span>New Snapshot Analysis</span>
           </button>
+
+          <button
+            onClick={() => {
+              if (!activeWorkspace) {
+                toast.error('Create a workspace first', 'You need a workspace before connecting GitHub.');
+                return;
+              }
+
+              setSelectedWorkspaceId(activeWorkspace.id);
+              setUploadModalMode('github');
+              setIsUploadModalOpen(true);
+            }}
+            disabled={!activeWorkspace}
+            className="db-button db-button-secondary"
+          >
+            <GitPullRequest className="w-3.5 h-3.5" />
+            <span>Connect GitHub</span>
+          </button>
         </div>
       </div>
 
       {/* Overview Stat Cards */}
       <div className="db-stats">
-        <div><span>Workspaces</span><strong>{workspaces?.length || 1}</strong></div>
+        <div><span>Workspaces</span><strong>{workspaces?.length ?? 0}</strong></div>
         <div><span>Analyses</span><strong>{history?.length || 0}</strong></div>
         <div><span>Behavior changes</span><strong>{totalDeltas}</strong></div>
         <div><span>Contract surfaces</span><strong>{totalContracts}</strong></div>
@@ -266,7 +300,15 @@ export const Dashboard: React.FC = () => {
               </p>
             </div>
             <button
-              onClick={() => setIsUploadModalOpen(true)}
+              onClick={() => {
+                if (!activeWorkspace) {
+                  toast.error('Create a workspace first', 'You need a workspace before running a snapshot analysis.');
+                  return;
+                }
+
+                setSelectedWorkspaceId(activeWorkspace.id);
+                setIsUploadModalOpen(true);
+              }}
               className="db-button db-button-primary"
             >
               <Plus className="w-4 h-4" />
@@ -280,6 +322,7 @@ export const Dashboard: React.FC = () => {
         <SnapshotUploadModal
           workspaceId={activeWorkspace.id}
           isOpen={isUploadModalOpen}
+          initialMode={uploadModalMode}
           onClose={() => setIsUploadModalOpen(false)}
           onAnalysisCreated={(newId) => {
             refetchHistory();
