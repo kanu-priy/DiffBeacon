@@ -18,6 +18,30 @@ export interface Workspace {
   snapshot_count?: number;
 }
 
+export interface GitHubRepositorySummary {
+  id: string;
+  full_name: string;
+  owner: string;
+  name: string;
+  visibility: 'public' | 'private' | 'internal';
+  default_branch: string;
+  selected: boolean;
+  status: 'active' | 'revoked' | 'removed' | 'error';
+  html_url: string;
+  is_private: boolean;
+}
+
+export interface GitHubConnectionStatus {
+  connected: boolean;
+  status: string;
+  installation_id?: string | null;
+  account_login?: string | null;
+  requires_setup: boolean;
+  connect_url?: string;
+  selected_repositories: GitHubRepositorySummary[];
+  repository_count: number;
+}
+
 export interface AnalysisRun {
   id: string;
   workspace: string;
@@ -53,6 +77,7 @@ export interface BehaviorDelta {
     | 'data_model'
     | 'error_handling'
     | 'logic'
+    | 'added_symbol'
     | 'deleted_symbol';
   title: string;
   summary: string;

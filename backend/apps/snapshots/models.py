@@ -123,6 +123,7 @@ class RelationshipEdge(models.Model):
         ("reads_model", "Reads Database Model"),
         ("writes_model", "Writes Database Model"),
         ("tests", "Tests Symbol"),
+        ("consumed_by_client", "Consumed by Frontend Client"),
     )
 
     PROVENANCE_CHOICES = (

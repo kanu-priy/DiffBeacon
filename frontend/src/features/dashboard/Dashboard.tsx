@@ -65,6 +65,15 @@ export const Dashboard: React.FC = () => {
       query.state.data?.some((run: any) => run.status === 'running' || run.status === 'queued') ? 2000 : false,
   });
 
+  const {
+    data: githubStatus,
+    isLoading: isGithubStatusLoading,
+    refetch: refetchGitHubStatus,
+  } = useQuery({
+    queryKey: ['github-connection'],
+    queryFn: api.getGitHubConnectionStatus,
+  });
+
   const handleCreateWorkspace = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newWorkspaceName.trim()) return;
@@ -79,6 +88,34 @@ export const Dashboard: React.FC = () => {
       toast.error('Could not create workspace', err.message);
     } finally {
       setIsCreatingWorkspace(false);
+    }
+  };
+
+  const handleGitHubConnect = async () => {
+    if (!activeWorkspace) {
+      toast.error('Create a workspace first', 'You need a workspace before connecting GitHub.');
+      return;
+    }
+
+    try {
+      const result = await api.connectGitHub();
+      if (!result.install_url) {
+        toast.error('GitHub App not configured', 'Set GITHUB_APP_SLUG and the private key before connecting.');
+        return;
+      }
+      window.location.href = result.install_url;
+    } catch (err: any) {
+      toast.error('GitHub connection failed', err.message);
+    }
+  };
+
+  const handleGitHubDisconnect = async () => {
+    try {
+      const result = await api.disconnectGitHub();
+      await refetchGitHubStatus();
+      toast.success('GitHub disconnected', result.message);
+    } catch (err: any) {
+      toast.error('Disconnect failed', err.message);
     }
   };
 
@@ -164,6 +201,81 @@ export const Dashboard: React.FC = () => {
         <div><span>Analyses</span><strong>{history?.length || 0}</strong></div>
         <div><span>Behavior changes</span><strong>{totalDeltas}</strong></div>
         <div><span>Contract surfaces</span><strong>{totalContracts}</strong></div>
+      </div>
+
+      <div className="rounded-2xl border border-[#1d2b22] bg-[#0b120e]/90 p-4">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex items-start gap-3">
+            <div className="rounded-xl border border-emerald-700/40 bg-emerald-950/40 p-2 text-emerald-300">
+              <GitPullRequest className="w-4 h-4" />
+            </div>
+            <div>
+              <div className="text-[10px] font-mono uppercase tracking-[0.2em] text-slate-400">GitHub Integration</div>
+              <h3 className="mt-1 text-base font-semibold text-white">
+                {githubStatus?.connected ? `${githubStatus.account_login || 'GitHub'} connected` : 'Connect a GitHub app'}
+              </h3>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            {!isGithubStatusLoading && githubStatus?.connected ? (
+              <>
+                <button
+                  onClick={handleGitHubDisconnect}
+                  className="db-button db-button-secondary"
+                >
+                  Disconnect
+                </button>
+                <button
+                  onClick={handleGitHubConnect}
+                  className="db-button db-button-primary"
+                >
+                  <GitPullRequest className="w-3.5 h-3.5" />
+                  <span>Manage repos</span>
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={handleGitHubConnect}
+                className="db-button db-button-primary"
+                disabled={isGithubStatusLoading}
+              >
+                <GitPullRequest className="w-3.5 h-3.5" />
+                <span>{isGithubStatusLoading ? 'Loading…' : 'Connect GitHub'}</span>
+              </button>
+            )}
+          </div>
+        </div>
+
+        {githubStatus?.connected ? (
+          <div className="mt-4 space-y-3">
+            <div className="flex items-center gap-2 text-xs text-emerald-300">
+              <ShieldCheck className="w-3.5 h-3.5" />
+              <span>Repository access is active and the app can discover relevant pull requests.</span>
+            </div>
+            {githubStatus.selected_repositories?.length ? (
+              <div className="flex flex-wrap gap-2">
+                {githubStatus.selected_repositories.map((repo: any) => (
+                  <span
+                    key={repo.id || repo.full_name}
+                    className="rounded-full border border-[#1d2b22] bg-[#0d1714] px-2.5 py-1 text-[11px] text-slate-200"
+                  >
+                    {repo.full_name}
+                  </span>
+                ))}
+              </div>
+            ) : (
+              <div className="rounded-xl border border-dashed border-[#21372e] bg-[#0d1412] px-3 py-2 text-xs text-slate-400">
+                No repositories selected yet. Connect the app and choose repositories to analyze.
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="mt-4 rounded-xl border border-dashed border-[#21372e] bg-[#0d1412] px-3 py-3 text-xs text-slate-400">
+            DiffBeacon needs GitHub access to discover installed repos and analyze relevant pull requests automatically.
+            {githubStatus?.requires_setup ? ' The server is not configured for a GitHub App yet.' : ' Connect the app once, then select repositories for PR monitoring.'}
+          </div>
+        )}
       </div>
 
       {/* Workspace Switcher & Creator */}

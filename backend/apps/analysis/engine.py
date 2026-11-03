@@ -1,4 +1,5 @@
 import difflib
+import hashlib
 import os
 from pathlib import Path
 from typing import Any, Dict, List, Set, Tuple
@@ -135,7 +136,7 @@ class AnalysisPipelineEngine:
                 )
 
             for bd in all_b_deltas:
-                b_rec = BehaviorDelta.objects.create(
+                BehaviorDelta.objects.create(
                     analysis=analysis,
                     category=bd["category"],
                     title=bd["title"],
@@ -149,14 +150,29 @@ class AnalysisPipelineEngine:
                     confidence=bd.get("confidence", "statically_established"),
                 )
                 # Store Evidence Record
+                file_path = bd["file_path"]
+                head_range = bd.get("head_line_range", [1, 1])
+                start_line, end_line = head_range[0], head_range[1]
+                file_on_disk = Path(head_snap.storage_path) / file_path
+                content_excerpt = ""
+                if file_on_disk.exists():
+                    with open(file_on_disk, "r", encoding="utf-8", errors="replace") as handle:
+                        lines = handle.read().splitlines()
+                    if 1 <= start_line <= len(lines) and 1 <= end_line <= len(lines):
+                        content_excerpt = "\n".join(lines[start_line - 1 : end_line])
+                    else:
+                        content_excerpt = bd["after_behavior"][:500]
+                else:
+                    content_excerpt = bd["after_behavior"][:500]
+
                 EvidenceRecord.objects.create(
                     analysis=analysis,
                     snapshot_side="head",
-                    file_path=bd["file_path"],
-                    start_line=bd.get("head_line_range", [1, 1])[0],
-                    end_line=bd.get("head_line_range", [1, 1])[1],
-                    content_excerpt=bd["after_behavior"][:500],
-                    content_hash="evidence-hash",
+                    file_path=file_path,
+                    start_line=start_line,
+                    end_line=end_line,
+                    content_excerpt=content_excerpt[:500],
+                    content_hash=self._compute_excerpt_hash(content_excerpt),
                     originating_stage="stage_7_deltas",
                 )
 
@@ -207,6 +223,8 @@ class AnalysisPipelineEngine:
                     resolution_strategy=u["resolution_strategy"],
                 )
 
+            self._verify_evidence_records(analysis)
+
             # Check for deleted config file (legacy_keys.json)
             base_file_names = set(base_snap.files.values_list("relative_path", flat=True))
             head_file_names = set(head_snap.files.values_list("relative_path", flat=True))
@@ -238,6 +256,45 @@ class AnalysisPipelineEngine:
             analysis.error_details = {"error": str(exc)}
             analysis.save()
             raise exc
+
+    def _compute_excerpt_hash(self, excerpt: str) -> str:
+        return hashlib.sha256(excerpt.encode("utf-8")).hexdigest()
+
+    def _extract_excerpt(self, snapshot: SourceSnapshot, relative_path: str, start_line: int, end_line: int) -> str:
+        full_path = Path(snapshot.storage_path) / relative_path
+        if not full_path.exists():
+            raise ValueError(f"Evidence file not found in snapshot: {relative_path}")
+
+        with open(full_path, "r", encoding="utf-8", errors="replace") as handle:
+            lines = handle.read().splitlines()
+
+        if start_line < 1 or end_line < start_line:
+            raise ValueError(
+                f"Invalid evidence line range for {relative_path}: {start_line}-{end_line}"
+            )
+        if end_line > len(lines):
+            raise ValueError(
+                f"Evidence range exceeds file length for {relative_path}: {end_line} > {len(lines)}"
+            )
+
+        return "\n".join(lines[start_line - 1 : end_line])
+
+    def _verify_evidence_records(self, analysis: AnalysisRun) -> None:
+        for evidence in EvidenceRecord.objects.filter(analysis=analysis):
+            snapshot = analysis.base_snapshot if evidence.snapshot_side == "base" else analysis.head_snapshot
+            excerpt = self._extract_excerpt(
+                snapshot,
+                evidence.file_path,
+                evidence.start_line,
+                evidence.end_line,
+            )
+            actual_hash = self._compute_excerpt_hash(excerpt)
+            if evidence.content_hash != actual_hash:
+                raise ValueError(
+                    "Evidence citation mismatch for "
+                    f"{evidence.file_path} ({snapshot.label}, L{evidence.start_line}-{evidence.end_line}): "
+                    f"expected {actual_hash}, found {evidence.content_hash}."
+                )
 
     def _compute_diffs(
         self, base_snap: SourceSnapshot, head_snap: SourceSnapshot
@@ -395,6 +452,33 @@ class AnalysisPipelineEngine:
                     line_number=e.get("line_number"),
                 )
 
+    def _is_breaking_signature_change(self, base_sig: str, head_sig: str) -> bool:
+        if not base_sig or not head_sig or base_sig == head_sig:
+            return False
+        # Strip parens and split params
+        base_clean = base_sig.strip().lstrip("(").rstrip(")")
+        head_clean = head_sig.strip().lstrip("(").rstrip(")")
+        base_params = [p.strip() for p in base_clean.split(",") if p.strip()]
+        head_params = [p.strip() for p in head_clean.split(",") if p.strip()]
+
+        base_names = [p.split("=")[0].split(":")[0].strip() for p in base_params]
+        head_names = [p.split("=")[0].split(":")[0].strip() for p in head_params]
+
+        # 1. Any parameter removed is breaking
+        for b_name in base_names:
+            if b_name not in head_names:
+                return True
+
+        # 2. Any new parameter added without default is breaking
+        for p in head_params:
+            p_name = p.split("=")[0].split(":")[0].strip()
+            if p_name not in base_names:
+                # If no default value assigned (e.g. no '='), it's a required new param
+                if "=" not in p:
+                    return True
+
+        return False
+
     def _detect_logic_deltas(
         self,
         base_symbols: List[Dict[str, Any]],
@@ -409,10 +493,18 @@ class AnalysisPipelineEngine:
             if qname in changed_qnames and head_s["symbol_type"] in ("function", "method"):
                 base_s = base_map.get(qname)
                 if base_s and base_s["fingerprint"] != head_s["fingerprint"]:
+                    base_sig = base_s.get("signature", "")
+                    head_sig = head_s.get("signature", "")
+                    is_sig_change = base_sig != head_sig
+                    is_breaking_sig = self._is_breaking_signature_change(base_sig, head_sig)
+                    cat = "signature" if is_breaking_sig else "logic"
+                    title = f"Breaking Signature in {head_s['name']}" if is_breaking_sig else (
+                        f"Compatible Signature Extension in {head_s['name']}" if is_sig_change else f"Modified Logic in {head_s['name']}"
+                    )
                     deltas.append(
                         {
-                            "category": "logic",
-                            "title": f"Modified Logic in {head_s['name']}",
+                            "category": cat,
+                            "title": title,
                             "summary": f"Implementation of {head_s['qualified_name']} changed between versions.",
                             "before_behavior": f"Original definition at line {base_s['start_line']}: {base_s['signature']}",
                             "after_behavior": f"Updated definition at line {head_s['start_line']}: {head_s['signature']}",
@@ -425,9 +517,9 @@ class AnalysisPipelineEngine:
                     )
 
         # Detect deleted symbols (present in base, absent in head)
-        head_names = {s["name"] for s in head_symbols}
+        head_qnames = {s["qualified_name"] for s in head_symbols}
         for base_s in base_symbols:
-            if base_s["symbol_type"] in ("function", "method") and base_s["name"] not in head_names:
+            if base_s["symbol_type"] in ("function", "method") and base_s["qualified_name"] not in head_qnames:
                 deltas.append(
                     {
                         "category": "deleted_symbol",
@@ -444,9 +536,9 @@ class AnalysisPipelineEngine:
                 )
 
         # Detect newly introduced symbols (present in head, absent in base)
-        base_names = {s["name"] for s in base_symbols}
+        base_qnames = {s["qualified_name"] for s in base_symbols}
         for head_s in head_symbols:
-            if head_s["symbol_type"] in ("function", "method", "class") and head_s["name"] not in base_names:
+            if head_s["symbol_type"] in ("function", "method", "class") and head_s["qualified_name"] not in base_qnames:
                 deltas.append(
                     {
                         "category": "added_symbol",

@@ -35,14 +35,15 @@ class ContractComparator:
                 )
                 continue
 
-            # Compare Fields
             base_fields = base_s["fields"]
             head_fields = head_s["fields"]
+            all_field_names = set(base_fields) | set(head_fields)
 
-            for f_name, head_f in head_fields.items():
+            for f_name in sorted(all_field_names):
                 base_f = base_fields.get(f_name)
-                if not base_f:
-                    # New field added
+                head_f = head_fields.get(f_name)
+
+                if base_f is None and head_f is not None:
                     is_breaking = head_f.get("required", True)
                     contract_deltas.append(
                         {
@@ -58,8 +59,54 @@ class ContractComparator:
                             "unresolved_assumptions": [],
                         }
                     )
-                else:
-                    # Field modified: Check required flag
+                    behavior_deltas.append(
+                        {
+                            "category": "api_contract",
+                            "title": f"Added {f_name} in {class_name}",
+                            "summary": f"{class_name} now includes '{f_name}' in request payloads.",
+                            "before_behavior": f"Field '{f_name}' was not present in requests.",
+                            "after_behavior": f"Field '{f_name}' is now present and required={head_f.get('required', True)}.",
+                            "affected_symbol": f"{class_name}.{f_name}",
+                            "file_path": head_s["file_path"],
+                            "base_line_range": [1, 1],
+                            "head_line_range": [head_f["line"], head_f["line"] + 5],
+                            "confidence": "statically_established",
+                        }
+                    )
+                    continue
+
+                if base_f is not None and head_f is None:
+                    contract_deltas.append(
+                        {
+                            "contract_type": "drf_serializer",
+                            "identifier": f"{class_name}.{f_name}",
+                            "change_nature": "removed",
+                            "before_spec": base_f,
+                            "after_spec": {},
+                            "is_breaking": True,
+                            "compatibility_assessment": f"Field '{f_name}' was removed from {class_name}; clients must stop sending it.",
+                            "unresolved_assumptions": [
+                                "Downstream payloads and callers may still include the removed field."
+                            ],
+                        }
+                    )
+                    behavior_deltas.append(
+                        {
+                            "category": "api_contract",
+                            "title": f"Removed {f_name} from {class_name}",
+                            "summary": f"Field '{f_name}' is no longer accepted or returned by {class_name}.",
+                            "before_behavior": f"Field '{f_name}' was present and validated on input.",
+                            "after_behavior": f"Field '{f_name}' is no longer recognized by the serializer.",
+                            "affected_symbol": f"{class_name}.{f_name}",
+                            "file_path": head_s["file_path"],
+                            "base_line_range": [base_f["line"], base_f["line"] + 5],
+                            "head_line_range": [1, 1],
+                            "confidence": "statically_established",
+                        }
+                    )
+                    continue
+
+                if base_f is not None and head_f is not None:
                     b_req = base_f.get("required", True)
                     h_req = head_f.get("required", True)
                     if b_req and not h_req:
@@ -91,8 +138,36 @@ class ContractComparator:
                                 "confidence": "statically_established",
                             }
                         )
+                    elif not b_req and h_req:
+                        contract_deltas.append(
+                            {
+                                "contract_type": "drf_serializer",
+                                "identifier": f"{class_name}.{f_name}",
+                                "change_nature": "modified_required",
+                                "before_spec": base_f,
+                                "after_spec": head_f,
+                                "is_breaking": True,
+                                "compatibility_assessment": "Field made required; existing clients that omit it will now fail validation.",
+                                "unresolved_assumptions": [
+                                    "Callers must include the field in all requests after this change."
+                                ],
+                            }
+                        )
+                        behavior_deltas.append(
+                            {
+                                "category": "api_contract",
+                                "title": f"Required {f_name} in {class_name}",
+                                "summary": f"{class_name} now requires '{f_name}' for valid request payloads.",
+                                "before_behavior": f"Field '{f_name}' was optional and could be omitted.",
+                                "after_behavior": f"Field '{f_name}' is now required and missing values produce validation failure.",
+                                "affected_symbol": f"{class_name}.{f_name}",
+                                "file_path": head_s["file_path"],
+                                "base_line_range": [base_f["line"], base_f["line"] + 5],
+                                "head_line_range": [head_f["line"], head_f["line"] + 5],
+                                "confidence": "statically_established",
+                            }
+                        )
 
-            # Compare Validations
             b_val_map = {v["method_name"]: v for v in base_s["validations"]}
             h_val_map = {v["method_name"]: v for v in head_s["validations"]}
 

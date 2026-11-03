@@ -1,7 +1,13 @@
+import hashlib
+from pathlib import Path
+from tempfile import TemporaryDirectory
+
 import pytest
 from django.test import Client
+from apps.analysis.engine import AnalysisPipelineEngine
+from apps.analysis.models import AnalysisRun, EvidenceRecord
+from apps.snapshots.models import SourceFile, SourceSnapshot
 from apps.workspaces.models import Workspace
-from apps.analysis.models import AnalysisRun
 
 
 @pytest.mark.django_db
@@ -87,3 +93,228 @@ def test_provider_settings_are_consistent():
     assert data["active_provider"] in provider_ids
     assert data["active_provider"] == "mock"
     assert "mock" in provider_ids
+
+
+@pytest.mark.django_db
+def test_evidence_citation_verifier_accepts_valid_excerpts():
+    with TemporaryDirectory() as tmpdir:
+        root = Path(tmpdir)
+        base_dir = root / "base"
+        head_dir = root / "head"
+        base_dir.mkdir()
+        head_dir.mkdir()
+
+        rel_path = "services/logic.py"
+        base_content = "def old_logic():\n    return 1\n"
+        head_content = "def new_logic():\n    return 2\n"
+        (base_dir / "services").mkdir()
+        (head_dir / "services").mkdir()
+        (base_dir / rel_path).write_text(base_content, encoding="utf-8")
+        (head_dir / rel_path).write_text(head_content, encoding="utf-8")
+
+        workspace = Workspace.objects.create(name="Citation Check", slug="citation-check")
+        base_snapshot = SourceSnapshot.objects.create(
+            workspace=workspace,
+            label="base",
+            storage_path=str(base_dir),
+            file_count=1,
+            total_bytes=len(base_content.encode("utf-8")),
+            ingestion_status="ready",
+        )
+        head_snapshot = SourceSnapshot.objects.create(
+            workspace=workspace,
+            label="head",
+            storage_path=str(head_dir),
+            file_count=1,
+            total_bytes=len(head_content.encode("utf-8")),
+            ingestion_status="ready",
+        )
+        SourceFile.objects.create(
+            snapshot=base_snapshot,
+            relative_path=rel_path,
+            content_hash=hashlib.sha256(base_content.encode("utf-8")).hexdigest(),
+            language="python",
+            file_classification="source",
+            line_count=2,
+            parse_status="parsed",
+        )
+        SourceFile.objects.create(
+            snapshot=head_snapshot,
+            relative_path=rel_path,
+            content_hash=hashlib.sha256(head_content.encode("utf-8")).hexdigest(),
+            language="python",
+            file_classification="source",
+            line_count=2,
+            parse_status="parsed",
+        )
+
+        analysis = AnalysisRun.objects.create(
+            workspace=workspace,
+            base_snapshot=base_snapshot,
+            head_snapshot=head_snapshot,
+            status="queued",
+        )
+
+        excerpt = "\n".join(head_content.splitlines())
+        EvidenceRecord.objects.create(
+            analysis=analysis,
+            snapshot_side="head",
+            file_path=rel_path,
+            start_line=1,
+            end_line=2,
+            content_excerpt=excerpt,
+            content_hash=hashlib.sha256(excerpt.encode("utf-8")).hexdigest(),
+            originating_stage="stage_7_deltas",
+        )
+
+        AnalysisPipelineEngine()._verify_evidence_records(analysis)
+
+
+@pytest.mark.django_db
+def test_evidence_citation_verifier_rejects_broken_hash():
+    with TemporaryDirectory() as tmpdir:
+        root = Path(tmpdir)
+        base_dir = root / "base"
+        head_dir = root / "head"
+        base_dir.mkdir()
+        head_dir.mkdir()
+
+        rel_path = "services/logic.py"
+        content = "def safe_logic():\n    return 42\n"
+        (base_dir / "services").mkdir()
+        (head_dir / "services").mkdir()
+        (base_dir / rel_path).write_text(content, encoding="utf-8")
+        (head_dir / rel_path).write_text(content, encoding="utf-8")
+
+        workspace = Workspace.objects.create(name="Broken Citation", slug="broken-citation")
+        base_snapshot = SourceSnapshot.objects.create(
+            workspace=workspace,
+            label="base",
+            storage_path=str(base_dir),
+            file_count=1,
+            total_bytes=len(content.encode("utf-8")),
+            ingestion_status="ready",
+        )
+        head_snapshot = SourceSnapshot.objects.create(
+            workspace=workspace,
+            label="head",
+            storage_path=str(head_dir),
+            file_count=1,
+            total_bytes=len(content.encode("utf-8")),
+            ingestion_status="ready",
+        )
+        SourceFile.objects.create(
+            snapshot=base_snapshot,
+            relative_path=rel_path,
+            content_hash=hashlib.sha256(content.encode("utf-8")).hexdigest(),
+            language="python",
+            file_classification="source",
+            line_count=2,
+            parse_status="parsed",
+        )
+        SourceFile.objects.create(
+            snapshot=head_snapshot,
+            relative_path=rel_path,
+            content_hash=hashlib.sha256(content.encode("utf-8")).hexdigest(),
+            language="python",
+            file_classification="source",
+            line_count=2,
+            parse_status="parsed",
+        )
+
+        analysis = AnalysisRun.objects.create(
+            workspace=workspace,
+            base_snapshot=base_snapshot,
+            head_snapshot=head_snapshot,
+            status="queued",
+        )
+        EvidenceRecord.objects.create(
+            analysis=analysis,
+            snapshot_side="head",
+            file_path=rel_path,
+            start_line=1,
+            end_line=2,
+            content_excerpt=content,
+            content_hash="broken-hash",
+            originating_stage="stage_7_deltas",
+        )
+
+        with pytest.raises(ValueError, match="Evidence citation mismatch"):
+            AnalysisPipelineEngine()._verify_evidence_records(analysis)
+
+
+@pytest.mark.django_db
+def test_evidence_citation_verifier_rejects_out_of_bounds_lines():
+    with TemporaryDirectory() as tmpdir:
+        root = Path(tmpdir)
+        base_dir = root / "base"
+        head_dir = root / "head"
+        base_dir.mkdir()
+        head_dir.mkdir()
+
+        rel_path = "services/logic.py"
+        content = "line 1\nline 2\n"
+        (base_dir / "services").mkdir()
+        (head_dir / "services").mkdir()
+        (base_dir / rel_path).write_text(content, encoding="utf-8")
+        (head_dir / rel_path).write_text(content, encoding="utf-8")
+
+        workspace = Workspace.objects.create(name="OOB Lines", slug="oob-lines")
+        base_snapshot = SourceSnapshot.objects.create(
+            workspace=workspace, label="base", storage_path=str(base_dir), file_count=1, ingestion_status="ready"
+        )
+        head_snapshot = SourceSnapshot.objects.create(
+            workspace=workspace, label="head", storage_path=str(head_dir), file_count=1, ingestion_status="ready"
+        )
+
+        analysis = AnalysisRun.objects.create(
+            workspace=workspace, base_snapshot=base_snapshot, head_snapshot=head_snapshot, status="queued"
+        )
+        EvidenceRecord.objects.create(
+            analysis=analysis,
+            snapshot_side="head",
+            file_path=rel_path,
+            start_line=1,
+            end_line=999,  # exceeds file length (2 lines)
+            content_excerpt=content,
+            content_hash=hashlib.sha256(content.encode("utf-8")).hexdigest(),
+            originating_stage="stage_7_deltas",
+        )
+
+        with pytest.raises(ValueError, match="Evidence range exceeds file length"):
+            AnalysisPipelineEngine()._verify_evidence_records(analysis)
+
+
+@pytest.mark.django_db
+def test_evidence_citation_verifier_rejects_missing_file():
+    with TemporaryDirectory() as tmpdir:
+        root = Path(tmpdir)
+        base_dir = root / "base"
+        head_dir = root / "head"
+        base_dir.mkdir()
+        head_dir.mkdir()
+
+        workspace = Workspace.objects.create(name="Missing File", slug="missing-file")
+        base_snapshot = SourceSnapshot.objects.create(
+            workspace=workspace, label="base", storage_path=str(base_dir), file_count=0, ingestion_status="ready"
+        )
+        head_snapshot = SourceSnapshot.objects.create(
+            workspace=workspace, label="head", storage_path=str(head_dir), file_count=0, ingestion_status="ready"
+        )
+
+        analysis = AnalysisRun.objects.create(
+            workspace=workspace, base_snapshot=base_snapshot, head_snapshot=head_snapshot, status="queued"
+        )
+        EvidenceRecord.objects.create(
+            analysis=analysis,
+            snapshot_side="head",
+            file_path="nonexistent.py",
+            start_line=1,
+            end_line=5,
+            content_excerpt="code",
+            content_hash="hash",
+            originating_stage="stage_7_deltas",
+        )
+
+        with pytest.raises(ValueError, match="Evidence file not found in snapshot"):
+            AnalysisPipelineEngine()._verify_evidence_records(analysis)

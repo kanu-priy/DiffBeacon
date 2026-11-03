@@ -52,6 +52,7 @@ class BehaviorDelta(models.Model):
         ("data_model", "Data Model / Schema Shift"),
         ("error_handling", "Error Handling Shift"),
         ("logic", "Business Logic Shift"),
+        ("added_symbol", "Added Symbol"),
         ("deleted_symbol", "Deleted Symbol with Remaining Reference"),
     )
 

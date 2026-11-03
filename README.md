@@ -122,6 +122,33 @@ The frontend runs at:
 
 ---
 
+## GitHub App setup (recommended)
+
+DiffBeacon prefers a GitHub App over a personal access token for repository discovery and PR automation.
+
+Create a GitHub App with these minimum permissions:
+
+- Repository permissions
+  - Metadata: Read
+  - Contents: Read
+  - Pull requests: Read
+- Events
+  - Pull request
+
+Add these values to your environment:
+
+```bash
+GITHUB_APP_ID=123456
+GITHUB_APP_SLUG=diffbeacon-dev
+GITHUB_APP_PRIVATE_KEY="-----BEGIN RSA PRIVATE KEY-----\n...\n-----END RSA PRIVATE KEY-----"
+GITHUB_WEBHOOK_SECRET=replace-with-a-secure-random-string
+GITHUB_APP_REDIRECT_URL=http://localhost:5173/dashboard
+```
+
+Then install the app on the target GitHub organization or user account. After installation, open the DiffBeacon dashboard and choose Connect GitHub to authorize the installation. The app will return to DiffBeacon, where you can select repositories for automatic PR detection.
+
+GitHub App private keys and webhooks must be stored in environment variables or a secure secret store; never commit them to the repository.
+
 ## Testing
 
 ### Backend

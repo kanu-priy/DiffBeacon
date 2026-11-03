@@ -129,6 +129,18 @@ export const api = {
   getWorkspace: (id: string) => request<Workspace>(`/workspaces/${id}/`),
   getWorkspaceHistory: (id: string) => request<AnalysisRun[]>(`/workspaces/${id}/history/`),
 
+  getGitHubConnectionStatus: () => request<{ connected: boolean; status: string; installation_id?: string | null; account_login?: string | null; requires_setup: boolean; connect_url?: string; selected_repositories: any[]; repository_count: number; }>('/integrations/github/connection/'),
+  connectGitHub: () => request<{ connected: boolean; status: string; install_url: string; message?: string }>('/integrations/github/connect/'),
+  completeGitHubInstallation: (installationId: string) => request<{ connected: boolean; status: string; installation_id: string; github_installation_id: number; message: string; created: boolean }>(`/integrations/github/callback/?installation_id=${encodeURIComponent(installationId)}`),
+  getGitHubRepositories: () => request<{ connected: boolean; repositories: any[] }>('/integrations/github/repositories/'),
+  selectGitHubRepositories: (repositoryIds: string[]) =>
+    request<{ connected: boolean; updated: boolean; repositories: any[] }>('/integrations/github/repositories/', {
+      method: 'POST',
+      body: JSON.stringify({ repository_ids: repositoryIds }),
+    }),
+  disconnectGitHub: () =>
+    request<{ status: string; message: string }>('/integrations/github/disconnect/', { method: 'POST' }),
+
   uploadSnapshot: (workspaceId: string, formData: FormData) =>
     request<{ id: string; label: string; file_count: number }>(`/workspaces/${workspaceId}/snapshots/`, {
       method: 'POST',
