@@ -50,6 +50,24 @@ export const SettingsView: React.FC = () => {
     queryFn: api.getProviderSettings,
   });
 
+  const {
+    data: githubStatus,
+    isLoading: isGitHubStatusLoading,
+    refetch: refetchGitHubStatus,
+  } = useQuery({
+    queryKey: ['github-connection-settings'],
+    queryFn: api.getGitHubConnectionStatus,
+  });
+
+  const {
+    data: githubRepos,
+    isLoading: isGitHubReposLoading,
+  } = useQuery({
+    queryKey: ['github-repositories-settings'],
+    queryFn: api.getGitHubRepositories,
+    enabled: !!githubStatus?.connected,
+  });
+
   const activeProviderId = normalizeProviderId(providerSettings?.active_provider || 'mock');
 
   useEffect(() => {
@@ -74,12 +92,39 @@ export const SettingsView: React.FC = () => {
     }
   };
 
+  const handleConnectGitHub = async () => {
+    try {
+      const result = await api.connectGitHub();
+      if (!result.install_url) {
+        toast.error('GitHub App not configured', 'Set GITHUB_APP_SLUG and the private key before connecting.');
+        return;
+      }
+
+      window.open(result.install_url, '_blank', 'noopener,noreferrer');
+      toast.success('GitHub setup opened', 'Install the app in the GitHub tab, then return to DiffBeacon to select repositories.');
+    } catch (err: any) {
+      toast.error('GitHub connection failed', err.message);
+    }
+  };
+
+  const handleDisconnectGitHub = async () => {
+    try {
+      const result = await api.disconnectGitHub();
+      await refetchGitHubStatus();
+      toast.success('GitHub disconnected', result.message);
+    } catch (err: any) {
+      toast.error('Disconnect failed', err.message);
+    }
+  };
+
+  const connectedRepos = githubRepos?.repositories?.filter((repo: any) => repo.selected) ?? [];
+
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
       {/* Header */}
       <div className="pb-6 border-b border-[#1f2638] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2 text-xs font-mono text-indigo-400 font-semibold uppercase tracking-wider">
+          <div className="flex items-center gap-2 text-xs font-mono text-emerald-400 font-semibold uppercase tracking-wider">
             <Settings className="w-3.5 h-3.5" />
             <span>Application Settings</span>
             <span className="text-slate-600">/</span>
@@ -97,7 +142,7 @@ export const SettingsView: React.FC = () => {
           <button
             onClick={() => setActiveTab('providers')}
             className={`px-3 py-1.5 rounded transition-colors cursor-pointer flex items-center gap-1.5 ${
-              activeTab === 'providers' ? 'bg-indigo-600 text-white font-semibold' : 'text-slate-400 hover:text-white'
+              activeTab === 'providers' ? 'bg-emerald-600 text-slate-950 font-semibold' : 'text-slate-400 hover:text-white'
             }`}
           >
             <Cpu className="w-3.5 h-3.5" />
@@ -106,7 +151,7 @@ export const SettingsView: React.FC = () => {
           <button
             onClick={() => setActiveTab('integrations')}
             className={`px-3 py-1.5 rounded transition-colors cursor-pointer flex items-center gap-1.5 ${
-              activeTab === 'integrations' ? 'bg-indigo-600 text-white font-semibold' : 'text-slate-400 hover:text-white'
+              activeTab === 'integrations' ? 'bg-emerald-600 text-slate-950 font-semibold' : 'text-slate-400 hover:text-white'
             }`}
           >
             <GitPullRequest className="w-3.5 h-3.5" />
@@ -115,7 +160,7 @@ export const SettingsView: React.FC = () => {
           <button
             onClick={() => setActiveTab('security')}
             className={`px-3 py-1.5 rounded transition-colors cursor-pointer flex items-center gap-1.5 ${
-              activeTab === 'security' ? 'bg-indigo-600 text-white font-semibold' : 'text-slate-400 hover:text-white'
+              activeTab === 'security' ? 'bg-emerald-600 text-slate-950 font-semibold' : 'text-slate-400 hover:text-white'
             }`}
           >
             <Shield className="w-3.5 h-3.5" />
@@ -124,7 +169,7 @@ export const SettingsView: React.FC = () => {
           <button
             onClick={() => setActiveTab('health')}
             className={`px-3 py-1.5 rounded transition-colors cursor-pointer flex items-center gap-1.5 ${
-              activeTab === 'health' ? 'bg-indigo-600 text-white font-semibold' : 'text-slate-400 hover:text-white'
+              activeTab === 'health' ? 'bg-emerald-600 text-slate-950 font-semibold' : 'text-slate-400 hover:text-white'
             }`}
           >
             <Activity className="w-3.5 h-3.5" />
@@ -163,7 +208,7 @@ export const SettingsView: React.FC = () => {
                   <div
                     key={p.id}
                     className={`surface-card p-5 border transition-all ${
-                      isSelected ? 'border-indigo-500 shadow-md ring-1 ring-indigo-500/30' : 'border-[#1f2638]'
+                      isSelected ? 'border-emerald-500 shadow-md ring-1 ring-emerald-500/30' : 'border-[#1f2638]'
                     }`}
                   >
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -175,7 +220,7 @@ export const SettingsView: React.FC = () => {
                               Local / Offline
                             </span>
                           ) : (
-                            <span className="px-2 py-0.2 rounded text-[10px] font-mono bg-indigo-950/80 text-indigo-300 border border-indigo-800/60">
+                            <span className="px-2 py-0.2 rounded text-[10px] font-mono bg-emerald-950/80 text-emerald-300 border border-emerald-800/60">
                               Cloud Provider
                             </span>
                           )}
@@ -196,12 +241,12 @@ export const SettingsView: React.FC = () => {
                         >
                           {isTesting ? (
                             <>
-                              <Loader2 className="w-3.5 h-3.5 animate-spin text-indigo-400" />
+                              <Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-400" />
                               <span>Testing...</span>
                             </>
                           ) : (
                             <>
-                              <Play className="w-3.5 h-3.5 text-indigo-400 fill-indigo-400" />
+                              <Play className="w-3.5 h-3.5 text-emerald-400 fill-emerald-400" />
                               <span>Test Connectivity</span>
                             </>
                           )}
@@ -214,7 +259,7 @@ export const SettingsView: React.FC = () => {
                           }}
                           className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
                             isSelected
-                              ? 'bg-indigo-600 text-white font-semibold'
+                              ? 'bg-emerald-600 text-slate-950 font-semibold'
                               : 'bg-[#10141f] text-slate-400 hover:text-white border border-[#1b202e]'
                           }`}
                         >
@@ -318,20 +363,99 @@ export const SettingsView: React.FC = () => {
       {activeTab === 'integrations' && (
         <div className="space-y-6">
           <div className="surface-card p-5 border-[#1f2638] space-y-4">
-            <div className="flex items-center gap-2 pb-3 border-b border-[#1b2130]">
-              <GitPullRequest className="w-4 h-4 text-indigo-400" />
-              <h2 className="text-sm font-semibold text-white">GitHub Ingestion & Webhooks</h2>
+            <div className="flex items-center justify-between gap-3 pb-3 border-b border-[#1b2130]">
+              <div className="flex items-center gap-2">
+                <GitPullRequest className="w-4 h-4 text-emerald-400" />
+                <h2 className="text-sm font-semibold text-white">GitHub Ingestion & Webhooks</h2>
+              </div>
+
+              {githubStatus?.connected ? (
+                <button
+                  onClick={handleDisconnectGitHub}
+                  className="px-3 py-1.5 rounded-lg bg-[#10141f] text-slate-300 border border-[#232b3e] hover:bg-[#141b2b] text-xs font-medium cursor-pointer"
+                >
+                  Disconnect GitHub
+                </button>
+              ) : (
+                <button
+                  onClick={handleConnectGitHub}
+                  disabled={isGitHubStatusLoading}
+                  className="px-3 py-1.5 rounded-lg bg-emerald-600 text-slate-950 text-xs font-semibold hover:bg-emerald-500 disabled:opacity-60 cursor-pointer"
+                >
+                  {isGitHubStatusLoading ? 'Loading…' : 'Connect GitHub'}
+                </button>
+              )}
             </div>
 
-            <p className="text-xs text-slate-300 leading-relaxed font-sans">
-              DiffBeacon integrates directly with GitHub Pull Requests. Configure a webhook in your repository settings to automatically run behavioral impact analysis whenever a PR is opened or updated.
-            </p>
+            <div className="rounded-xl border border-[#1b202e] bg-[#0a0d14] p-4 space-y-3">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <div className="text-[10px] font-mono uppercase tracking-[0.2em] text-slate-400">Connection status</div>
+                  <div className="mt-1 text-sm font-semibold text-white">
+                    {githubStatus?.connected ? `Connected to ${githubStatus.account_login || 'GitHub'}` : 'Not connected'}
+                  </div>
+                </div>
+                <div className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-mono uppercase tracking-[0.15em] ${
+                  githubStatus?.connected
+                    ? 'border-emerald-800/60 bg-emerald-950/60 text-emerald-300'
+                    : 'border-[#2a3140] bg-[#121822] text-slate-400'
+                }`}>
+                  {githubStatus?.connected ? 'Active' : 'Not connected'}
+                </div>
+              </div>
 
-            <div className="p-4 rounded-xl bg-[#0a0d14] border border-[#1b202e] space-y-3 font-mono text-xs">
-              <span className="text-[11px] text-slate-400 uppercase tracking-wider block font-bold">
-                Webhook Payload URL:
-              </span>
-              <div className="flex items-center justify-between p-2.5 rounded-lg bg-[#0e121c] border border-[#232b3e] text-slate-200">
+              <p className="text-xs text-slate-300 leading-relaxed font-sans">
+                DiffBeacon integrates directly with GitHub Pull Requests. Connect once, select the repositories you want monitored, and let DiffBeacon queue analysis whenever a PR is opened or updated.
+              </p>
+
+              {!githubStatus?.connected && (
+                <div className="rounded-lg border border-dashed border-[#2a3140] bg-[#0d1019] p-3 text-xs text-slate-300">
+                  GitHub App access is required to discover repositories and monitor relevant PRs. Use the least-privilege setup with metadata, contents, and pull requests read access.
+                </div>
+              )}
+            </div>
+
+            {githubStatus?.connected && (
+              <div className="space-y-3 rounded-xl border border-[#1b202e] bg-[#0c111a] p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="text-xs font-semibold text-white">Selected repositories</div>
+                  <span className="text-[10px] font-mono uppercase tracking-[0.15em] text-slate-400">
+                    {connectedRepos.length} selected
+                  </span>
+                </div>
+
+                {isGitHubReposLoading ? (
+                  <div className="text-xs text-slate-400">Loading repositories…</div>
+                ) : connectedRepos.length ? (
+                  <div className="flex flex-wrap gap-2">
+                    {connectedRepos.map((repo: any) => (
+                      <span
+                        key={repo.id || repo.full_name}
+                        className="rounded-full border border-[#233041] bg-[#101821] px-2.5 py-1 text-[11px] text-slate-200"
+                      >
+                        {repo.full_name}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="rounded-lg border border-dashed border-[#2a3140] bg-[#0d1219] p-3 text-xs text-slate-400">
+                    No repositories selected yet. Choose the repos you want DiffBeacon to watch.
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div className="rounded-xl border border-[#1b202e] bg-[#0a0d14] p-4 space-y-3 font-mono text-xs">
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-[11px] text-slate-400 uppercase tracking-wider block font-bold">
+                  Webhook Payload URL
+                </span>
+                <span className="rounded-full border border-[#1d2b22] bg-[#0d1714] px-2 py-0.5 text-[10px] uppercase tracking-[0.14em] text-emerald-300">
+                  {githubStatus?.connected ? 'live' : 'pending'}
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between gap-3 rounded-lg bg-[#0e121c] border border-[#232b3e] p-2.5 text-slate-200">
                 <span className="truncate">{window.location.origin}/api/v1/integrations/github/webhook/</span>
                 <button
                   onClick={() => {
@@ -348,11 +472,11 @@ export const SettingsView: React.FC = () => {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 text-[11px] text-slate-400">
                 <div>
-                  <span className="text-white block font-semibold">Content Type:</span>
+                  <span className="text-white block font-semibold">Content Type</span>
                   <code>application/json</code>
                 </div>
                 <div>
-                  <span className="text-white block font-semibold">Secret:</span>
+                  <span className="text-white block font-semibold">Secret</span>
                   <span>Configured via <code>GITHUB_WEBHOOK_SECRET</code></span>
                 </div>
               </div>
@@ -361,15 +485,9 @@ export const SettingsView: React.FC = () => {
             <div className="space-y-2 text-xs">
               <h3 className="font-semibold text-white">Handled Pull Request Events</h3>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 font-mono text-[11px]">
-                <div className="p-2 rounded bg-[#0e121c] border border-[#1e2436] text-emerald-300">
-                  ✓ pull_request.opened
-                </div>
-                <div className="p-2 rounded bg-[#0e121c] border border-[#1e2436] text-emerald-300">
-                  ✓ pull_request.synchronize
-                </div>
-                <div className="p-2 rounded bg-[#0e121c] border border-[#1e2436] text-emerald-300">
-                  ✓ pull_request.reopened
-                </div>
+                <div className="p-2 rounded bg-[#0e121c] border border-[#1e2436] text-emerald-300">✓ pull_request.opened</div>
+                <div className="p-2 rounded bg-[#0e121c] border border-[#1e2436] text-emerald-300">✓ pull_request.synchronize</div>
+                <div className="p-2 rounded bg-[#0e121c] border border-[#1e2436] text-emerald-300">✓ pull_request.reopened</div>
               </div>
             </div>
           </div>
@@ -397,7 +515,7 @@ export const SettingsView: React.FC = () => {
 
             {isHealthLoading ? (
               <div className="p-8 text-center text-slate-400 flex flex-col items-center gap-2">
-                <Loader2 className="w-6 h-6 animate-spin text-indigo-400" />
+                <Loader2 className="w-6 h-6 animate-spin text-emerald-400" />
                 <span className="text-xs font-mono">Probing backend services and storage...</span>
               </div>
             ) : healthData ? (

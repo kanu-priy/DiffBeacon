@@ -1,5 +1,5 @@
 # DiffBeacon Empirical Evaluation Benchmark Report
-*Generated on: 2026-11-02 02:09:12*
+*Generated on: 2026-11-04 02:14:31*
 
 ## 1. Executive Summary
 
@@ -10,7 +10,7 @@
 | **False Positives** | 0 | 0 | Passed |
 | **Missed Breaking Changes** | 0 | 0 | Passed |
 | **Fabricated Citations** | **0** | **0** | **100% Cryptographically Verified** |
-| **Average Runtime Per PR** | < 2.0s | 4.763s | Real-time performance |
+| **Average Runtime Per PR** | < 2.0s | 9.707s | Real-time performance |
 
 ---
 
@@ -18,11 +18,11 @@
 
 | Scenario ID | Repository & PR | Expected | Detected | Deltas | Fabricated Cites | Runtime |
 |---|---|---|---|---|---|---|
-| `drf-pr-7921` | encode/django-rest-framework #7921 | Safe | Safe | 2 | 0 | 4.99s |
-| `drf-pr-8104` | encode/django-rest-framework #8104 | Breaking | Breaking | 3 | 0 | 5.048s |
-| `oauth-pr-412` | jazzband/django-oauth-toolkit #412 | Breaking | Breaking | 1 | 0 | 5.111s |
-| `django-pr-15201` | django/django #15201 | Safe | Safe | 1 | 0 | 4.593s |
-| `drf-pr-8452` | encode/django-rest-framework #8452 | Safe | Safe | 1 | 0 | 4.073s |
+| `drf-pr-7921` | encode/django-rest-framework #7921 | Safe | Safe | 2 | 0 | 13.69s |
+| `drf-pr-8104` | encode/django-rest-framework #8104 | Breaking | Breaking | 3 | 0 | 13.102s |
+| `oauth-pr-412` | jazzband/django-oauth-toolkit #412 | Breaking | Breaking | 1 | 0 | 8.885s |
+| `django-pr-15201` | django/django #15201 | Safe | Safe | 1 | 0 | 6.666s |
+| `drf-pr-8452` | encode/django-rest-framework #8452 | Safe | Safe | 1 | 0 | 6.192s |
 
 ---
 

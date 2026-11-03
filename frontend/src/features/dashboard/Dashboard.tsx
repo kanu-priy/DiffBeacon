@@ -92,18 +92,15 @@ export const Dashboard: React.FC = () => {
   };
 
   const handleGitHubConnect = async () => {
-    if (!activeWorkspace) {
-      toast.error('Create a workspace first', 'You need a workspace before connecting GitHub.');
-      return;
-    }
-
     try {
       const result = await api.connectGitHub();
       if (!result.install_url) {
         toast.error('GitHub App not configured', 'Set GITHUB_APP_SLUG and the private key before connecting.');
         return;
       }
-      window.location.href = result.install_url;
+
+      window.open(result.install_url, '_blank', 'noopener,noreferrer');
+      toast.success('GitHub setup opened', 'Complete the app install in the GitHub tab, then return to DiffBeacon.');
     } catch (err: any) {
       toast.error('GitHub connection failed', err.message);
     }
@@ -212,7 +209,7 @@ export const Dashboard: React.FC = () => {
             <div>
               <div className="text-[10px] font-mono uppercase tracking-[0.2em] text-slate-400">GitHub Integration</div>
               <h3 className="mt-1 text-base font-semibold text-white">
-                {githubStatus?.connected ? `${githubStatus.account_login || 'GitHub'} connected` : 'Connect a GitHub app'}
+                {githubStatus?.connected ? `${githubStatus.account_login || 'GitHub'} connected` : githubStatus?.requires_setup ? 'GitHub App setup required' : 'Connect a GitHub app'}
               </h3>
             </div>
           </div>
@@ -220,16 +217,10 @@ export const Dashboard: React.FC = () => {
           <div className="flex flex-wrap items-center gap-2">
             {!isGithubStatusLoading && githubStatus?.connected ? (
               <>
-                <button
-                  onClick={handleGitHubDisconnect}
-                  className="db-button db-button-secondary"
-                >
+                <button onClick={handleGitHubDisconnect} className="db-button db-button-secondary">
                   Disconnect
                 </button>
-                <button
-                  onClick={handleGitHubConnect}
-                  className="db-button db-button-primary"
-                >
+                <button onClick={handleGitHubConnect} className="db-button db-button-primary">
                   <GitPullRequest className="w-3.5 h-3.5" />
                   <span>Manage repos</span>
                 </button>
@@ -241,7 +232,7 @@ export const Dashboard: React.FC = () => {
                 disabled={isGithubStatusLoading}
               >
                 <GitPullRequest className="w-3.5 h-3.5" />
-                <span>{isGithubStatusLoading ? 'Loading…' : 'Connect GitHub'}</span>
+                <span>{isGithubStatusLoading ? 'Loading…' : githubStatus?.requires_setup ? 'Set up GitHub' : 'Connect GitHub'}</span>
               </button>
             )}
           </div>
@@ -270,10 +261,21 @@ export const Dashboard: React.FC = () => {
               </div>
             )}
           </div>
+        ) : githubStatus?.requires_setup ? (
+          <div className="mt-4 rounded-xl border border-[#2a302a] bg-[#0d1412] p-3 text-xs text-slate-300 space-y-2">
+            <p className="text-slate-200">
+              DiffBeacon is ready for a GitHub App, but the server still needs the app credentials configured.
+            </p>
+            <ol className="list-decimal pl-5 text-slate-400 space-y-1">
+              <li>Create a GitHub App in your GitHub account.</li>
+              <li>Set <span className="font-mono text-emerald-300">GITHUB_APP_ID</span>, <span className="font-mono text-emerald-300">GITHUB_APP_SLUG</span>, and <span className="font-mono text-emerald-300">GITHUB_APP_PRIVATE_KEY</span>.</li>
+              <li>Install it on the target org or user, then return here to connect.</li>
+            </ol>
+          </div>
         ) : (
           <div className="mt-4 rounded-xl border border-dashed border-[#21372e] bg-[#0d1412] px-3 py-3 text-xs text-slate-400">
             DiffBeacon needs GitHub access to discover installed repos and analyze relevant pull requests automatically.
-            {githubStatus?.requires_setup ? ' The server is not configured for a GitHub App yet.' : ' Connect the app once, then select repositories for PR monitoring.'}
+            Connect the app once, then select repositories for PR monitoring.
           </div>
         )}
       </div>

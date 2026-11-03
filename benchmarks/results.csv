@@ -1,6 +1,6 @@
 case_id,repo,pr_number,title,expected_breaking,detected_breaking,true_breaking_caught,false_positive,missed_breaking,fabricated_citations,total_deltas,total_evidence_records,runtime_seconds
-drf-pr-7921,encode/django-rest-framework,7921,Make serializer context optional in nested hyperlinked identity field,False,False,False,False,False,0,2,2,4.99
-drf-pr-8104,encode/django-rest-framework,8104,Disallow null bytes in CharField and raise ValidationError,True,True,True,False,False,0,3,3,5.048
-oauth-pr-412,jazzband/django-oauth-toolkit,412,Drop deprecated client_secret parameter from PKCE public token exchange,True,True,True,False,False,0,1,1,5.111
-django-pr-15201,django/django,15201,Support pre-hashed passwords in create_user without double hashing,False,False,False,False,False,0,1,1,4.593
-drf-pr-8452,encode/django-rest-framework,8452,Refactor internal token parsing cache without external behavior change,False,False,False,False,False,0,1,1,4.073
+drf-pr-7921,encode/django-rest-framework,7921,Make serializer context optional in nested hyperlinked identity field,False,False,False,False,False,0,2,2,13.69
+drf-pr-8104,encode/django-rest-framework,8104,Disallow null bytes in CharField and raise ValidationError,True,True,True,False,False,0,3,3,13.102
+oauth-pr-412,jazzband/django-oauth-toolkit,412,Drop deprecated client_secret parameter from PKCE public token exchange,True,True,True,False,False,0,1,1,8.885
+django-pr-15201,django/django,15201,Support pre-hashed passwords in create_user without double hashing,False,False,False,False,False,0,1,1,6.666
+drf-pr-8452,encode/django-rest-framework,8452,Refactor internal token parsing cache without external behavior change,False,False,False,False,False,0,1,1,6.192

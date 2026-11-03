@@ -43,6 +43,11 @@ dist/
 dist-ssr/
 *.local
 
+# Local environment files
+.env
+.env.*
+!.env.example
+
 # Editor & OS
 .vscode/
 .idea/
