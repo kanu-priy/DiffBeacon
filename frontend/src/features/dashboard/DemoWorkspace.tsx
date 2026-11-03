@@ -141,6 +141,20 @@ export const DemoWorkspace: React.FC = () => {
                 <code>notifications.py</code> uses <code>getattr(notifier, 'send_' + channel)</code>, correctly tracked in Unknowns Register.
               </p>
             </div>
+
+            <div className="p-3.5 rounded-lg bg-[#0a0d14] border border-[#1b202e] space-y-1">
+              <span className="text-cyan-400 font-bold block">7. Cross-Stack Frontend Client Tracing</span>
+              <p className="text-slate-400 font-sans text-xs">
+                <code>client/employeeClient.ts</code> API consumers statically linked to DRF routes via <code>consumed_by_client</code> edges.
+              </p>
+            </div>
+
+            <div className="p-3.5 rounded-lg bg-[#0a0d14] border border-[#1b202e] space-y-1">
+              <span className="text-emerald-400 font-bold block">8. Cryptographic Citation Linter</span>
+              <p className="text-slate-400 font-sans text-xs">
+                Every line range re-opened from disk in Stage 11 with SHA-256 slice hash validation (0 hallucinated citations).
+              </p>
+            </div>
           </div>
         </div>
       </div>

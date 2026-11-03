@@ -6,6 +6,7 @@ import { ToastProvider } from './components/Toast';
 import { LandingPage } from './features/dashboard/LandingPage';
 import { Dashboard } from './features/dashboard/Dashboard';
 import { DemoWorkspace } from './features/dashboard/DemoWorkspace';
+import { BenchmarkReportView } from './features/benchmarks/BenchmarkReportView';
 import { AnalysisWorkspace } from './features/changes/AnalysisWorkspace';
 import { LanguageRegistryView } from './features/languages/LanguageRegistryView';
 import { SettingsView } from './features/settings/SettingsView';
@@ -106,6 +107,7 @@ export const App: React.FC = () => {
                 <Route path="/app/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
                 <Route path="/app/workspaces" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
                 <Route path="/demo" element={<DemoWorkspace />} />
+                <Route path="/benchmarks" element={<BenchmarkReportView />} />
                 <Route path="/languages" element={<ProtectedRoute><LanguageRegistryView /></ProtectedRoute>} />
                 <Route path="/app/languages" element={<ProtectedRoute><LanguageRegistryView /></ProtectedRoute>} />
                 <Route path="/settings" element={<ProtectedRoute><SettingsView /></ProtectedRoute>} />

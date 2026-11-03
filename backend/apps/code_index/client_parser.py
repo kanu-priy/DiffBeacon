@@ -72,7 +72,7 @@ class ClientConsumerParser:
                     normalized_call = normalized_call[len(prefix):]
 
             for route in drf_routes:
-                route_pattern = route.get("pattern", "").strip().strip("/").strip("^").strip("$")
+                route_pattern = (route.get("prefix") or route.get("pattern") or "").strip().strip("/").strip("^").strip("$")
                 if not route_pattern:
                     continue
 
@@ -89,7 +89,7 @@ class ClientConsumerParser:
                         "client_line": call["line_number"],
                         "client_method": call["method"],
                         "client_endpoint": call["endpoint"],
-                        "view_symbol": route.get("view_name") or route.get("callback", "UnknownView"),
+                        "view_symbol": route.get("view_target") or route.get("view_name") or route.get("callback", "UnknownView"),
                     })
 
         return matches

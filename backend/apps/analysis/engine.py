@@ -13,6 +13,7 @@ from apps.analysis.models import (
     UnknownEntry,
     VerificationCase,
 )
+from apps.code_index.client_parser import ClientConsumerParser
 from apps.code_index.parser import PythonASTParser
 from apps.contracts.comparator import ContractComparator
 from apps.contracts.django_adapter import DjangoContractAdapter
@@ -101,6 +102,8 @@ class AnalysisPipelineEngine:
                 changed_symbols=changed_symbol_qnames,
             )
             self._persist_graph_edges(head_snap, head_graph)
+            # Cross-Stack Client Consumer Tracing (TS / JS API calls -> DRF routes)
+            self._link_client_consumers(head_snap, head_contracts["routes"])
             analysis.stages_completed.append("stage_6_graph")
             analysis.save()
 
@@ -450,6 +453,34 @@ class AnalysisPipelineEngine:
                     certainty=e.get("certainty", "definite"),
                     source_file=e.get("file_path", ""),
                     line_number=e.get("line_number"),
+                )
+
+    def _link_client_consumers(
+        self, snapshot: SourceSnapshot, routes: List[Dict[str, Any]]
+    ) -> None:
+        client_files = snapshot.files.filter(
+            relative_path__iregex=r"\.(ts|tsx|js|jsx)$"
+        )
+        for cf in client_files:
+            full_path = Path(snapshot.storage_path) / cf.relative_path
+            if not full_path.exists():
+                continue
+            with open(full_path, "r", encoding="utf-8", errors="replace") as f:
+                content = f.read()
+
+            api_calls = ClientConsumerParser.extract_client_api_calls(cf.relative_path, content)
+            matches = ClientConsumerParser.match_client_calls_to_routes(api_calls, routes)
+            for m in matches:
+                route_prefix = m["route"].get("prefix", "")
+                RelationshipEdge.objects.create(
+                    snapshot=snapshot,
+                    source_symbol_qname=f"{m['client_file']}:{m['client_line']}",
+                    target_symbol_qname=f"ROUTE:{route_prefix}" if route_prefix else m["view_symbol"],
+                    edge_type="consumed_by_client",
+                    provenance="ast_static",
+                    certainty="definite",
+                    source_file=m["client_file"],
+                    line_number=m["client_line"],
                 )
 
     def _is_breaking_signature_change(self, base_sig: str, head_sig: str) -> bool:

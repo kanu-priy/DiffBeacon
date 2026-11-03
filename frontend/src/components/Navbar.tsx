@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Layers, Search, Settings, Terminal } from 'lucide-react';
+import { Layers, Search, Settings, Terminal, Scale } from 'lucide-react';
 
 interface Props {
   onOpenCommandPalette?: () => void;
@@ -49,6 +49,10 @@ export const Navbar: React.FC<Props> = ({ onOpenCommandPalette, isAuthenticated,
             <Link to={isAuthenticated ? '/dashboard' : '/'} className={`px-2.5 py-1.5 rounded-md border flex items-center gap-1.5 transition-colors ${linkClass('/dashboard')}`}>
               <Layers className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Workspaces</span>
+            </Link>
+            <Link to="/benchmarks" className={`px-2.5 py-1.5 rounded-md border flex items-center gap-1.5 transition-colors ${linkClass('/benchmarks')}`}>
+              <Scale className="w-3.5 h-3.5 text-[#d6fa64]" />
+              <span className="hidden sm:inline">Benchmarks</span>
             </Link>
             <Link to={isAuthenticated ? '/languages' : '/auth'} className={`px-2.5 py-1.5 rounded-md border flex items-center gap-1.5 transition-colors ${linkClass('/languages')}`}>
               <Terminal className="w-3.5 h-3.5" />
