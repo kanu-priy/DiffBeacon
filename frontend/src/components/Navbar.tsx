@@ -54,16 +54,6 @@ export const Navbar: React.FC<Props> = ({ onOpenCommandPalette, isAuthenticated,
               <Scale className="w-3.5 h-3.5 text-[#d6fa64]" />
               <span className="hidden sm:inline">Benchmarks</span>
             </Link>
-            <a
-              href="/demo-video.html"
-              target="_blank"
-              rel="noreferrer"
-              className="px-2.5 py-1.5 rounded-md border border-[#2e4738] bg-[#14231b] hover:bg-[#1a3024] text-[#d6fa64] flex items-center gap-1.5 transition-colors font-medium shadow-sm"
-              title="Watch interactive 1080p product demo video"
-            >
-              <Play className="w-3 h-3 fill-current text-[#d6fa64]" />
-              <span className="hidden sm:inline">Demo Video</span>
-            </a>
             <Link to={isAuthenticated ? '/languages' : '/auth'} className={`px-2.5 py-1.5 rounded-md border flex items-center gap-1.5 transition-colors ${linkClass('/languages')}`}>
               <Terminal className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Languages</span>
