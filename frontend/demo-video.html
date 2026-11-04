@@ -1435,8 +1435,11 @@
       else stopRecording();
     });
 
-    function startRecording() {
+    async function startRecording() {
       initAudio();
+      if (audioCtx && audioCtx.state === 'suspended') {
+        try { await audioCtx.resume(); } catch(e) {}
+      }
       isRecording = true;
       recordedChunks = [];
       recordBtn.classList.add('recording');
@@ -1445,17 +1448,8 @@
       if (recordingBanner) recordingBanner.style.display = 'flex';
 
       const stream = canvas.captureStream(60);
-      if (audioCtx) {
-        const dest = audioCtx.createMediaStreamDestination();
-        synthMasterGain.connect(dest);
-        const audioTracks = dest.stream.getAudioTracks();
-        if (audioTracks.length > 0) stream.addTrack(audioTracks[0]);
-      }
 
-      let mimeType = 'video/webm;codecs=vp9,opus';
-      if (!MediaRecorder.isTypeSupported(mimeType)) mimeType = 'video/webm;codecs=vp8,opus';
-      if (!MediaRecorder.isTypeSupported(mimeType)) mimeType = 'video/webm';
-      if (!MediaRecorder.isTypeSupported(mimeType)) mimeType = 'video/mp4';
+      let mimeType = 'video/webm';
 
       try {
         mediaRecorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 8000000 });
@@ -1463,7 +1457,11 @@
         mediaRecorder = new MediaRecorder(stream);
       }
 
-      mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) recordedChunks.push(e.data); };
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data && e.data.size > 0) {
+          recordedChunks.push(e.data);
+        }
+      };
       mediaRecorder.onstop = () => {
         const ext = mediaRecorder.mimeType && mediaRecorder.mimeType.includes('mp4') ? 'mp4' : 'webm';
         const blob = new Blob(recordedChunks, { type: mediaRecorder.mimeType || 'video/webm' });
@@ -1501,11 +1499,13 @@
       };
 
       currentTime = 0; lastSpokenScene = -1; isPlaying = true; playBtn.textContent = '❚❚';
-      mediaRecorder.start();
+      mediaRecorder.start(250);
     }
 
     function stopRecording() {
-      if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
+      if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+        mediaRecorder.stop();
+      }
       const recBanner = document.getElementById('recordingBanner');
       if (recBanner) recBanner.style.display = 'none';
     }
