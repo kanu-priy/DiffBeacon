@@ -1,0 +1,1914 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DiffBeacon — Interactive 1080p Product Demo Video</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+    body {
+      background-color: #030605;
+      color: #edf7f2;
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow-x: hidden;
+      padding: 16px;
+    }
+    
+    /* Top Toolbar */
+    .header-bar {
+      width: 100%;
+      max-width: 1280px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+      padding: 8px 16px;
+      background: #090f0c;
+      border: 1px solid #1d2b22;
+      border-radius: 12px;
+    }
+    .brand-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      font-size: 14px;
+      letter-spacing: -0.01em;
+    }
+    .brand-beacon {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #d6fa64;
+      box-shadow: 0 0 12px #d6fa64;
+      animation: pulse-glow 2s infinite ease-in-out;
+    }
+    @keyframes pulse-glow {
+      0%, 100% { opacity: 0.8; transform: scale(1); }
+      50% { opacity: 1; transform: scale(1.25); filter: drop-shadow(0 0 8px #d6fa64); }
+    }
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      text-decoration: none;
+    }
+    .btn-record {
+      background: linear-gradient(135deg, #d6fa64 0%, #8fe6a9 100%);
+      color: #06110b;
+      border: 1px solid #d6fa64;
+      font-weight: 700;
+    }
+    .btn-record:hover {
+      opacity: 0.92;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 16px rgba(214, 250, 100, 0.25);
+    }
+    .btn-record.recording {
+      background: #ef4444;
+      color: #ffffff;
+      border-color: #f87171;
+      animation: rec-blink 1s infinite;
+    }
+    @keyframes rec-blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.75; }
+    }
+    .btn-secondary {
+      background: #0d1511;
+      color: #a7b7b0;
+      border: 1px solid #1d2b22;
+    }
+    .btn-secondary:hover {
+      background: #14231b;
+      color: #edf7f2;
+      border-color: #2e4738;
+    }
+
+    /* Video Frame Container (16:9 Aspect Ratio) */
+    .video-viewport {
+      position: relative;
+      width: 100%;
+      max-width: 1280px;
+      aspect-ratio: 16 / 9;
+      background: #060b09;
+      border: 1px solid #1d2b22;
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(143, 230, 169, 0.08);
+    }
+
+    canvas#demoCanvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: contain;
+    }
+
+    /* Video Player Controls Bar */
+    .player-controls {
+      width: 100%;
+      max-width: 1280px;
+      margin-top: 12px;
+      background: #090f0c;
+      border: 1px solid #1d2b22;
+      border-radius: 12px;
+      padding: 10px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .scrub-container {
+      position: relative;
+      width: 100%;
+      height: 8px;
+      background: #15221b;
+      border-radius: 4px;
+      cursor: pointer;
+      overflow: hidden;
+    }
+    .scrub-fill {
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 0%;
+      background: linear-gradient(90deg, #8fe6a9, #d6fa64);
+      transition: width 0.05s linear;
+    }
+    .scene-markers {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      pointer-events: none;
+    }
+    .scene-mark {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: rgba(6, 11, 9, 0.7);
+    }
+    .control-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .left-controls, .right-controls {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .play-btn {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: #15241b;
+      border: 1px solid #2e4738;
+      color: #d6fa64;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .play-btn:hover {
+      background: #20362a;
+      transform: scale(1.05);
+    }
+    .time-readout {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: #8fe6a9;
+    }
+    .scene-pills {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      overflow-x: auto;
+    }
+    .scene-pill {
+      font-size: 10px;
+      font-weight: 600;
+      font-family: 'JetBrains Mono', monospace;
+      padding: 3px 8px;
+      border-radius: 6px;
+      background: #0d1511;
+      border: 1px solid #1b281f;
+      color: #7a8c86;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.15s ease;
+    }
+    .scene-pill:hover {
+      color: #edf7f2;
+      border-color: #2e4738;
+    }
+    .scene-pill.active {
+      background: #15241b;
+      color: #d6fa64;
+      border-color: #2e4738;
+    }
+
+    /* Subtitle Display Overlay */
+    .subtitle-banner {
+      width: 100%;
+      max-width: 1280px;
+      margin-top: 8px;
+      padding: 8px 16px;
+      background: #060b09;
+      border: 1px dashed #1d2b22;
+      border-radius: 8px;
+      font-size: 13px;
+      line-height: 1.5;
+      text-align: center;
+      color: #d6fa64;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      min-height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .linkedin-card {
+      width: 100%;
+      max-width: 1280px;
+      margin-top: 14px;
+      padding: 14px 18px;
+      background: #080d0a;
+      border: 1px solid #1d2b22;
+      border-radius: 12px;
+      font-size: 12px;
+      color: #a7b7b0;
+      line-height: 1.6;
+    }
+    .linkedin-card strong {
+      color: #edf7f2;
+    }
+    .linkedin-copy-btn {
+      float: right;
+      padding: 4px 10px;
+      font-size: 11px;
+      background: #14231b;
+      border: 1px solid #2e4738;
+      color: #8fe6a9;
+      border-radius: 6px;
+      cursor: pointer;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .linkedin-copy-btn:hover {
+      background: #1c3325;
+      color: #d6fa64;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top App Bar -->
+  <div class="header-bar">
+    <div class="brand-title">
+      <div class="brand-beacon"></div>
+      <span>DiffBeacon</span>
+      <span style="color: #7a8c86; font-weight: 500; font-size: 12px;">/ 1080p Interactive Product Demo Video</span>
+      <span style="background: #13231a; color: #8fe6a9; border: 1px solid #213b2c; font-size: 10px; font-family: 'JetBrains Mono'; padding: 2px 6px; border-radius: 4px;">60 FPS</span>
+    </div>
+    <div class="header-actions">
+      <button id="toggleAudioBtn" class="btn btn-secondary">
+        <span id="audioIcon">🔊</span>
+        <span id="audioLabel">Sound & Voice On</span>
+      </button>
+      <button id="recordBtn" class="btn btn-record">
+        <span>⏺</span>
+        <span id="recordLabel">Record & Export 1080p Video</span>
+      </button>
+      <button id="fullscreenBtn" class="btn btn-secondary">⛶ Fullscreen</button>
+      <a href="/dashboard" class="btn btn-secondary">Open App →</a>
+    </div>
+  </div>
+
+  <!-- 16:9 Canvas Viewport (1920x1080 Native Render Target) -->
+  <div class="video-viewport" id="viewport">
+    <canvas id="demoCanvas" width="1920" height="1080"></canvas>
+  </div>
+
+  <!-- Player Controls -->
+  <div class="player-controls">
+    <div class="scrub-container" id="scrubber">
+      <div class="scrub-fill" id="scrubFill"></div>
+      <div class="scene-markers" id="sceneMarkers"></div>
+    </div>
+    <div class="control-row">
+      <div class="left-controls">
+        <button class="play-btn" id="playBtn">▶</button>
+        <button class="btn btn-secondary" id="restartBtn" style="padding: 4px 8px; font-size: 11px;">↺ Restart</button>
+        <div class="time-readout" id="timeDisplay">00:00 / 01:28</div>
+      </div>
+      <div class="scene-pills" id="scenePills">
+        <button class="scene-pill active" data-time="0">1. The Question</button>
+        <button class="scene-pill" data-time="8">2. Enter DiffBeacon</button>
+        <button class="scene-pill" data-time="18">3. Analysis Pipeline</button>
+        <button class="scene-pill" data-time="35">4. Impact Report</button>
+        <button class="scene-pill" data-time="55">5. Evidence & Provenance</button>
+        <button class="scene-pill" data-time="70">6. Verification Sandbox</button>
+        <button class="scene-pill" data-time="82">7. Closing</button>
+      </div>
+      <div class="right-controls">
+        <button class="btn btn-secondary" id="speedBtn" style="font-family: 'JetBrains Mono'; font-size: 11px;">1.0x</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Subtitle Voiceover Bar -->
+  <div class="subtitle-banner" id="subtitleBox">
+    "A small code change can affect much more than the file you're looking at."
+  </div>
+
+  <!-- Ready-to-use LinkedIn Caption Box -->
+  <div class="linkedin-card">
+    <button class="linkedin-copy-btn" id="copyCaptionBtn">Copy LinkedIn Post</button>
+    <strong>Ready-to-Post LinkedIn Caption:</strong><br>
+    A standard Git diff tells you *what* changed line-by-line. But how do you know *what that change actually affects* across APIs, data models, and business logic before merging?<br><br>
+    I built <strong>DiffBeacon</strong> — code-change intelligence with evidence and transparent uncertainty.<br>
+    ⚡ Traces behavioral impact across serializers, endpoints & downstream dependencies.<br>
+    🛡️ Provenance tiers (Confirmed vs Inferred vs Unverified) — no hallucinated confidence.<br>
+    🧪 Auto-generates targeted sandbox verification pytest cases.<br><br>
+    Live App: <a href="https://diffbeacon-delta.vercel.app" style="color: #8fe6a9;" target="_blank">https://diffbeacon-delta.vercel.app</a> | Built with Python AST + Django + React + Tailwind
+  </div>
+
+  <script>
+    // =========================================================================
+    // DIFFBEACON 1080p DEMO VIDEO ENGINE (1920x1080 @ 60FPS)
+    // =========================================================================
+    const canvas = document.getElementById('demoCanvas');
+    const ctx = canvas.getContext('2d');
+    const playBtn = document.getElementById('playBtn');
+    const restartBtn = document.getElementById('restartBtn');
+    const timeDisplay = document.getElementById('timeDisplay');
+    const scrubber = document.getElementById('scrubber');
+    const scrubFill = document.getElementById('scrubFill');
+    const subtitleBox = document.getElementById('subtitleBox');
+    const scenePills = document.querySelectorAll('.scene-pill');
+    const recordBtn = document.getElementById('recordBtn');
+    const recordLabel = document.getElementById('recordLabel');
+    const speedBtn = document.getElementById('speedBtn');
+    const toggleAudioBtn = document.getElementById('toggleAudioBtn');
+    const audioIcon = document.getElementById('audioIcon');
+    const audioLabel = document.getElementById('audioLabel');
+    const copyCaptionBtn = document.getElementById('copyCaptionBtn');
+    const fullscreenBtn = document.getElementById('fullscreenBtn');
+
+    const TOTAL_DURATION = 88.0; // 88 seconds demo video
+    let currentTime = 0.0;
+    let isPlaying = false;
+    let playbackSpeed = 1.0;
+    let lastTimestamp = null;
+    let soundEnabled = true;
+    let isRecording = false;
+    let mediaRecorder = null;
+    let recordedChunks = [];
+
+    // Ambient Web Audio Synthesizer
+    let audioCtx = null;
+    let droneOsc = null;
+    let chordOsc1 = null;
+    let chordOsc2 = null;
+    let synthGain = null;
+
+    function initAudio() {
+      if (audioCtx) return;
+      try {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        audioCtx = new AudioContext();
+        synthGain = audioCtx.createGain();
+        synthGain.gain.setValueAtTime(0.04, audioCtx.currentTime);
+        synthGain.connect(audioCtx.destination);
+
+        // Low Warm Forest Drone (F# minor root 46.25 Hz)
+        droneOsc = audioCtx.createOscillator();
+        droneOsc.type = 'triangle';
+        droneOsc.frequency.setValueAtTime(46.25, audioCtx.currentTime);
+        const droneFilter = audioCtx.createBiquadFilter();
+        droneFilter.type = 'lowpass';
+        droneFilter.frequency.setValueAtTime(140, audioCtx.currentTime);
+        droneOsc.connect(droneFilter);
+        droneFilter.connect(synthGain);
+        droneOsc.start();
+
+        // Harmonic Shimmer Chords (Ambient SaaS Pad)
+        chordOsc1 = audioCtx.createOscillator();
+        chordOsc1.type = 'sine';
+        chordOsc1.frequency.setValueAtTime(185.0, audioCtx.currentTime); // F#3
+        chordOsc1.connect(synthGain);
+        chordOsc1.start();
+
+        chordOsc2 = audioCtx.createOscillator();
+        chordOsc2.type = 'sine';
+        chordOsc2.frequency.setValueAtTime(277.18, audioCtx.currentTime); // C#4
+        chordOsc2.connect(synthGain);
+        chordOsc2.start();
+      } catch (e) {
+        console.warn('AudioContext not supported or blocked:', e);
+      }
+    }
+
+    function triggerAudioClick() {
+      if (!audioCtx || !soundEnabled) return;
+      try {
+        const clickOsc = audioCtx.createOscillator();
+        const clickGain = audioCtx.createGain();
+        clickOsc.type = 'sine';
+        clickOsc.frequency.setValueAtTime(880, audioCtx.currentTime);
+        clickOsc.frequency.exponentialRampToValueAtTime(320, audioCtx.currentTime + 0.04);
+        clickGain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+        clickGain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.04);
+        clickOsc.connect(clickGain);
+        clickGain.connect(audioCtx.destination);
+        clickOsc.start();
+        clickOsc.stop(audioCtx.currentTime + 0.045);
+      } catch (e) {}
+    }
+
+    // Voiceover Synthesis
+    let lastSpokenScene = -1;
+    const VOICEOVER_SCRIPTS = [
+      { start: 0.5, end: 7.5, text: "A small code change can affect much more than the file you're looking at." },
+      { start: 8.5, end: 17.5, text: "DiffBeacon compares two versions of your code to analyze downstream impact before merging." },
+      { start: 18.5, end: 34.0, text: "It parses AST symbol boundaries and traces how meaningful changes connect across the entire application." },
+      { start: 35.5, end: 54.0, text: "Instead of stopping at changed lines, DiffBeacon traces where that behavior connects across APIs, models, and services." },
+      { start: 55.5, end: 69.5, text: "Not every conclusion has the same certainty. DiffBeacon shows what the code directly supports, what is inferred, and what still needs verification." },
+      { start: 70.5, end: 81.5, text: "The goal is not just to find changes. It helps developers understand what deserves attention before the change is merged." },
+      { start: 82.5, end: 87.5, text: "DiffBeacon. Understand the impact before the merge." }
+    ];
+
+    function speakText(text) {
+      if (!soundEnabled || !('speechSynthesis' in window)) return;
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.rate = 1.0;
+      utterance.pitch = 1.02;
+      const voices = window.speechSynthesis.getVoices();
+      const englishVoice = voices.find(v => v.lang.startsWith('en') && (v.name.includes('Natural') || v.name.includes('Google') || v.name.includes('Samantha') || v.name.includes('David')));
+      if (englishVoice) utterance.voice = englishVoice;
+      window.speechSynthesis.speak(utterance);
+    }
+
+    // Colors Palette
+    const PALETTE = {
+      bgDark: '#050907',
+      bgCard: '#0a100d',
+      bgElevated: '#0e1612',
+      border: '#1b281f',
+      borderHighlight: '#2e4738',
+      accentLime: '#d6fa64',
+      accentBrand: '#8fe6a9',
+      accentMint: '#7ee7b2',
+      accentAmber: '#f5d67b',
+      accentRose: '#ff7d7d',
+      textPrimary: '#edf7f2',
+      textSecondary: '#a7b7b0',
+      textMuted: '#677a73'
+    };
+
+    // Simulated Mouse Cursor State
+    const mouse = {
+      x: 960,
+      y: 540,
+      targetX: 960,
+      targetY: 540,
+      clicking: false,
+      clickProgress: 0,
+      cursorType: 'arrow'
+    };
+
+    // Camera Pan/Zoom Matrix
+    const camera = {
+      scale: 1.0,
+      targetScale: 1.0,
+      x: 0,
+      y: 0,
+      targetX: 0,
+      targetY: 0
+    };
+
+    // Easing helper
+    function lerp(start, end, amt) {
+      return (1 - amt) * start + amt * end;
+    }
+    function easeInOutQuad(t) {
+      return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+    }
+
+    // =========================================================================
+    // SCENE TIMELINE ORCHESTRATION
+    // =========================================================================
+    function getSceneIndex(t) {
+      if (t < 8.0) return 0;
+      if (t < 18.0) return 1;
+      if (t < 35.0) return 2;
+      if (t < 55.0) return 3;
+      if (t < 70.0) return 4;
+      if (t < 82.0) return 5;
+      return 6;
+    }
+
+    function updateSimulation(t) {
+      // Manage Subtitles and Voiceover
+      const currentVo = VOICEOVER_SCRIPTS.find(s => t >= s.start && t <= s.end);
+      if (currentVo) {
+        subtitleBox.textContent = `"${currentVo.text}"`;
+      } else {
+        subtitleBox.textContent = "DiffBeacon — Code-change intelligence with evidence and transparent uncertainty.";
+      }
+
+      const sceneIdx = getSceneIndex(t);
+      if (sceneIdx !== lastSpokenScene) {
+        lastSpokenScene = sceneIdx;
+        scenePills.forEach((p, idx) => {
+          p.classList.toggle('active', idx === sceneIdx);
+        });
+        if (currentVo) speakText(currentVo.text);
+      }
+
+      // -----------------------------------------------------------------------
+      // SCENE 1 (0s - 8s): The Question / Git Diff
+      // -----------------------------------------------------------------------
+      if (t < 8.0) {
+        camera.targetScale = 1.08;
+        camera.targetX = -60;
+        camera.targetY = -40;
+
+        // Mouse hovers over line 42 in the diff
+        const subT = Math.min(1, Math.max(0, (t - 1.5) / 3));
+        mouse.targetX = lerp(400, 780, easeInOutQuad(subT));
+        mouse.targetY = lerp(200, 480, easeInOutQuad(subT));
+        mouse.cursorType = subT > 0.4 ? 'text' : 'arrow';
+
+        if (t > 4.5 && t < 4.8) {
+          if (!mouse.clicking) triggerAudioClick();
+          mouse.clicking = true;
+        } else {
+          mouse.clicking = false;
+        }
+      }
+      // -----------------------------------------------------------------------
+      // SCENE 2 (8s - 18s): Enter DiffBeacon Dashboard
+      // -----------------------------------------------------------------------
+      else if (t < 18.0) {
+        camera.targetScale = 1.0;
+        camera.targetX = 0;
+        camera.targetY = 0;
+
+        if (t < 13.0) {
+          // Cursor moves to "Start Change Analysis" button at (1520, 240)
+          const subT = Math.min(1, Math.max(0, (t - 9.0) / 2.5));
+          mouse.targetX = lerp(780, 1490, easeInOutQuad(subT));
+          mouse.targetY = lerp(480, 242, easeInOutQuad(subT));
+          mouse.cursorType = 'pointer';
+
+          if (t > 12.0 && t < 12.3) {
+            if (!mouse.clicking) triggerAudioClick();
+            mouse.clicking = true;
+          } else {
+            mouse.clicking = false;
+          }
+        } else {
+          // Resting on dashboard
+          mouse.targetX = 1490;
+          mouse.targetY = 242;
+          mouse.cursorType = 'arrow';
+          mouse.clicking = false;
+        }
+      }
+      // -----------------------------------------------------------------------
+      // SCENE 3 (18s - 35s): Analysis Pipeline (Live Execution Stepper)
+      // -----------------------------------------------------------------------
+      else if (t < 35.0) {
+        camera.targetScale = 1.04;
+        camera.targetX = -30;
+        camera.targetY = -20;
+
+        // Cursor gently inspects the progressive pipeline stages
+        if (t < 24.0) {
+          mouse.targetX = lerp(1490, 840, 0.05);
+          mouse.targetY = lerp(242, 420, 0.05);
+          mouse.cursorType = 'arrow';
+        } else if (t < 29.0) {
+          mouse.targetX = lerp(mouse.x, 1260, 0.05);
+          mouse.targetY = lerp(mouse.y, 520, 0.05);
+          mouse.cursorType = 'arrow';
+        } else {
+          mouse.targetX = lerp(mouse.x, 960, 0.05);
+          mouse.targetY = lerp(mouse.y, 600, 0.05);
+        }
+        mouse.clicking = false;
+      }
+      // -----------------------------------------------------------------------
+      // SCENE 4 (35s - 55s): Change Impact Report (Topological Path Exploration)
+      // -----------------------------------------------------------------------
+      else if (t < 55.0) {
+        camera.targetScale = 1.12;
+        camera.targetX = -100;
+        camera.targetY = -80;
+
+        // Path node coordinates:
+        // Node 1: Validation Rule (540, 480)
+        // Node 2: OrderSerializer (880, 480)
+        // Node 3: CheckoutAPIView (1220, 480)
+        // Node 4: OrderProcessing (1560, 480)
+
+        if (t < 40.0) {
+          // Hover and Click Node 1
+          const subT = Math.min(1, Math.max(0, (t - 36.0) / 2.0));
+          mouse.targetX = lerp(960, 540, easeInOutQuad(subT));
+          mouse.targetY = lerp(600, 480, easeInOutQuad(subT));
+          mouse.cursorType = 'pointer';
+          if (t > 38.5 && t < 38.8) {
+            if (!mouse.clicking) triggerAudioClick();
+            mouse.clicking = true;
+          } else {
+            mouse.clicking = false;
+          }
+        } else if (t < 46.0) {
+          // Hover and Click Node 2 (Serializer)
+          const subT = Math.min(1, Math.max(0, (t - 40.5) / 2.0));
+          mouse.targetX = lerp(540, 880, easeInOutQuad(subT));
+          mouse.targetY = lerp(480, 480, easeInOutQuad(subT));
+          mouse.cursorType = 'pointer';
+          if (t > 43.5 && t < 43.8) {
+            if (!mouse.clicking) triggerAudioClick();
+            mouse.clicking = true;
+          } else {
+            mouse.clicking = false;
+          }
+        } else if (t < 51.0) {
+          // Hover and Click Node 3 (CheckoutAPIView)
+          const subT = Math.min(1, Math.max(0, (t - 46.5) / 2.0));
+          mouse.targetX = lerp(880, 1220, easeInOutQuad(subT));
+          mouse.targetY = lerp(480, 480, easeInOutQuad(subT));
+          mouse.cursorType = 'pointer';
+          if (t > 49.0 && t < 49.3) {
+            if (!mouse.clicking) triggerAudioClick();
+            mouse.clicking = true;
+          } else {
+            mouse.clicking = false;
+          }
+        } else {
+          // Moving toward Node 4
+          const subT = Math.min(1, Math.max(0, (t - 51.5) / 2.0));
+          mouse.targetX = lerp(1220, 1560, easeInOutQuad(subT));
+          mouse.targetY = lerp(480, 480, easeInOutQuad(subT));
+          mouse.cursorType = 'pointer';
+          if (t > 53.5 && t < 53.8) {
+            if (!mouse.clicking) triggerAudioClick();
+            mouse.clicking = true;
+          } else {
+            mouse.clicking = false;
+          }
+        }
+      }
+      // -----------------------------------------------------------------------
+      // SCENE 5 (55s - 70s): Evidence Inspector & Provenance
+      // -----------------------------------------------------------------------
+      else if (t < 70.0) {
+        camera.targetScale = 1.15;
+        camera.targetX = -140;
+        camera.targetY = -100;
+
+        if (t < 60.0) {
+          // Focus on Confirmed Badge (x: 580, y: 380)
+          const subT = Math.min(1, Math.max(0, (t - 55.5) / 2.0));
+          mouse.targetX = lerp(1560, 580, easeInOutQuad(subT));
+          mouse.targetY = lerp(480, 380, easeInOutQuad(subT));
+          mouse.cursorType = 'pointer';
+          if (t > 58.0 && t < 58.3) {
+            if (!mouse.clicking) triggerAudioClick();
+            mouse.clicking = true;
+          } else {
+            mouse.clicking = false;
+          }
+        } else if (t < 65.0) {
+          // Focus on Inferred Badge (x: 880, y: 380)
+          const subT = Math.min(1, Math.max(0, (t - 60.5) / 2.0));
+          mouse.targetX = lerp(580, 880, easeInOutQuad(subT));
+          mouse.targetY = lerp(380, 380, easeInOutQuad(subT));
+          mouse.cursorType = 'pointer';
+          if (t > 63.0 && t < 63.3) {
+            if (!mouse.clicking) triggerAudioClick();
+            mouse.clicking = true;
+          } else {
+            mouse.clicking = false;
+          }
+        } else {
+          // Focus on Unverified Badge (x: 1180, y: 380)
+          const subT = Math.min(1, Math.max(0, (t - 65.5) / 2.0));
+          mouse.targetX = lerp(880, 1180, easeInOutQuad(subT));
+          mouse.targetY = lerp(380, 380, easeInOutQuad(subT));
+          mouse.cursorType = 'pointer';
+          if (t > 68.0 && t < 68.3) {
+            if (!mouse.clicking) triggerAudioClick();
+            mouse.clicking = true;
+          } else {
+            mouse.clicking = false;
+          }
+        }
+      }
+      // -----------------------------------------------------------------------
+      // SCENE 6 (70s - 82s): Verification Matrix & Pytest Sandbox
+      // -----------------------------------------------------------------------
+      else if (t < 82.0) {
+        camera.targetScale = 1.08;
+        camera.targetX = -70;
+        camera.targetY = -50;
+
+        if (t < 74.0) {
+          // Move to Verification Checklist Item (x: 960, y: 440)
+          const subT = Math.min(1, Math.max(0, (t - 70.5) / 2.0));
+          mouse.targetX = lerp(1180, 960, easeInOutQuad(subT));
+          mouse.targetY = lerp(380, 440, easeInOutQuad(subT));
+          mouse.cursorType = 'pointer';
+        } else if (t < 78.0) {
+          // Click "Run Sandbox Test" Button (x: 1480, y: 440)
+          const subT = Math.min(1, Math.max(0, (t - 74.0) / 1.5));
+          mouse.targetX = lerp(960, 1480, easeInOutQuad(subT));
+          mouse.targetY = lerp(440, 440, easeInOutQuad(subT));
+          mouse.cursorType = 'pointer';
+          if (t > 76.0 && t < 76.3) {
+            if (!mouse.clicking) triggerAudioClick();
+            mouse.clicking = true;
+          } else {
+            mouse.clicking = false;
+          }
+        } else {
+          // Cursor hovers over active green terminal
+          mouse.targetX = 1480;
+          mouse.targetY = 440;
+          mouse.cursorType = 'arrow';
+          mouse.clicking = false;
+        }
+      }
+      // -----------------------------------------------------------------------
+      // SCENE 7 (82s - 88s): Cinematic Closing
+      // -----------------------------------------------------------------------
+      else {
+        camera.targetScale = 1.0;
+        camera.targetX = 0;
+        camera.targetY = 0;
+        mouse.targetX = 960;
+        mouse.targetY = 540;
+        mouse.clicking = false;
+        mouse.cursorType = 'arrow';
+      }
+
+      // Smooth cursor lerp
+      mouse.x = lerp(mouse.x, mouse.targetX, 0.2);
+      mouse.y = lerp(mouse.y, mouse.targetY, 0.2);
+
+      // Smooth camera lerp
+      camera.scale = lerp(camera.scale, camera.targetScale, 0.08);
+      camera.x = lerp(camera.x, camera.targetX, 0.08);
+      camera.y = lerp(camera.y, camera.targetY, 0.08);
+    }
+
+    // =========================================================================
+    // CANVAS RENDER PASSES (1920x1080)
+    // =========================================================================
+    function renderFrame(t) {
+      ctx.save();
+      ctx.clearRect(0, 0, 1920, 1080);
+
+      // Apply Camera Transform
+      ctx.translate(960 + camera.x, 540 + camera.y);
+      ctx.scale(camera.scale, camera.scale);
+      ctx.translate(-960, -540);
+
+      const sceneIdx = getSceneIndex(t);
+
+      // Render Scene Specific Content
+      switch (sceneIdx) {
+        case 0:
+          renderScene1_TheQuestion(t);
+          break;
+        case 1:
+          renderScene2_EnterDiffBeacon(t);
+          break;
+        case 2:
+          renderScene3_AnalysisPipeline(t);
+          break;
+        case 3:
+          renderScene4_ChangeImpactReport(t);
+          break;
+        case 4:
+          renderScene5_EvidenceProvenance(t);
+          break;
+        case 5:
+          renderScene6_VerificationMatrix(t);
+          break;
+        case 6:
+          renderScene7_Closing(t);
+          break;
+      }
+
+      // Render Global Realistic Mouse Cursor
+      renderMouseCursor();
+
+      ctx.restore();
+    }
+
+    // -------------------------------------------------------------------------
+    // SCENE 1: THE QUESTION (Git PR Code Diff)
+    // -------------------------------------------------------------------------
+    function renderScene1_TheQuestion(t) {
+      // Dark IDE Workspace Background
+      ctx.fillStyle = '#060a08';
+      ctx.fillRect(0, 0, 1920, 1080);
+
+      // Chrome Window Top Bar
+      renderBrowserHeader('pull/142 — feat: enforce corporate department validation · EnterpriseOrderService');
+
+      // Left File Tree
+      ctx.fillStyle = '#0a100d';
+      ctx.fillRect(40, 120, 320, 920);
+      ctx.strokeStyle = PALETTE.border;
+      ctx.lineWidth = 1;
+      ctx.strokeRect(40, 120, 320, 920);
+
+      ctx.fillStyle = PALETTE.textSecondary;
+      ctx.font = '600 13px "JetBrains Mono"';
+      ctx.fillText('CHANGED FILES (3)', 60, 160);
+
+      const files = [
+        { name: 'orders/serializers.py', mod: '+4 -1', active: true },
+        { name: 'orders/views.py', mod: '+2 -0', active: false },
+        { name: 'inventory/models.py', mod: '+1 -1', active: false }
+      ];
+      files.forEach((f, idx) => {
+        const y = 200 + idx * 46;
+        if (f.active) {
+          ctx.fillStyle = '#14231b';
+          ctx.fillRect(50, y - 24, 300, 38);
+          ctx.strokeStyle = '#2e4738';
+          ctx.strokeRect(50, y - 24, 300, 38);
+        }
+        ctx.fillStyle = f.active ? PALETTE.accentLime : PALETTE.textPrimary;
+        ctx.font = '500 13px "JetBrains Mono"';
+        ctx.fillText(f.name, 70, y);
+        ctx.fillStyle = PALETTE.accentMint;
+        ctx.font = '400 11px "JetBrains Mono"';
+        ctx.fillText(f.mod, 290, y);
+      });
+
+      // Code Diff Editor Area
+      ctx.fillStyle = '#070d0a';
+      ctx.fillRect(380, 120, 1500, 920);
+      ctx.strokeStyle = PALETTE.border;
+      ctx.strokeRect(380, 120, 1500, 920);
+
+      // Diff File Header
+      ctx.fillStyle = '#0c1410';
+      ctx.fillRect(380, 120, 1500, 52);
+      ctx.fillStyle = PALETTE.textPrimary;
+      ctx.font = '600 14px "JetBrains Mono"';
+      ctx.fillText('@@ -38,7 +38,10 @@ class OrderCreateSerializer(serializers.ModelSerializer):', 410, 152);
+
+      // Diff Code Lines
+      const codeLines = [
+        { num: '38', type: 'ctx', text: '    department_id = serializers.IntegerField(required=False, allow_null=True)' },
+        { num: '39', type: 'ctx', text: '    total_amount = serializers.DecimalField(max_digits=10, decimal_places=2)' },
+        { num: '40', type: 'ctx', text: ' ' },
+        { num: '41', type: 'ctx', text: '    def validate(self, attrs):' },
+        { num: '42', type: 'del', text: '-       if attrs.get("department_id") is None:' },
+        { num: '43', type: 'add', text: '+       dept = attrs.get("department_id")' },
+        { num: '44', type: 'add', text: '+       if dept is None or dept < 100:' },
+        { num: '45', type: 'add', text: '+           raise serializers.ValidationError("Corporate department >= 100 required")' },
+        { num: '46', type: 'ctx', text: '        return super().validate(attrs)' },
+        { num: '47', type: 'ctx', text: ' ' },
+        { num: '48', type: 'ctx', text: '    def create(self, validated_data):' },
+        { num: '49', type: 'ctx', text: '        return Order.objects.create(**validated_data)' }
+      ];
+
+      codeLines.forEach((line, idx) => {
+        const y = 220 + idx * 36;
+        if (line.type === 'del') {
+          ctx.fillStyle = 'rgba(255, 125, 125, 0.12)';
+          ctx.fillRect(380, y - 24, 1500, 36);
+          ctx.fillStyle = '#ff7d7d';
+        } else if (line.type === 'add') {
+          ctx.fillStyle = 'rgba(143, 230, 169, 0.12)';
+          ctx.fillRect(380, y - 24, 1500, 36);
+          ctx.fillStyle = '#8fe6a9';
+        } else {
+          ctx.fillStyle = PALETTE.textSecondary;
+        }
+
+        ctx.font = '500 12px "JetBrains Mono"';
+        ctx.fillText(line.num, 400, y);
+        ctx.fillText(line.text, 450, y);
+      });
+
+      // Animated Impact Ripple Waves extending from line 44
+      if (t > 2.5) {
+        const waveRadius = ((t - 2.5) * 120) % 240;
+        ctx.save();
+        ctx.strokeStyle = `rgba(214, 250, 100, ${Math.max(0, 1 - waveRadius / 240)})`;
+        ctx.lineWidth = 2;
+        ctx.setLineDash([6, 6]);
+        ctx.beginPath();
+        ctx.arc(880, 375, waveRadius, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      // Title Card Overlay Transition at t > 4.5s
+      if (t > 3.0) {
+        const alpha = Math.min(1, (t - 3.0) / 1.5);
+        ctx.save();
+        ctx.fillStyle = `rgba(6, 11, 9, ${alpha * 0.88})`;
+        ctx.fillRect(0, 0, 1920, 1080);
+
+        ctx.textAlign = 'center';
+        if (t < 5.8) {
+          ctx.fillStyle = PALETTE.textSecondary;
+          ctx.font = '600 24px "JetBrains Mono"';
+          ctx.fillText('A code diff tells you what changed.', 960, 510);
+        } else {
+          ctx.fillStyle = PALETTE.textPrimary;
+          ctx.font = '700 44px "Plus Jakarta Sans"';
+          ctx.fillText('A code diff tells you what changed.', 960, 480);
+
+          ctx.fillStyle = PALETTE.accentLime;
+          ctx.font = '800 58px "Plus Jakarta Sans"';
+          ctx.fillText('But what does that change affect?', 960, 560);
+        }
+        ctx.restore();
+      }
+    }
+
+    // -------------------------------------------------------------------------
+    // SCENE 2: ENTER DIFFBEACON (Dashboard Launch)
+    // -------------------------------------------------------------------------
+    function renderScene2_EnterDiffBeacon(t) {
+      renderStandardAppFrame();
+
+      // Top Breadcrumb & Actions
+      ctx.fillStyle = PALETTE.textPrimary;
+      ctx.font = '700 22px "Plus Jakarta Sans"';
+      ctx.fillText('Workspace / Enterprise Order Service', 340, 160);
+
+      ctx.fillStyle = PALETTE.textSecondary;
+      ctx.font = '500 13px "JetBrains Mono"';
+      ctx.fillText('HEAD: feat/corporate-validation (PR #142) → BASE: main', 340, 190);
+
+      // Primary Action Button: "Start Change Analysis" (1480, 240)
+      const btnX = 1420;
+      const btnY = 150;
+      const btnW = 280;
+      const btnH = 50;
+
+      const isHovered = mouse.x >= btnX && mouse.x <= btnX + btnW && mouse.y >= btnY && mouse.y <= btnY + btnH;
+      ctx.save();
+      if (t >= 12.0) {
+        // Active clicked state
+        ctx.fillStyle = PALETTE.accentLime;
+      } else if (isHovered) {
+        ctx.fillStyle = '#e2feb0';
+        ctx.shadowColor = 'rgba(214, 250, 100, 0.4)';
+        ctx.shadowBlur = 16;
+      } else {
+        ctx.fillStyle = PALETTE.accentLime;
+      }
+      roundRect(ctx, btnX, btnY, btnW, btnH, 10, true, false);
+
+      ctx.fillStyle = '#06110b';
+      ctx.font = '700 14px "Plus Jakarta Sans"';
+      ctx.textAlign = 'center';
+      ctx.fillText('⚡ Start Change Analysis', btnX + btnW / 2, btnY + 31);
+      ctx.restore();
+
+      // Repository Snapshot Card
+      ctx.fillStyle = PALETTE.bgCard;
+      roundRect(ctx, 340, 230, 1460, 720, 16, true, false);
+      ctx.strokeStyle = PALETTE.border;
+      ctx.stroke();
+
+      // Card Header
+      ctx.fillStyle = PALETTE.textPrimary;
+      ctx.font = '700 16px "Plus Jakarta Sans"';
+      ctx.fillText('Target Pull Request Overview', 380, 280);
+
+      // Metrics in cards
+      const metrics = [
+        { label: 'Commits in Diff', val: '2 Commits', sub: 'feat: dept check' },
+        { label: 'Files Affected', val: '3 Files', sub: '+12 / -3 lines' },
+        { label: 'AST Symbols Tracked', val: '1,420 Symbols', sub: 'Python Django DRF' },
+        { label: 'Deterministic Engine', val: 'Local AST Parse', sub: 'Zero Cloud Leakage' }
+      ];
+
+      metrics.forEach((m, idx) => {
+        const x = 380 + idx * 340;
+        ctx.fillStyle = PALETTE.bgElevated;
+        roundRect(ctx, x, 320, 310, 120, 12, true, false);
+        ctx.strokeStyle = PALETTE.border;
+        ctx.stroke();
+
+        ctx.fillStyle = PALETTE.textSecondary;
+        ctx.font = '600 11px "JetBrains Mono"';
+        ctx.fillText(m.label.toUpperCase(), x + 20, 350);
+
+        ctx.fillStyle = PALETTE.accentBrand;
+        ctx.font = '700 20px "JetBrains Mono"';
+        ctx.fillText(m.val, x + 20, 390);
+
+        ctx.fillStyle = PALETTE.textMuted;
+        ctx.font = '500 12px "Plus Jakarta Sans"';
+        ctx.fillText(m.sub, x + 20, 418);
+      });
+
+      // Loading Progress overlay if t > 12.0
+      if (t >= 12.0) {
+        const progressT = Math.min(1, (t - 12.0) / 6.0);
+        ctx.fillStyle = 'rgba(6, 11, 9, 0.9)';
+        roundRect(ctx, 380, 480, 1380, 430, 14, true, false);
+        ctx.strokeStyle = PALETTE.borderHighlight;
+        ctx.stroke();
+
+        ctx.textAlign = 'center';
+        ctx.fillStyle = PALETTE.accentLime;
+        ctx.font = '700 22px "Plus Jakarta Sans"';
+        ctx.fillText('Preparing change analysis...', 1070, 660);
+
+        ctx.fillStyle = PALETTE.textSecondary;
+        ctx.font = '500 14px "JetBrains Mono"';
+        ctx.fillText('Comparing base (main) and head (feat/corporate-validation)', 1070, 700);
+
+        // Progress bar
+        ctx.fillStyle = '#15241b';
+        roundRect(ctx, 770, 740, 600, 12, 6, true, false);
+        ctx.fillStyle = PALETTE.accentLime;
+        roundRect(ctx, 770, 740, 600 * progressT, 12, 6, true, false);
+      }
+    }
+
+    // -------------------------------------------------------------------------
+    // SCENE 3: WATCH THE ANALYSIS HAPPEN (Live Pipeline Stepper)
+    // -------------------------------------------------------------------------
+    function renderScene3_AnalysisPipeline(t) {
+      renderStandardAppFrame();
+
+      ctx.fillStyle = PALETTE.textPrimary;
+      ctx.font = '700 22px "Plus Jakarta Sans"';
+      ctx.fillText('Change Intelligence Pipeline', 340, 160);
+
+      ctx.fillStyle = PALETTE.textSecondary;
+      ctx.font = '500 13px "JetBrains Mono"';
+      ctx.fillText('Snapshot: pr-142-corporate-validation · AST Multi-Pass Resolver', 340, 190);
+
+      // Pipeline Container
+      ctx.fillStyle = PALETTE.bgCard;
+      roundRect(ctx, 340, 230, 1460, 760, 16, true, false);
+      ctx.strokeStyle = PALETTE.border;
+      ctx.stroke();
+
+      const stages = [
+        { title: 'Comparing Code & AST Changes', desc: 'Normalized AST symbol diffs & token boundaries', doneAt: 20 },
+        { title: 'Detecting Behavioral Deltas', desc: 'Identified stricter validation in OrderCreateSerializer', doneAt: 23 },
+        { title: 'Tracing Affected Components', desc: 'Navigating call graphs to CheckoutAPIView & OrderProcessor', doneAt: 27 },
+        { title: 'Checking API & Model Contracts', desc: 'Auditing DRF request payload compatibility across endpoints', doneAt: 31 },
+        { title: 'Preparing Verification Matrix', desc: 'Assembling targeted pytest sandbox test recommendations', doneAt: 34 }
+      ];
+
+      stages.forEach((st, idx) => {
+        const y = 300 + idx * 110;
+        const isDone = t >= st.doneAt;
+        const isActive = t >= st.doneAt - 3 && t < st.doneAt;
+
+        // Stage row box
+        ctx.fillStyle = isActive ? '#14231b' : PALETTE.bgElevated;
+        roundRect(ctx, 380, y, 680, 85, 12, true, false);
+        ctx.strokeStyle = isActive ? PALETTE.borderHighlight : PALETTE.border;
+        ctx.stroke();
+
+        // Icon circle
+        ctx.beginPath();
+        ctx.arc(420, y + 42, 18, 0, Math.PI * 2);
+        if (isDone) {
+          ctx.fillStyle = PALETTE.accentMint;
+          ctx.fill();
+          ctx.fillStyle = '#06110b';
+          ctx.font = '700 14px "JetBrains Mono"';
+          ctx.textAlign = 'center';
+          ctx.fillText('✓', 420, y + 47);
+        } else if (isActive) {
+          ctx.fillStyle = PALETTE.accentLime;
+          ctx.fill();
+          ctx.fillStyle = '#06110b';
+          ctx.font = '700 14px "JetBrains Mono"';
+          ctx.textAlign = 'center';
+          ctx.fillText('→', 420, y + 47);
+        } else {
+          ctx.fillStyle = '#1c2820';
+          ctx.fill();
+          ctx.fillStyle = PALETTE.textMuted;
+          ctx.font = '600 12px "JetBrains Mono"';
+          ctx.textAlign = 'center';
+          ctx.fillText('○', 420, y + 46);
+        }
+
+        // Texts
+        ctx.textAlign = 'left';
+        ctx.fillStyle = isDone ? PALETTE.textPrimary : isActive ? PALETTE.accentLime : PALETTE.textSecondary;
+        ctx.font = '700 15px "Plus Jakarta Sans"';
+        ctx.fillText(st.title, 460, y + 36);
+
+        ctx.fillStyle = PALETTE.textMuted;
+        ctx.font = '500 12px "JetBrains Mono"';
+        ctx.fillText(st.desc, 460, y + 60);
+      });
+
+      // Right Side: Live Dynamic Topology Graph Visualizer
+      ctx.fillStyle = '#060b09';
+      roundRect(ctx, 1100, 270, 660, 670, 14, true, false);
+      ctx.strokeStyle = PALETTE.border;
+      ctx.stroke();
+
+      ctx.fillStyle = PALETTE.accentLime;
+      ctx.font = '600 12px "JetBrains Mono"';
+      ctx.fillText('TOPOLOGY IMPACT STREAM', 1130, 310);
+
+      // Draw Connected Nodes
+      const nodes = [
+        { label: 'OrderCreateSerializer.validate', x: 1240, y: 410, active: t > 21 },
+        { label: 'CheckoutAPIView.post', x: 1540, y: 410, active: t > 24 },
+        { label: 'OrderProcessingService.submit', x: 1390, y: 560, active: t > 26 },
+        { label: 'InventoryModel.reserve', x: 1240, y: 720, active: t > 28 },
+        { label: 'NotificationService.dispatch', x: 1540, y: 720, active: t > 30 }
+      ];
+
+      // Draw Lines
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = '#213b2c';
+      ctx.beginPath();
+      ctx.moveTo(1240, 410); ctx.lineTo(1540, 410);
+      ctx.moveTo(1540, 410); ctx.lineTo(1390, 560);
+      ctx.moveTo(1390, 560); ctx.lineTo(1240, 720);
+      ctx.moveTo(1390, 560); ctx.lineTo(1540, 720);
+      ctx.stroke();
+
+      // Render Graph Nodes
+      nodes.forEach(nd => {
+        ctx.fillStyle = nd.active ? '#15241b' : '#0d1511';
+        roundRect(ctx, nd.x - 110, nd.y - 25, 220, 50, 10, true, false);
+        ctx.strokeStyle = nd.active ? PALETTE.accentLime : PALETTE.border;
+        ctx.stroke();
+
+        ctx.fillStyle = nd.active ? PALETTE.accentLime : PALETTE.textMuted;
+        ctx.font = '600 11px "JetBrains Mono"';
+        ctx.textAlign = 'center';
+        ctx.fillText(nd.label, nd.x, nd.y + 5);
+      });
+      ctx.textAlign = 'left';
+    }
+
+    // -------------------------------------------------------------------------
+    // SCENE 4: CHANGE IMPACT REPORT
+    // -------------------------------------------------------------------------
+    function renderScene4_ChangeImpactReport(t) {
+      renderStandardAppFrame();
+
+      ctx.fillStyle = PALETTE.textPrimary;
+      ctx.font = '700 22px "Plus Jakarta Sans"';
+      ctx.fillText('Change Impact Report / PR #142', 340, 160);
+
+      ctx.fillStyle = PALETTE.accentLime;
+      ctx.font = '700 13px "JetBrains Mono"';
+      ctx.fillText('FINDING 1 OF 3: Validation Rule Tightened', 340, 190);
+
+      // Summary Card
+      ctx.fillStyle = PALETTE.bgCard;
+      roundRect(ctx, 340, 220, 1460, 200, 16, true, false);
+      ctx.strokeStyle = PALETTE.border;
+      ctx.stroke();
+
+      ctx.fillStyle = '#ff7d7d';
+      ctx.font = '700 18px "Plus Jakarta Sans"';
+      ctx.fillText('⚠️ Breaking Behavior: Corporate department validation rejected on previously valid IDs', 380, 265);
+
+      ctx.fillStyle = PALETTE.textSecondary;
+      ctx.font = '500 14px "Plus Jakarta Sans"';
+      ctx.fillText('Validation logic now requires department_id >= 100. Requests with null, 0, or legacy single-digit department IDs will now return 400 Bad Request.', 380, 305);
+      ctx.fillText('Affected entry points: 1 Public API Endpoint · 2 Internal Celery Handlers · 4 Downstream Services', 380, 335);
+
+      // Interactive Topological Flow Nodes
+      ctx.fillStyle = PALETTE.bgCard;
+      roundRect(ctx, 340, 440, 1460, 550, 16, true, false);
+      ctx.strokeStyle = PALETTE.border;
+      ctx.stroke();
+
+      ctx.fillStyle = PALETTE.textSecondary;
+      ctx.font = '700 13px "JetBrains Mono"';
+      ctx.fillText('DOWNSTREAM IMPACT PATHWAY (CLICK TO TRACE)', 380, 480);
+
+      const pathNodes = [
+        { label: '1. Validation Rule', sub: 'orders/serializers.py:42', x: 540, y: 550, active: t >= 36.0 },
+        { label: '2. OrderCreateSerializer', sub: 'ModelSerializer Contract', x: 880, y: 550, active: t >= 41.0 },
+        { label: '3. CheckoutAPIView', sub: 'POST /api/v1/checkout/', x: 1220, y: 550, active: t >= 47.0 },
+        { label: '4. OrderProcessing', sub: 'services/fulfillment.py', x: 1560, y: 550, active: t >= 52.0 }
+      ];
+
+      // Connecting Arrows
+      pathNodes.forEach((nd, idx) => {
+        if (idx < pathNodes.length - 1) {
+          const next = pathNodes[idx + 1];
+          ctx.strokeStyle = nd.active ? PALETTE.accentLime : PALETTE.border;
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.moveTo(nd.x + 120, nd.y);
+          ctx.lineTo(next.x - 120, next.y);
+          ctx.stroke();
+        }
+      });
+
+      // Draw Path Nodes
+      pathNodes.forEach(nd => {
+        ctx.fillStyle = nd.active ? '#15241b' : PALETTE.bgElevated;
+        roundRect(ctx, nd.x - 120, nd.y - 45, 240, 90, 12, true, false);
+        ctx.strokeStyle = nd.active ? PALETTE.accentLime : PALETTE.border;
+        ctx.stroke();
+
+        ctx.fillStyle = nd.active ? PALETTE.accentLime : PALETTE.textPrimary;
+        ctx.font = '700 13px "JetBrains Mono"';
+        ctx.textAlign = 'center';
+        ctx.fillText(nd.label, nd.x, nd.y - 10);
+
+        ctx.fillStyle = PALETTE.textMuted;
+        ctx.font = '500 11px "JetBrains Mono"';
+        ctx.fillText(nd.sub, nd.x, nd.y + 18);
+      });
+      ctx.textAlign = 'left';
+
+      // Dynamic Code Inspector Drawer below path
+      ctx.fillStyle = '#060b09';
+      roundRect(ctx, 380, 640, 1380, 320, 12, true, false);
+      ctx.strokeStyle = PALETTE.border;
+      ctx.stroke();
+
+      ctx.fillStyle = PALETTE.accentMint;
+      ctx.font = '600 12px "JetBrains Mono"';
+      ctx.fillText('AFFECTED SOURCE EVIDENCE (orders/serializers.py)', 410, 675);
+
+      const inspectCode = [
+        '38:   department_id = serializers.IntegerField(required=False, allow_null=True)',
+        '41:   def validate(self, attrs):',
+        '43: +     dept = attrs.get("department_id")',
+        '44: +     if dept is None or dept < 100:',
+        '45: +         raise serializers.ValidationError("Corporate department >= 100 required")',
+        '46:       return super().validate(attrs)'
+      ];
+
+      inspectCode.forEach((line, idx) => {
+        ctx.fillStyle = line.includes('+') ? PALETTE.accentLime : PALETTE.textSecondary;
+        ctx.font = '500 13px "JetBrains Mono"';
+        ctx.fillText(line, 410, 715 + idx * 30);
+      });
+    }
+
+    // -------------------------------------------------------------------------
+    // SCENE 5: EVIDENCE, NOT JUST AI CLAIMS (Epistemic Provenance)
+    // -------------------------------------------------------------------------
+    function renderScene5_EvidenceProvenance(t) {
+      renderStandardAppFrame();
+
+      ctx.fillStyle = PALETTE.textPrimary;
+      ctx.font = '700 22px "Plus Jakarta Sans"';
+      ctx.fillText('Epistemic Provenance & Evidence Explorer', 340, 160);
+
+      ctx.fillStyle = PALETTE.textSecondary;
+      ctx.font = '500 13px "JetBrains Mono"';
+      ctx.fillText('Transparent Confidence Tiers: No Hallucinated Certainty', 340, 190);
+
+      // Three Provenance Cards
+      const tiers = [
+        {
+          tier: 'CONFIRMED',
+          sub: 'Statically Established AST Proof',
+          badgeColor: '#7ee7b2',
+          badgeBg: '#13281e',
+          desc: 'Direct AST syntax proof in orders/serializers.py lines 42-46. The validation function explicitly asserts dept >= 100.',
+          active: t >= 55.5 && t < 60.5
+        },
+        {
+          tier: 'INFERRED',
+          sub: 'Call Graph & Framework Relationship',
+          badgeColor: '#8fe6a9',
+          badgeBg: '#15241b',
+          desc: 'CheckoutAPIView uses OrderCreateSerializer as its default serializer. Downstream HTTP calls without dept >= 100 will fail.',
+          active: t >= 60.5 && t < 65.5
+        },
+        {
+          tier: 'UNVERIFIED',
+          sub: 'Requires Human or Test Verification',
+          badgeColor: '#f5d67b',
+          badgeBg: '#282313',
+          desc: 'External third-party API clients or mobile apps may still submit null department_id. Runtime sandbox verification recommended.',
+          active: t >= 65.5
+        }
+      ];
+
+      tiers.forEach((tr, idx) => {
+        const x = 340 + idx * 495;
+        ctx.fillStyle = tr.active ? '#111d16' : PALETTE.bgCard;
+        roundRect(ctx, x, 230, 470, 240, 16, true, false);
+        ctx.strokeStyle = tr.active ? tr.badgeColor : PALETTE.border;
+        ctx.stroke();
+
+        // Badge pill
+        ctx.fillStyle = tr.badgeBg;
+        roundRect(ctx, x + 25, 260, 140, 30, 6, true, false);
+        ctx.strokeStyle = tr.badgeColor;
+        ctx.stroke();
+
+        ctx.fillStyle = tr.badgeColor;
+        ctx.font = '700 12px "JetBrains Mono"';
+        ctx.textAlign = 'center';
+        ctx.fillText(tr.tier, x + 95, 280);
+
+        ctx.textAlign = 'left';
+        ctx.fillStyle = PALETTE.textPrimary;
+        ctx.font = '700 14px "Plus Jakarta Sans"';
+        ctx.fillText(tr.sub, x + 25, 325);
+
+        ctx.fillStyle = PALETTE.textSecondary;
+        ctx.font = '500 13px "Plus Jakarta Sans"';
+        renderWrappedText(ctx, tr.desc, x + 25, 360, 420, 24);
+      });
+
+      // Side-by-Side Evidence Inspection Card
+      ctx.fillStyle = PALETTE.bgCard;
+      roundRect(ctx, 340, 490, 1460, 500, 16, true, false);
+      ctx.strokeStyle = PALETTE.border;
+      ctx.stroke();
+
+      ctx.fillStyle = PALETTE.textPrimary;
+      ctx.font = '700 16px "Plus Jakarta Sans"';
+      ctx.fillText('Deterministic Evidence Ledger', 380, 535);
+
+      // Baseline vs Updated Table
+      ctx.fillStyle = '#060b09';
+      roundRect(ctx, 380, 560, 680, 390, 12, true, false);
+      ctx.strokeStyle = PALETTE.border;
+      ctx.stroke();
+
+      ctx.fillStyle = '#ff7d7d';
+      ctx.font = '700 13px "JetBrains Mono"';
+      ctx.fillText('BASELINE (main branch)', 410, 600);
+      ctx.fillStyle = PALETTE.textSecondary;
+      ctx.font = '500 12px "JetBrains Mono"';
+      ctx.fillText('Accepts department_id = None', 410, 640);
+      ctx.fillText('Accepts department_id = 0 .. 99', 410, 670);
+      ctx.fillText('Legacy partners payload succeeds (200 OK)', 410, 700);
+
+      ctx.fillStyle = '#060b09';
+      roundRect(ctx, 1100, 560, 660, 390, 12, true, false);
+      ctx.strokeStyle = PALETTE.border;
+      ctx.stroke();
+
+      ctx.fillStyle = PALETTE.accentLime;
+      ctx.font = '700 13px "JetBrains Mono"';
+      ctx.fillText('UPDATED (feat/corporate-validation)', 1130, 600);
+      ctx.fillStyle = PALETTE.textPrimary;
+      ctx.font = '500 12px "JetBrains Mono"';
+      ctx.fillText('Rejects department_id = None (ValidationError)', 1130, 640);
+      ctx.fillText('Rejects department_id < 100 (ValidationError)', 1130, 670);
+      ctx.fillText('Requires department_id >= 100 on all orders', 1130, 700);
+    }
+
+    // -------------------------------------------------------------------------
+    // SCENE 6: WHAT TO VERIFY BEFORE MERGING (Verification Matrix & Pytest)
+    // -------------------------------------------------------------------------
+    function renderScene6_VerificationMatrix(t) {
+      renderStandardAppFrame();
+
+      ctx.fillStyle = PALETTE.textPrimary;
+      ctx.font = '700 22px "Plus Jakarta Sans"';
+      ctx.fillText('Verification Matrix & Automated Sandbox', 340, 160);
+
+      ctx.fillStyle = PALETTE.textSecondary;
+      ctx.font = '500 13px "JetBrains Mono"';
+      ctx.fillText('Actionable Test Plan: Verified with Ephemeral Pytest Runner', 340, 190);
+
+      // Recommended Verification Checklist
+      ctx.fillStyle = PALETTE.bgCard;
+      roundRect(ctx, 340, 220, 1460, 770, 16, true, false);
+      ctx.strokeStyle = PALETTE.border;
+      ctx.stroke();
+
+      const testCases = [
+        {
+          title: 'test_order_checkout_with_null_dept',
+          target: 'tests/test_orders.py',
+          reason: 'Validates that omitted department returns 400 Bad Request instead of silent corruption',
+          status: t >= 76.5 ? 'PASSED' : 'READY TO RUN'
+        },
+        {
+          title: 'test_legacy_partner_api_payload',
+          target: 'tests/test_integrations.py',
+          reason: 'Verifies external partner API clients handling corporate department >= 100',
+          status: 'PENDING'
+        },
+        {
+          title: 'test_department_id_boundary_at_100',
+          target: 'tests/test_orders.py',
+          reason: 'Boundary condition test for department_id == 99 (fails) vs 100 (passes)',
+          status: 'PENDING'
+        }
+      ];
+
+      testCases.forEach((tc, idx) => {
+        const y = 260 + idx * 105;
+        const isRun = idx === 0;
+
+        ctx.fillStyle = isRun ? '#122018' : PALETTE.bgElevated;
+        roundRect(ctx, 380, y, 1380, 85, 12, true, false);
+        ctx.strokeStyle = isRun ? PALETTE.borderHighlight : PALETTE.border;
+        ctx.stroke();
+
+        ctx.fillStyle = PALETTE.textPrimary;
+        ctx.font = '700 14px "JetBrains Mono"';
+        ctx.fillText(tc.title, 410, y + 36);
+
+        ctx.fillStyle = PALETTE.textMuted;
+        ctx.font = '500 12px "Plus Jakarta Sans"';
+        ctx.fillText(`Target: ${tc.target} · ${tc.reason}`, 410, y + 62);
+
+        // Run Button / Status Pill
+        if (isRun) {
+          if (t >= 76.5) {
+            ctx.fillStyle = 'rgba(126, 231, 178, 0.15)';
+            roundRect(ctx, 1540, y + 25, 180, 36, 8, true, false);
+            ctx.strokeStyle = PALETTE.accentMint;
+            ctx.stroke();
+
+            ctx.fillStyle = PALETTE.accentMint;
+            ctx.font = '700 12px "JetBrains Mono"';
+            ctx.textAlign = 'center';
+            ctx.fillText('✓ PASSED (0.24s)', 1630, y + 48);
+          } else {
+            ctx.fillStyle = PALETTE.accentLime;
+            roundRect(ctx, 1540, y + 25, 180, 36, 8, true, false);
+
+            ctx.fillStyle = '#06110b';
+            ctx.font = '700 12px "Plus Jakarta Sans"';
+            ctx.textAlign = 'center';
+            ctx.fillText('▶ Run Sandbox Test', 1630, y + 48);
+          }
+        } else {
+          ctx.fillStyle = '#14231b';
+          roundRect(ctx, 1540, y + 25, 180, 36, 8, true, false);
+          ctx.strokeStyle = PALETTE.border;
+          ctx.stroke();
+
+          ctx.fillStyle = PALETTE.textMuted;
+          ctx.font = '600 12px "JetBrains Mono"';
+          ctx.textAlign = 'center';
+          ctx.fillText(tc.status, 1630, y + 48);
+        }
+        ctx.textAlign = 'left';
+      });
+
+      // Live Execution Terminal Drawer
+      ctx.fillStyle = '#060b09';
+      roundRect(ctx, 380, 600, 1380, 350, 12, true, false);
+      ctx.strokeStyle = PALETTE.border;
+      ctx.stroke();
+
+      ctx.fillStyle = PALETTE.accentLime;
+      ctx.font = '600 12px "JetBrains Mono"';
+      ctx.fillText('SANDBOX TERMINAL LOG', 410, 635);
+
+      const termLogs = [
+        '$ pytest tests/test_orders.py::test_order_checkout_with_null_dept -v',
+        '============================= test session starts =============================',
+        'platform linux -- Python 3.12.3, pytest-8.3.3',
+        'rootdir: /workspace/DiffBeacon/EnterpriseOrderService',
+        'collected 1 item',
+        ' ',
+        'tests/test_orders.py::test_order_checkout_with_null_dept PASSED           [100%]',
+        ' ',
+        '============================== 1 passed in 0.24s =============================='
+      ];
+
+      termLogs.forEach((line, idx) => {
+        if (line.includes('PASSED')) {
+          ctx.fillStyle = PALETTE.accentMint;
+        } else if (line.startsWith('$')) {
+          ctx.fillStyle = PALETTE.accentLime;
+        } else {
+          ctx.fillStyle = PALETTE.textSecondary;
+        }
+        ctx.font = '500 12px "JetBrains Mono"';
+        ctx.fillText(line, 410, 675 + idx * 26);
+      });
+    }
+
+    // -------------------------------------------------------------------------
+    // SCENE 7: STRONG CLOSING
+    // -------------------------------------------------------------------------
+    function renderScene7_Closing(t) {
+      ctx.fillStyle = '#040705';
+      ctx.fillRect(0, 0, 1920, 1080);
+
+      // Radial Ambient Gradient
+      const grad = ctx.createRadialGradient(960, 540, 50, 960, 540, 800);
+      grad.addColorStop(0, 'rgba(143, 230, 169, 0.08)');
+      grad.addColorStop(1, 'rgba(4, 7, 5, 0)');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, 1920, 1080);
+
+      ctx.save();
+      ctx.textAlign = 'center';
+
+      // Glowing Beacon Logo
+      ctx.beginPath();
+      ctx.arc(960, 360, 24, 0, Math.PI * 2);
+      ctx.fillStyle = PALETTE.accentLime;
+      ctx.shadowColor = PALETTE.accentLime;
+      ctx.shadowBlur = 32;
+      ctx.fill();
+
+      // Title Sequence
+      ctx.fillStyle = PALETTE.textSecondary;
+      ctx.font = '600 24px "Plus Jakarta Sans"';
+      ctx.fillText('Not just what changed.', 960, 450);
+
+      ctx.fillStyle = PALETTE.textPrimary;
+      ctx.font = '800 64px "Plus Jakarta Sans"';
+      ctx.fillText('Understand what it affects.', 960, 530);
+
+      ctx.fillStyle = PALETTE.accentLime;
+      ctx.font = '800 36px "Plus Jakarta Sans"';
+      ctx.fillText('DiffBeacon', 960, 600);
+
+      ctx.fillStyle = PALETTE.accentBrand;
+      ctx.font = '500 18px "JetBrains Mono"';
+      ctx.fillText('Understand the impact before the merge.', 960, 640);
+
+      // Deployment URL pill
+      ctx.fillStyle = '#0c1611';
+      roundRect(ctx, 800, 690, 320, 44, 22, true, false);
+      ctx.strokeStyle = PALETTE.borderHighlight;
+      ctx.stroke();
+
+      ctx.fillStyle = PALETTE.accentMint;
+      ctx.font = '600 14px "JetBrains Mono"';
+      ctx.fillText('diffbeacon-delta.vercel.app', 960, 717);
+
+      ctx.restore();
+    }
+
+    // -------------------------------------------------------------------------
+    // RENDER HELPERS
+    // -------------------------------------------------------------------------
+    function renderBrowserHeader(title) {
+      // Browser Window Header Bar
+      ctx.fillStyle = '#080e0b';
+      ctx.fillRect(0, 0, 1920, 80);
+      ctx.strokeStyle = PALETTE.border;
+      ctx.beginPath();
+      ctx.moveTo(0, 80); ctx.lineTo(1920, 80);
+      ctx.stroke();
+
+      // Mac Window Dots
+      ctx.fillStyle = '#ff5f56';
+      ctx.beginPath(); ctx.arc(40, 40, 7, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#ffbd2e';
+      ctx.beginPath(); ctx.arc(65, 40, 7, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#27c93f';
+      ctx.beginPath(); ctx.arc(90, 40, 7, 0, Math.PI * 2); ctx.fill();
+
+      // Browser Search Pill
+      ctx.fillStyle = '#0c1410';
+      roundRect(ctx, 480, 20, 960, 40, 8, true, false);
+      ctx.strokeStyle = PALETTE.border;
+      ctx.stroke();
+
+      ctx.fillStyle = PALETTE.textSecondary;
+      ctx.font = '500 13px "JetBrains Mono"';
+      ctx.textAlign = 'center';
+      ctx.fillText(`🔒 https://github.com/org/EnterpriseOrderService/${title}`, 960, 45);
+      ctx.textAlign = 'left';
+    }
+
+    function renderStandardAppFrame() {
+      // Background
+      ctx.fillStyle = PALETTE.bgDark;
+      ctx.fillRect(0, 0, 1920, 1080);
+
+      // Top Chrome
+      renderBrowserHeader('diffbeacon-delta.vercel.app');
+
+      // Left Navigation Sidebar
+      ctx.fillStyle = '#070c09';
+      ctx.fillRect(0, 80, 300, 1000);
+      ctx.strokeStyle = PALETTE.border;
+      ctx.strokeRect(0, 80, 300, 1000);
+
+      // DiffBeacon Logo in sidebar
+      ctx.beginPath();
+      ctx.arc(45, 135, 8, 0, Math.PI * 2);
+      ctx.fillStyle = PALETTE.accentLime;
+      ctx.shadowColor = PALETTE.accentLime;
+      ctx.shadowBlur = 12;
+      ctx.fill();
+      ctx.shadowBlur = 0;
+
+      ctx.fillStyle = PALETTE.textPrimary;
+      ctx.font = '800 18px "Plus Jakarta Sans"';
+      ctx.fillText('DiffBeacon', 65, 142);
+
+      const navItems = [
+        { label: 'Project Dashboard', active: false },
+        { label: 'Change Intelligence', active: true },
+        { label: 'Impact Graph', active: false },
+        { label: 'Contract Map', active: false },
+        { label: 'Verification Matrix', active: false },
+        { label: 'Settings', active: false }
+      ];
+
+      navItems.forEach((item, idx) => {
+        const y = 200 + idx * 48;
+        if (item.active) {
+          ctx.fillStyle = '#15241b';
+          roundRect(ctx, 20, y - 24, 260, 38, 8, true, false);
+          ctx.strokeStyle = '#2e4738';
+          ctx.stroke();
+        }
+        ctx.fillStyle = item.active ? PALETTE.accentLime : PALETTE.textSecondary;
+        ctx.font = '600 13px "Plus Jakarta Sans"';
+        ctx.fillText(item.label, 40, y);
+      });
+    }
+
+    function renderMouseCursor() {
+      ctx.save();
+      ctx.translate(mouse.x, mouse.y);
+
+      // Click shockwave ring
+      if (mouse.clicking) {
+        ctx.beginPath();
+        ctx.arc(0, 0, 18, 0, Math.PI * 2);
+        ctx.strokeStyle = PALETTE.accentLime;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      }
+
+      // Cursor pointer shape (SVG path simulation)
+      ctx.fillStyle = '#edf7f2';
+      ctx.strokeStyle = '#060b09';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(0, 18);
+      ctx.lineTo(5, 14);
+      ctx.lineTo(10, 22);
+      ctx.lineTo(13, 20);
+      ctx.lineTo(8, 12);
+      ctx.lineTo(14, 12);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function roundRect(ctx, x, y, width, height, radius, fill, stroke) {
+      ctx.beginPath();
+      ctx.moveTo(x + radius, y);
+      ctx.lineTo(x + width - radius, y);
+      ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+      ctx.lineTo(x + width, y + height - radius);
+      ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+      ctx.lineTo(x + radius, y + height);
+      ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+      ctx.lineTo(x, y + radius);
+      ctx.quadraticCurveTo(x, y, x + radius, y);
+      ctx.closePath();
+      if (fill) ctx.fill();
+      if (stroke) ctx.stroke();
+    }
+
+    function renderWrappedText(ctx, text, x, y, maxWidth, lineHeight) {
+      const words = text.split(' ');
+      let line = '';
+      for (let n = 0; n < words.length; n++) {
+        const testLine = line + words[n] + ' ';
+        const metrics = ctx.measureText(testLine);
+        if (metrics.width > maxWidth && n > 0) {
+          ctx.fillText(line, x, y);
+          line = words[n] + ' ';
+          y += lineHeight;
+        } else {
+          line = testLine;
+        }
+      }
+      ctx.fillText(line, x, y);
+    }
+
+    // =========================================================================
+    // ANIMATION & PLAYBACK LOOP (60 FPS)
+    // =========================================================================
+    function tick(timestamp) {
+      if (!lastTimestamp) lastTimestamp = timestamp;
+      const deltaTime = (timestamp - lastTimestamp) / 1000;
+      lastTimestamp = timestamp;
+
+      if (isPlaying) {
+        currentTime += deltaTime * playbackSpeed;
+        if (currentTime >= TOTAL_DURATION) {
+          currentTime = TOTAL_DURATION;
+          isPlaying = false;
+          playBtn.textContent = '▶';
+          if (isRecording) stopRecording();
+        }
+      }
+
+      updateSimulation(currentTime);
+      renderFrame(currentTime);
+
+      // Update UI Progress readouts
+      const progressPercent = (currentTime / TOTAL_DURATION) * 100;
+      scrubFill.style.width = `${progressPercent}%`;
+
+      const curM = Math.floor(currentTime / 60).toString().padStart(2, '0');
+      const curS = Math.floor(currentTime % 60).toString().padStart(2, '0');
+      const totM = Math.floor(TOTAL_DURATION / 60).toString().padStart(2, '0');
+      const totS = Math.floor(TOTAL_DURATION % 60).toString().padStart(2, '0');
+      timeDisplay.textContent = `${curM}:${curS} / ${totM}:${totS}`;
+
+      requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+
+    // =========================================================================
+    // EVENT LISTENERS & CONTROLS
+    // =========================================================================
+    playBtn.addEventListener('click', () => {
+      initAudio();
+      if (currentTime >= TOTAL_DURATION) currentTime = 0;
+      isPlaying = !isPlaying;
+      playBtn.textContent = isPlaying ? '❚❚' : '▶';
+    });
+
+    restartBtn.addEventListener('click', () => {
+      currentTime = 0;
+      lastSpokenScene = -1;
+      updateSimulation(0);
+      renderFrame(0);
+    });
+
+    scrubber.addEventListener('click', (e) => {
+      const rect = scrubber.getBoundingClientRect();
+      const pos = (e.clientX - rect.left) / rect.width;
+      currentTime = Math.max(0, Math.min(TOTAL_DURATION, pos * TOTAL_DURATION));
+      lastSpokenScene = -1;
+      updateSimulation(currentTime);
+    });
+
+    scenePills.forEach(pill => {
+      pill.addEventListener('click', () => {
+        initAudio();
+        currentTime = parseFloat(pill.dataset.time);
+        lastSpokenScene = -1;
+        updateSimulation(currentTime);
+        if (!isPlaying) {
+          isPlaying = true;
+          playBtn.textContent = '❚❚';
+        }
+      });
+    });
+
+    speedBtn.addEventListener('click', () => {
+      if (playbackSpeed === 1.0) playbackSpeed = 1.25;
+      else if (playbackSpeed === 1.25) playbackSpeed = 1.5;
+      else playbackSpeed = 1.0;
+      speedBtn.textContent = `${playbackSpeed}x`;
+    });
+
+    toggleAudioBtn.addEventListener('click', () => {
+      soundEnabled = !soundEnabled;
+      audioIcon.textContent = soundEnabled ? '🔊' : '🔇';
+      audioLabel.textContent = soundEnabled ? 'Sound & Voice On' : 'Muted';
+      if (synthGain) synthGain.gain.setValueAtTime(soundEnabled ? 0.04 : 0.0, audioCtx.currentTime);
+      if (!soundEnabled && 'speechSynthesis' in window) window.speechSynthesis.cancel();
+    });
+
+    fullscreenBtn.addEventListener('click', () => {
+      const el = document.getElementById('viewport');
+      if (!document.fullscreenElement) {
+        el.requestFullscreen().catch(err => alert(err.message));
+      } else {
+        document.exitFullscreen();
+      }
+    });
+
+    copyCaptionBtn.addEventListener('click', () => {
+      const text = `A standard Git diff tells you *what* changed line-by-line. But how do you know *what that change actually affects* across APIs, data models, and business logic before merging?\n\nI built DiffBeacon — code-change intelligence with evidence and transparent uncertainty.\n⚡ Traces behavioral impact across serializers, endpoints & downstream dependencies.\n🛡️ Provenance tiers (Confirmed vs Inferred vs Unverified) — no hallucinated confidence.\n🧪 Auto-generates targeted sandbox verification pytest cases.\n\nLive App: https://diffbeacon-delta.vercel.app\n#developer #ai #devtools #softwareengineering #github`;
+      navigator.clipboard.writeText(text);
+      copyCaptionBtn.textContent = '✓ Copied!';
+      setTimeout(() => (copyCaptionBtn.textContent = 'Copy LinkedIn Post'), 2000);
+    });
+
+    // =========================================================================
+    // 1080p CANVAS VIDEO RECORDER & EXPORT (WebM/MP4)
+    // =========================================================================
+    recordBtn.addEventListener('click', () => {
+      if (!isRecording) {
+        startRecording();
+      } else {
+        stopRecording();
+      }
+    });
+
+    function startRecording() {
+      initAudio();
+      isRecording = true;
+      recordedChunks = [];
+      recordBtn.classList.add('recording');
+      recordLabel.textContent = 'Recording 1080p... Click to Stop';
+
+      // Capture canvas stream at 60 fps
+      const stream = canvas.captureStream(60);
+
+      // Connect Web Audio stream if present
+      if (audioCtx) {
+        const dest = audioCtx.createMediaStreamDestination();
+        synthGain.connect(dest);
+        const audioTracks = dest.stream.getAudioTracks();
+        if (audioTracks.length > 0) stream.addTrack(audioTracks[0]);
+      }
+
+      const options = { mimeType: 'video/webm;codecs=vp9', videoBitsPerSecond: 8000000 };
+      try {
+        mediaRecorder = new MediaRecorder(stream, options);
+      } catch (e) {
+        mediaRecorder = new MediaRecorder(stream);
+      }
+
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) recordedChunks.push(e.data);
+      };
+
+      mediaRecorder.onstop = () => {
+        const blob = new Blob(recordedChunks, { type: 'video/webm' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `DiffBeacon-Product-Demo-1080p-${new Date().toISOString().slice(0, 10)}.webm`;
+        a.click();
+        URL.revokeObjectURL(url);
+
+        recordBtn.classList.remove('recording');
+        recordLabel.textContent = 'Record & Export 1080p Video';
+        isRecording = false;
+        alert('🎉 1080p Video export complete! The video file has been saved to your downloads folder.');
+      };
+
+      // Restart from beginning and play
+      currentTime = 0;
+      lastSpokenScene = -1;
+      isPlaying = true;
+      playBtn.textContent = '❚❚';
+      mediaRecorder.start();
+    }
+
+    function stopRecording() {
+      if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+        mediaRecorder.stop();
+      }
+    }
+  </script>
+</body>
+</html>
