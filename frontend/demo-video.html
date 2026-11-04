@@ -49,16 +49,18 @@
       letter-spacing: -0.01em;
     }
     .brand-beacon {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
+      width: 22px;
+      height: 22px;
+      border-radius: 6px;
       background: #d6fa64;
-      box-shadow: 0 0 12px #d6fa64;
-      animation: pulse-glow 2s infinite ease-in-out;
-    }
-    @keyframes pulse-glow {
-      0%, 100% { opacity: 0.8; transform: scale(1); }
-      50% { opacity: 1; transform: scale(1.25); filter: drop-shadow(0 0 8px #d6fa64); }
+      color: #07110b;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 800;
+      font-size: 13px;
+      box-shadow: 0 0 14px rgba(214, 250, 100, 0.4);
     }
     .header-actions {
       display: flex;
@@ -160,21 +162,6 @@
       background: linear-gradient(90deg, #8fe6a9, #d6fa64);
       transition: width 0.05s linear;
     }
-    .scene-markers {
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      pointer-events: none;
-    }
-    .scene-mark {
-      position: absolute;
-      top: 0;
-      bottom: 0;
-      width: 2px;
-      background: rgba(6, 11, 9, 0.7);
-    }
     .control-row {
       display: flex;
       align-items: center;
@@ -241,19 +228,20 @@
       width: 100%;
       max-width: 1280px;
       margin-top: 8px;
-      padding: 8px 16px;
-      background: #060b09;
-      border: 1px dashed #1d2b22;
+      padding: 10px 18px;
+      background: #080d0a;
+      border: 1px solid #1d2b22;
       border-radius: 8px;
       font-size: 13px;
       line-height: 1.5;
       text-align: center;
       color: #d6fa64;
       font-family: 'Plus Jakarta Sans', sans-serif;
-      min-height: 40px;
+      min-height: 42px;
       display: flex;
       align-items: center;
       justify-content: center;
+      font-weight: 500;
     }
 
     .linkedin-card {
@@ -293,9 +281,9 @@
   <!-- Top App Bar -->
   <div class="header-bar">
     <div class="brand-title">
-      <div class="brand-beacon"></div>
+      <div class="brand-beacon">Δ</div>
       <span>DiffBeacon</span>
-      <span style="color: #7a8c86; font-weight: 500; font-size: 12px;">/ 1080p Interactive Product Demo Video</span>
+      <span style="color: #7a8c86; font-weight: 500; font-size: 12px;">/ BeaconWorks 1080p Product Demo Video</span>
       <span style="background: #13231a; color: #8fe6a9; border: 1px solid #213b2c; font-size: 10px; font-family: 'JetBrains Mono'; padding: 2px 6px; border-radius: 4px;">60 FPS</span>
     </div>
     <div class="header-actions">
@@ -312,7 +300,7 @@
     </div>
   </div>
 
-  <!-- 16:9 Canvas Viewport (1920x1080 Native Render Target) -->
+  <!-- 16:9 Canvas Viewport (1920x1080 Native Target) -->
   <div class="video-viewport" id="viewport">
     <canvas id="demoCanvas" width="1920" height="1080"></canvas>
   </div>
@@ -321,7 +309,6 @@
   <div class="player-controls">
     <div class="scrub-container" id="scrubber">
       <div class="scrub-fill" id="scrubFill"></div>
-      <div class="scene-markers" id="sceneMarkers"></div>
     </div>
     <div class="control-row">
       <div class="left-controls">
@@ -331,12 +318,12 @@
       </div>
       <div class="scene-pills" id="scenePills">
         <button class="scene-pill active" data-time="0">1. The Question</button>
-        <button class="scene-pill" data-time="8">2. Enter DiffBeacon</button>
-        <button class="scene-pill" data-time="18">3. Analysis Pipeline</button>
-        <button class="scene-pill" data-time="35">4. Impact Report</button>
-        <button class="scene-pill" data-time="55">5. Evidence & Provenance</button>
-        <button class="scene-pill" data-time="70">6. Verification Sandbox</button>
-        <button class="scene-pill" data-time="82">7. Closing</button>
+        <button class="scene-pill" data-time="10">2. BeaconWorks Workspace</button>
+        <button class="scene-pill" data-time="22">3. 12-Stage AST Pipeline</button>
+        <button class="scene-pill" data-time="38">4. Impact Explorer</button>
+        <button class="scene-pill" data-time="58">5. Behavioral Deltas</button>
+        <button class="scene-pill" data-time="72">6. Verification Sandbox</button>
+        <button class="scene-pill" data-time="84">7. Closing</button>
       </div>
       <div class="right-controls">
         <button class="btn btn-secondary" id="speedBtn" style="font-family: 'JetBrains Mono'; font-size: 11px;">1.0x</button>
@@ -364,6 +351,7 @@
   <script>
     // =========================================================================
     // DIFFBEACON 1080p DEMO VIDEO ENGINE (1920x1080 @ 60FPS)
+    // Matches the exact visual identity and components of the live application!
     // =========================================================================
     const canvas = document.getElementById('demoCanvas');
     const ctx = canvas.getContext('2d');
@@ -393,77 +381,87 @@
     let mediaRecorder = null;
     let recordedChunks = [];
 
-    // Ambient Web Audio Synthesizer
+    // =========================================================================
+    // POLISHED AMBIENT AUDIO ENGINE (ZERO BEEPING)
+    // Soft, soothing, low-pass filtered velvety warmth
+    // =========================================================================
     let audioCtx = null;
-    let droneOsc = null;
-    let chordOsc1 = null;
-    let chordOsc2 = null;
-    let synthGain = null;
+    let synthMasterGain = null;
+    let padOsc1 = null;
+    let padOsc2 = null;
 
     function initAudio() {
       if (audioCtx) return;
       try {
         const AudioContext = window.AudioContext || window.webkitAudioContext;
         audioCtx = new AudioContext();
-        synthGain = audioCtx.createGain();
-        synthGain.gain.setValueAtTime(0.04, audioCtx.currentTime);
-        synthGain.connect(audioCtx.destination);
 
-        // Low Warm Forest Drone (F# minor root 46.25 Hz)
-        droneOsc = audioCtx.createOscillator();
-        droneOsc.type = 'triangle';
-        droneOsc.frequency.setValueAtTime(46.25, audioCtx.currentTime);
-        const droneFilter = audioCtx.createBiquadFilter();
-        droneFilter.type = 'lowpass';
-        droneFilter.frequency.setValueAtTime(140, audioCtx.currentTime);
-        droneOsc.connect(droneFilter);
-        droneFilter.connect(synthGain);
-        droneOsc.start();
+        synthMasterGain = audioCtx.createGain();
+        synthMasterGain.gain.setValueAtTime(0.03, audioCtx.currentTime);
+        synthMasterGain.connect(audioCtx.destination);
 
-        // Harmonic Shimmer Chords (Ambient SaaS Pad)
-        chordOsc1 = audioCtx.createOscillator();
-        chordOsc1.type = 'sine';
-        chordOsc1.frequency.setValueAtTime(185.0, audioCtx.currentTime); // F#3
-        chordOsc1.connect(synthGain);
-        chordOsc1.start();
+        // Lowpass filter to ensure NO high-pitch beeps or harshness
+        const lowpass = audioCtx.createBiquadFilter();
+        lowpass.type = 'lowpass';
+        lowpass.frequency.setValueAtTime(160, audioCtx.currentTime); // Deep warm roll-off
+        lowpass.connect(synthMasterGain);
 
-        chordOsc2 = audioCtx.createOscillator();
-        chordOsc2.type = 'sine';
-        chordOsc2.frequency.setValueAtTime(277.18, audioCtx.currentTime); // C#4
-        chordOsc2.connect(synthGain);
-        chordOsc2.start();
+        // Ambient Drone Pad (Warm F# minor root 55Hz)
+        padOsc1 = audioCtx.createOscillator();
+        padOsc1.type = 'sine';
+        padOsc1.frequency.setValueAtTime(55.0, audioCtx.currentTime);
+        padOsc1.connect(lowpass);
+        padOsc1.start();
+
+        padOsc2 = audioCtx.createOscillator();
+        padOsc2.type = 'triangle';
+        padOsc2.frequency.setValueAtTime(110.0, audioCtx.currentTime);
+        padOsc2.connect(lowpass);
+        padOsc2.start();
       } catch (e) {
-        console.warn('AudioContext not supported or blocked:', e);
+        console.warn('AudioContext not supported:', e);
       }
     }
 
-    function triggerAudioClick() {
+    // Ultra-soft haptic click (NOT a beep! Muted sub-bass 50Hz tap)
+    function triggerHapticClick() {
       if (!audioCtx || !soundEnabled) return;
       try {
-        const clickOsc = audioCtx.createOscillator();
-        const clickGain = audioCtx.createGain();
-        clickOsc.type = 'sine';
-        clickOsc.frequency.setValueAtTime(880, audioCtx.currentTime);
-        clickOsc.frequency.exponentialRampToValueAtTime(320, audioCtx.currentTime + 0.04);
-        clickGain.gain.setValueAtTime(0.05, audioCtx.currentTime);
-        clickGain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.04);
-        clickOsc.connect(clickGain);
-        clickGain.connect(audioCtx.destination);
-        clickOsc.start();
-        clickOsc.stop(audioCtx.currentTime + 0.045);
+        const tap = audioCtx.createOscillator();
+        const tapGain = audioCtx.createGain();
+        tap.type = 'sine';
+        tap.frequency.setValueAtTime(50, audioCtx.currentTime);
+        tapGain.gain.setValueAtTime(0.012, audioCtx.currentTime);
+        tapGain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.03);
+        tap.connect(tapGain);
+        tapGain.connect(audioCtx.destination);
+        tap.start();
+        tap.stop(audioCtx.currentTime + 0.035);
       } catch (e) {}
     }
 
-    // Voiceover Synthesis
+    // =========================================================================
+    // NARRATION & IN-BETWEEN AUDIO TEXT SCRIPTS
+    // =========================================================================
     let lastSpokenScene = -1;
     const VOICEOVER_SCRIPTS = [
-      { start: 0.5, end: 7.5, text: "A small code change can affect much more than the file you're looking at." },
-      { start: 8.5, end: 17.5, text: "DiffBeacon compares two versions of your code to analyze downstream impact before merging." },
-      { start: 18.5, end: 34.0, text: "It parses AST symbol boundaries and traces how meaningful changes connect across the entire application." },
-      { start: 35.5, end: 54.0, text: "Instead of stopping at changed lines, DiffBeacon traces where that behavior connects across APIs, models, and services." },
-      { start: 55.5, end: 69.5, text: "Not every conclusion has the same certainty. DiffBeacon shows what the code directly supports, what is inferred, and what still needs verification." },
-      { start: 70.5, end: 81.5, text: "The goal is not just to find changes. It helps developers understand what deserves attention before the change is merged." },
-      { start: 82.5, end: 87.5, text: "DiffBeacon. Understand the impact before the merge." }
+      { start: 0.5, end: 9.0, text: "A small code change can affect much more than the file you're looking at." },
+      { start: 10.5, end: 21.0, text: "DiffBeacon compares two versions of your code to analyze downstream impact before merging." },
+      { start: 22.5, end: 36.5, text: "It runs a deterministic multi-pass AST pipeline, tracing how changes propagate across models, APIs, and services." },
+      { start: 38.5, end: 56.5, text: "Instead of stopping at changed lines, DiffBeacon traces where that behavior connects across the entire architecture." },
+      { start: 58.5, end: 70.5, text: "Not every conclusion has the same certainty. DiffBeacon separates what code directly supports, what is inferred, and what needs testing." },
+      { start: 72.5, end: 83.0, text: "It gives your team targeted verification guidance with executable sandbox pytest cases before you merge." },
+      { start: 84.5, end: 87.5, text: "DiffBeacon. Understand the impact before the merge." }
+    ];
+
+    // In-between textual annotations displayed directly inside video frames
+    const IN_BETWEEN_CALLOUTS = [
+      { start: 4.5, end: 9.5, title: "THE HIDDEN RIPPLE", subtitle: "A 4-line serializer change silently alters validation across 3 endpoints." },
+      { start: 16.0, end: 21.5, title: "FIXTURE WORKSPACE", subtitle: "Zero cloud API keys required. 100% deterministic local AST parsing." },
+      { start: 32.0, end: 37.5, title: "AST GRAPH RESOLUTION", subtitle: "1,420 Python symbols tracked across Django ORM, views, and Celery workers." },
+      { start: 51.0, end: 57.5, title: "DOWNSTREAM CALL PATHWAY", subtitle: "Tracking Breaking Behavior: Corporate department validation rejected on legacy payloads." },
+      { start: 65.0, end: 71.5, title: "EPISTEMIC PROVENANCE", subtitle: "Confirmed AST Proof · Inferred Framework Rules · Unverified Boundaries." },
+      { start: 78.5, end: 83.5, title: "TARGETED VERIFICATION", subtitle: "Generated pytest passes in isolated ephemeral sandbox environment." }
     ];
 
     function speakText(text) {
@@ -471,19 +469,22 @@
       window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.rate = 1.0;
-      utterance.pitch = 1.02;
+      utterance.pitch = 1.0;
       const voices = window.speechSynthesis.getVoices();
-      const englishVoice = voices.find(v => v.lang.startsWith('en') && (v.name.includes('Natural') || v.name.includes('Google') || v.name.includes('Samantha') || v.name.includes('David')));
-      if (englishVoice) utterance.voice = englishVoice;
+      const naturalVoice = voices.find(v => v.lang.startsWith('en') && (v.name.includes('Natural') || v.name.includes('Google') || v.name.includes('Samantha') || v.name.includes('David')));
+      if (naturalVoice) utterance.voice = naturalVoice;
       window.speechSynthesis.speak(utterance);
     }
 
-    // Colors Palette
+    // Exact DiffBeacon Theme Palette
     const PALETTE = {
-      bgDark: '#050907',
-      bgCard: '#0a100d',
-      bgElevated: '#0e1612',
-      border: '#1b281f',
+      bgCanvas: '#060b09',
+      bgNavbar: '#090c09',
+      bgCard: '#0c120e',
+      bgElevated: '#0e1611',
+      bgDarkest: '#080d0a',
+      border: '#1d2b22',
+      borderDivider: '#1b281f',
       borderHighlight: '#2e4738',
       accentLime: '#d6fa64',
       accentBrand: '#8fe6a9',
@@ -495,18 +496,18 @@
       textMuted: '#677a73'
     };
 
-    // Simulated Mouse Cursor State
+    // Simulated Mouse Cursor Physics
     const mouse = {
       x: 960,
       y: 540,
       targetX: 960,
       targetY: 540,
       clicking: false,
-      clickProgress: 0,
+      clickRing: 0,
       cursorType: 'arrow'
     };
 
-    // Camera Pan/Zoom Matrix
+    // Smooth Camera Matrix
     const camera = {
       scale: 1.0,
       targetScale: 1.0,
@@ -516,29 +517,23 @@
       targetY: 0
     };
 
-    // Easing helper
-    function lerp(start, end, amt) {
-      return (1 - amt) * start + amt * end;
-    }
-    function easeInOutQuad(t) {
-      return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
-    }
+    function lerp(start, end, amt) { return (1 - amt) * start + amt * end; }
+    function easeInOutQuad(t) { return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t; }
 
-    // =========================================================================
-    // SCENE TIMELINE ORCHESTRATION
-    // =========================================================================
     function getSceneIndex(t) {
-      if (t < 8.0) return 0;
-      if (t < 18.0) return 1;
-      if (t < 35.0) return 2;
-      if (t < 55.0) return 3;
-      if (t < 70.0) return 4;
-      if (t < 82.0) return 5;
-      return 6;
+      if (t < 10.0) return 0; // 0..10s
+      if (t < 22.0) return 1; // 10..22s
+      if (t < 38.0) return 2; // 22..38s
+      if (t < 58.0) return 3; // 38..58s
+      if (t < 72.0) return 4; // 58..72s
+      if (t < 84.0) return 5; // 72..84s
+      return 6;               // 84..88s
     }
 
+    // =========================================================================
+    // TIMELINE SIMULATION UPDATE
+    // =========================================================================
     function updateSimulation(t) {
-      // Manage Subtitles and Voiceover
       const currentVo = VOICEOVER_SCRIPTS.find(s => t >= s.start && t <= s.end);
       if (currentVo) {
         subtitleBox.textContent = `"${currentVo.text}"`;
@@ -549,317 +544,146 @@
       const sceneIdx = getSceneIndex(t);
       if (sceneIdx !== lastSpokenScene) {
         lastSpokenScene = sceneIdx;
-        scenePills.forEach((p, idx) => {
-          p.classList.toggle('active', idx === sceneIdx);
-        });
+        scenePills.forEach((p, idx) => p.classList.toggle('active', idx === sceneIdx));
         if (currentVo) speakText(currentVo.text);
       }
 
-      // -----------------------------------------------------------------------
-      // SCENE 1 (0s - 8s): The Question / Git Diff
-      // -----------------------------------------------------------------------
-      if (t < 8.0) {
-        camera.targetScale = 1.08;
-        camera.targetX = -60;
-        camera.targetY = -40;
-
-        // Mouse hovers over line 42 in the diff
-        const subT = Math.min(1, Math.max(0, (t - 1.5) / 3));
-        mouse.targetX = lerp(400, 780, easeInOutQuad(subT));
-        mouse.targetY = lerp(200, 480, easeInOutQuad(subT));
-        mouse.cursorType = subT > 0.4 ? 'text' : 'arrow';
-
-        if (t > 4.5 && t < 4.8) {
-          if (!mouse.clicking) triggerAudioClick();
-          mouse.clicking = true;
-        } else {
-          mouse.clicking = false;
-        }
-      }
-      // -----------------------------------------------------------------------
-      // SCENE 2 (8s - 18s): Enter DiffBeacon Dashboard
-      // -----------------------------------------------------------------------
-      else if (t < 18.0) {
-        camera.targetScale = 1.0;
-        camera.targetX = 0;
-        camera.targetY = 0;
-
-        if (t < 13.0) {
-          // Cursor moves to "Start Change Analysis" button at (1520, 240)
-          const subT = Math.min(1, Math.max(0, (t - 9.0) / 2.5));
-          mouse.targetX = lerp(780, 1490, easeInOutQuad(subT));
-          mouse.targetY = lerp(480, 242, easeInOutQuad(subT));
-          mouse.cursorType = 'pointer';
-
-          if (t > 12.0 && t < 12.3) {
-            if (!mouse.clicking) triggerAudioClick();
+      // Cursor movement trajectories matching real UI elements
+      if (t < 10.0) {
+        // Scene 1: Code review diff
+        camera.targetScale = 1.06; camera.targetX = -40; camera.targetY = -30;
+        const subT = Math.min(1, Math.max(0, (t - 2.0) / 3.0));
+        mouse.targetX = lerp(450, 840, easeInOutQuad(subT));
+        mouse.targetY = lerp(240, 480, easeInOutQuad(subT));
+        mouse.clicking = (t > 5.5 && t < 5.8);
+      } else if (t < 22.0) {
+        // Scene 2: BeaconWorks Demo Workspace
+        camera.targetScale = 1.0; camera.targetX = 0; camera.targetY = 0;
+        if (t < 16.0) {
+          const subT = Math.min(1, Math.max(0, (t - 11.0) / 2.5));
+          mouse.targetX = lerp(840, 1540, easeInOutQuad(subT));
+          mouse.targetY = lerp(480, 275, easeInOutQuad(subT));
+          if (t > 14.5 && t < 14.8) {
+            if (!mouse.clicking) triggerHapticClick();
             mouse.clicking = true;
           } else {
             mouse.clicking = false;
           }
         } else {
-          // Resting on dashboard
-          mouse.targetX = 1490;
-          mouse.targetY = 242;
-          mouse.cursorType = 'arrow';
-          mouse.clicking = false;
+          mouse.targetX = 1540; mouse.targetY = 275; mouse.clicking = false;
         }
-      }
-      // -----------------------------------------------------------------------
-      // SCENE 3 (18s - 35s): Analysis Pipeline (Live Execution Stepper)
-      // -----------------------------------------------------------------------
-      else if (t < 35.0) {
-        camera.targetScale = 1.04;
-        camera.targetX = -30;
-        camera.targetY = -20;
-
-        // Cursor gently inspects the progressive pipeline stages
-        if (t < 24.0) {
-          mouse.targetX = lerp(1490, 840, 0.05);
-          mouse.targetY = lerp(242, 420, 0.05);
-          mouse.cursorType = 'arrow';
-        } else if (t < 29.0) {
-          mouse.targetX = lerp(mouse.x, 1260, 0.05);
+      } else if (t < 38.0) {
+        // Scene 3: 12-Stage AST Pipeline
+        camera.targetScale = 1.04; camera.targetX = -25; camera.targetY = -20;
+        if (t < 28.0) {
+          mouse.targetX = lerp(mouse.x, 820, 0.05);
+          mouse.targetY = lerp(mouse.y, 440, 0.05);
+        } else {
+          mouse.targetX = lerp(mouse.x, 1420, 0.05);
           mouse.targetY = lerp(mouse.y, 520, 0.05);
-          mouse.cursorType = 'arrow';
-        } else {
-          mouse.targetX = lerp(mouse.x, 960, 0.05);
-          mouse.targetY = lerp(mouse.y, 600, 0.05);
         }
         mouse.clicking = false;
-      }
-      // -----------------------------------------------------------------------
-      // SCENE 4 (35s - 55s): Change Impact Report (Topological Path Exploration)
-      // -----------------------------------------------------------------------
-      else if (t < 55.0) {
-        camera.targetScale = 1.12;
-        camera.targetX = -100;
-        camera.targetY = -80;
-
-        // Path node coordinates:
-        // Node 1: Validation Rule (540, 480)
-        // Node 2: OrderSerializer (880, 480)
-        // Node 3: CheckoutAPIView (1220, 480)
-        // Node 4: OrderProcessing (1560, 480)
-
-        if (t < 40.0) {
-          // Hover and Click Node 1
-          const subT = Math.min(1, Math.max(0, (t - 36.0) / 2.0));
-          mouse.targetX = lerp(960, 540, easeInOutQuad(subT));
-          mouse.targetY = lerp(600, 480, easeInOutQuad(subT));
-          mouse.cursorType = 'pointer';
-          if (t > 38.5 && t < 38.8) {
-            if (!mouse.clicking) triggerAudioClick();
-            mouse.clicking = true;
-          } else {
-            mouse.clicking = false;
-          }
-        } else if (t < 46.0) {
-          // Hover and Click Node 2 (Serializer)
-          const subT = Math.min(1, Math.max(0, (t - 40.5) / 2.0));
-          mouse.targetX = lerp(540, 880, easeInOutQuad(subT));
-          mouse.targetY = lerp(480, 480, easeInOutQuad(subT));
-          mouse.cursorType = 'pointer';
-          if (t > 43.5 && t < 43.8) {
-            if (!mouse.clicking) triggerAudioClick();
-            mouse.clicking = true;
-          } else {
-            mouse.clicking = false;
-          }
-        } else if (t < 51.0) {
-          // Hover and Click Node 3 (CheckoutAPIView)
-          const subT = Math.min(1, Math.max(0, (t - 46.5) / 2.0));
-          mouse.targetX = lerp(880, 1220, easeInOutQuad(subT));
-          mouse.targetY = lerp(480, 480, easeInOutQuad(subT));
-          mouse.cursorType = 'pointer';
-          if (t > 49.0 && t < 49.3) {
-            if (!mouse.clicking) triggerAudioClick();
-            mouse.clicking = true;
-          } else {
-            mouse.clicking = false;
-          }
+      } else if (t < 58.0) {
+        // Scene 4: Analysis Workspace & Impact Explorer
+        camera.targetScale = 1.10; camera.targetX = -80; camera.targetY = -60;
+        if (t < 44.0) {
+          // Hover & Click Node 1 (orders/serializers.py)
+          const subT = Math.min(1, Math.max(0, (t - 39.0) / 2.0));
+          mouse.targetX = lerp(960, 560, easeInOutQuad(subT));
+          mouse.targetY = lerp(600, 520, easeInOutQuad(subT));
+          if (t > 42.0 && t < 42.3) { if (!mouse.clicking) triggerHapticClick(); mouse.clicking = true; } else mouse.clicking = false;
+        } else if (t < 50.0) {
+          // Click Node 2 (CheckoutAPIView)
+          const subT = Math.min(1, Math.max(0, (t - 45.0) / 2.0));
+          mouse.targetX = lerp(560, 940, easeInOutQuad(subT));
+          mouse.targetY = lerp(520, 520, easeInOutQuad(subT));
+          if (t > 48.0 && t < 48.3) { if (!mouse.clicking) triggerHapticClick(); mouse.clicking = true; } else mouse.clicking = false;
         } else {
-          // Moving toward Node 4
-          const subT = Math.min(1, Math.max(0, (t - 51.5) / 2.0));
-          mouse.targetX = lerp(1220, 1560, easeInOutQuad(subT));
-          mouse.targetY = lerp(480, 480, easeInOutQuad(subT));
-          mouse.cursorType = 'pointer';
-          if (t > 53.5 && t < 53.8) {
-            if (!mouse.clicking) triggerAudioClick();
-            mouse.clicking = true;
-          } else {
-            mouse.clicking = false;
-          }
+          // Click Node 3 (OrderProcessingService)
+          const subT = Math.min(1, Math.max(0, (t - 51.0) / 2.0));
+          mouse.targetX = lerp(940, 1320, easeInOutQuad(subT));
+          mouse.targetY = lerp(520, 520, easeInOutQuad(subT));
+          if (t > 54.0 && t < 54.3) { if (!mouse.clicking) triggerHapticClick(); mouse.clicking = true; } else mouse.clicking = false;
         }
-      }
-      // -----------------------------------------------------------------------
-      // SCENE 5 (55s - 70s): Evidence Inspector & Provenance
-      // -----------------------------------------------------------------------
-      else if (t < 70.0) {
-        camera.targetScale = 1.15;
-        camera.targetX = -140;
-        camera.targetY = -100;
-
-        if (t < 60.0) {
-          // Focus on Confirmed Badge (x: 580, y: 380)
-          const subT = Math.min(1, Math.max(0, (t - 55.5) / 2.0));
-          mouse.targetX = lerp(1560, 580, easeInOutQuad(subT));
-          mouse.targetY = lerp(480, 380, easeInOutQuad(subT));
-          mouse.cursorType = 'pointer';
-          if (t > 58.0 && t < 58.3) {
-            if (!mouse.clicking) triggerAudioClick();
-            mouse.clicking = true;
-          } else {
-            mouse.clicking = false;
-          }
-        } else if (t < 65.0) {
-          // Focus on Inferred Badge (x: 880, y: 380)
-          const subT = Math.min(1, Math.max(0, (t - 60.5) / 2.0));
-          mouse.targetX = lerp(580, 880, easeInOutQuad(subT));
-          mouse.targetY = lerp(380, 380, easeInOutQuad(subT));
-          mouse.cursorType = 'pointer';
-          if (t > 63.0 && t < 63.3) {
-            if (!mouse.clicking) triggerAudioClick();
-            mouse.clicking = true;
-          } else {
-            mouse.clicking = false;
-          }
+      } else if (t < 72.0) {
+        // Scene 5: Behavioral Deltas & Epistemic Provenance
+        camera.targetScale = 1.12; camera.targetX = -110; camera.targetY = -80;
+        if (t < 64.0) {
+          const subT = Math.min(1, Math.max(0, (t - 59.0) / 2.0));
+          mouse.targetX = lerp(1320, 680, easeInOutQuad(subT));
+          mouse.targetY = lerp(520, 390, easeInOutQuad(subT));
+          if (t > 62.0 && t < 62.3) { if (!mouse.clicking) triggerHapticClick(); mouse.clicking = true; } else mouse.clicking = false;
         } else {
-          // Focus on Unverified Badge (x: 1180, y: 380)
-          const subT = Math.min(1, Math.max(0, (t - 65.5) / 2.0));
-          mouse.targetX = lerp(880, 1180, easeInOutQuad(subT));
-          mouse.targetY = lerp(380, 380, easeInOutQuad(subT));
-          mouse.cursorType = 'pointer';
-          if (t > 68.0 && t < 68.3) {
-            if (!mouse.clicking) triggerAudioClick();
-            mouse.clicking = true;
-          } else {
-            mouse.clicking = false;
-          }
+          const subT = Math.min(1, Math.max(0, (t - 65.0) / 2.0));
+          mouse.targetX = lerp(680, 1140, easeInOutQuad(subT));
+          mouse.targetY = lerp(390, 390, easeInOutQuad(subT));
+          if (t > 68.5 && t < 68.8) { if (!mouse.clicking) triggerHapticClick(); mouse.clicking = true; } else mouse.clicking = false;
         }
-      }
-      // -----------------------------------------------------------------------
-      // SCENE 6 (70s - 82s): Verification Matrix & Pytest Sandbox
-      // -----------------------------------------------------------------------
-      else if (t < 82.0) {
-        camera.targetScale = 1.08;
-        camera.targetX = -70;
-        camera.targetY = -50;
-
-        if (t < 74.0) {
-          // Move to Verification Checklist Item (x: 960, y: 440)
-          const subT = Math.min(1, Math.max(0, (t - 70.5) / 2.0));
-          mouse.targetX = lerp(1180, 960, easeInOutQuad(subT));
-          mouse.targetY = lerp(380, 440, easeInOutQuad(subT));
-          mouse.cursorType = 'pointer';
-        } else if (t < 78.0) {
-          // Click "Run Sandbox Test" Button (x: 1480, y: 440)
-          const subT = Math.min(1, Math.max(0, (t - 74.0) / 1.5));
-          mouse.targetX = lerp(960, 1480, easeInOutQuad(subT));
-          mouse.targetY = lerp(440, 440, easeInOutQuad(subT));
-          mouse.cursorType = 'pointer';
-          if (t > 76.0 && t < 76.3) {
-            if (!mouse.clicking) triggerAudioClick();
-            mouse.clicking = true;
-          } else {
-            mouse.clicking = false;
-          }
+      } else if (t < 84.0) {
+        // Scene 6: Verification Matrix & Sandbox
+        camera.targetScale = 1.07; camera.targetX = -50; camera.targetY = -40;
+        if (t < 76.0) {
+          const subT = Math.min(1, Math.max(0, (t - 72.5) / 1.5));
+          mouse.targetX = lerp(1140, 1600, easeInOutQuad(subT));
+          mouse.targetY = lerp(390, 360, easeInOutQuad(subT));
+          if (t > 74.8 && t < 75.1) { if (!mouse.clicking) triggerHapticClick(); mouse.clicking = true; } else mouse.clicking = false;
         } else {
-          // Cursor hovers over active green terminal
-          mouse.targetX = 1480;
-          mouse.targetY = 440;
-          mouse.cursorType = 'arrow';
-          mouse.clicking = false;
+          mouse.targetX = 1600; mouse.targetY = 360; mouse.clicking = false;
         }
-      }
-      // -----------------------------------------------------------------------
-      // SCENE 7 (82s - 88s): Cinematic Closing
-      // -----------------------------------------------------------------------
-      else {
-        camera.targetScale = 1.0;
-        camera.targetX = 0;
-        camera.targetY = 0;
-        mouse.targetX = 960;
-        mouse.targetY = 540;
-        mouse.clicking = false;
-        mouse.cursorType = 'arrow';
+      } else {
+        // Scene 7: Closing
+        camera.targetScale = 1.0; camera.targetX = 0; camera.targetY = 0;
+        mouse.targetX = 960; mouse.targetY = 540; mouse.clicking = false;
       }
 
-      // Smooth cursor lerp
       mouse.x = lerp(mouse.x, mouse.targetX, 0.2);
       mouse.y = lerp(mouse.y, mouse.targetY, 0.2);
-
-      // Smooth camera lerp
       camera.scale = lerp(camera.scale, camera.targetScale, 0.08);
       camera.x = lerp(camera.x, camera.targetX, 0.08);
       camera.y = lerp(camera.y, camera.targetY, 0.08);
     }
 
     // =========================================================================
-    // CANVAS RENDER PASSES (1920x1080)
+    // FRAME RENDERER (1920x1080)
     // =========================================================================
     function renderFrame(t) {
       ctx.save();
       ctx.clearRect(0, 0, 1920, 1080);
-
-      // Apply Camera Transform
       ctx.translate(960 + camera.x, 540 + camera.y);
       ctx.scale(camera.scale, camera.scale);
       ctx.translate(-960, -540);
 
       const sceneIdx = getSceneIndex(t);
-
-      // Render Scene Specific Content
       switch (sceneIdx) {
-        case 0:
-          renderScene1_TheQuestion(t);
-          break;
-        case 1:
-          renderScene2_EnterDiffBeacon(t);
-          break;
-        case 2:
-          renderScene3_AnalysisPipeline(t);
-          break;
-        case 3:
-          renderScene4_ChangeImpactReport(t);
-          break;
-        case 4:
-          renderScene5_EvidenceProvenance(t);
-          break;
-        case 5:
-          renderScene6_VerificationMatrix(t);
-          break;
-        case 6:
-          renderScene7_Closing(t);
-          break;
+        case 0: renderScene1_TheQuestion(t); break;
+        case 1: renderScene2_DemoWorkspace(t); break;
+        case 2: renderScene3_Pipeline(t); break;
+        case 3: renderScene4_ImpactExplorer(t); break;
+        case 4: renderScene5_BehavioralDeltas(t); break;
+        case 5: renderScene6_VerificationSandbox(t); break;
+        case 6: renderScene7_Closing(t); break;
       }
 
-      // Render Global Realistic Mouse Cursor
-      renderMouseCursor();
+      // Render In-Between Callout Banner if active
+      renderInBetweenCallout(t);
 
+      // Render Precision Mouse Cursor
+      renderMouseCursor();
       ctx.restore();
     }
 
     // -------------------------------------------------------------------------
-    // SCENE 1: THE QUESTION (Git PR Code Diff)
+    // SCENE 1: THE QUESTION (Pull Request Git Diff)
     // -------------------------------------------------------------------------
     function renderScene1_TheQuestion(t) {
-      // Dark IDE Workspace Background
-      ctx.fillStyle = '#060a08';
-      ctx.fillRect(0, 0, 1920, 1080);
-
-      // Chrome Window Top Bar
-      renderBrowserHeader('pull/142 — feat: enforce corporate department validation · EnterpriseOrderService');
+      ctx.fillStyle = '#060a08'; ctx.fillRect(0, 0, 1920, 1080);
+      renderBrowserHeader('BeaconWorks / PR #142 · Enforce corporate department validation');
 
       // Left File Tree
-      ctx.fillStyle = '#0a100d';
-      ctx.fillRect(40, 120, 320, 920);
-      ctx.strokeStyle = PALETTE.border;
-      ctx.lineWidth = 1;
-      ctx.strokeRect(40, 120, 320, 920);
+      ctx.fillStyle = PALETTE.bgCard; ctx.fillRect(40, 120, 320, 920);
+      ctx.strokeStyle = PALETTE.border; ctx.lineWidth = 1; ctx.strokeRect(40, 120, 320, 920);
 
-      ctx.fillStyle = PALETTE.textSecondary;
-      ctx.font = '600 13px "JetBrains Mono"';
+      ctx.fillStyle = PALETTE.textSecondary; ctx.font = '600 13px "JetBrains Mono"';
       ctx.fillText('CHANGED FILES (3)', 60, 160);
 
       const files = [
@@ -870,42 +694,29 @@
       files.forEach((f, idx) => {
         const y = 200 + idx * 46;
         if (f.active) {
-          ctx.fillStyle = '#14231b';
-          ctx.fillRect(50, y - 24, 300, 38);
-          ctx.strokeStyle = '#2e4738';
-          ctx.strokeRect(50, y - 24, 300, 38);
+          ctx.fillStyle = '#14231b'; ctx.fillRect(50, y - 24, 300, 38);
+          ctx.strokeStyle = '#2e4738'; ctx.strokeRect(50, y - 24, 300, 38);
         }
         ctx.fillStyle = f.active ? PALETTE.accentLime : PALETTE.textPrimary;
-        ctx.font = '500 13px "JetBrains Mono"';
-        ctx.fillText(f.name, 70, y);
-        ctx.fillStyle = PALETTE.accentMint;
-        ctx.font = '400 11px "JetBrains Mono"';
-        ctx.fillText(f.mod, 290, y);
+        ctx.font = '500 13px "JetBrains Mono"'; ctx.fillText(f.name, 70, y);
+        ctx.fillStyle = PALETTE.accentMint; ctx.font = '400 11px "JetBrains Mono"'; ctx.fillText(f.mod, 290, y);
       });
 
       // Code Diff Editor Area
-      ctx.fillStyle = '#070d0a';
-      ctx.fillRect(380, 120, 1500, 920);
-      ctx.strokeStyle = PALETTE.border;
-      ctx.strokeRect(380, 120, 1500, 920);
+      ctx.fillStyle = '#070d0a'; ctx.fillRect(380, 120, 1500, 920);
+      ctx.strokeStyle = PALETTE.border; ctx.strokeRect(380, 120, 1500, 920);
 
-      // Diff File Header
-      ctx.fillStyle = '#0c1410';
-      ctx.fillRect(380, 120, 1500, 52);
-      ctx.fillStyle = PALETTE.textPrimary;
-      ctx.font = '600 14px "JetBrains Mono"';
-      ctx.fillText('@@ -38,7 +38,10 @@ class OrderCreateSerializer(serializers.ModelSerializer):', 410, 152);
+      ctx.fillStyle = '#0c1410'; ctx.fillRect(380, 120, 1500, 52);
+      ctx.fillStyle = PALETTE.textPrimary; ctx.font = '600 14px "JetBrains Mono"';
+      ctx.fillText('@@ -41,6 +41,9 @@ class OrderCreateSerializer(serializers.ModelSerializer):', 410, 152);
 
-      // Diff Code Lines
       const codeLines = [
-        { num: '38', type: 'ctx', text: '    department_id = serializers.IntegerField(required=False, allow_null=True)' },
-        { num: '39', type: 'ctx', text: '    total_amount = serializers.DecimalField(max_digits=10, decimal_places=2)' },
-        { num: '40', type: 'ctx', text: ' ' },
+        { num: '40', type: 'ctx', text: '    total_amount = serializers.DecimalField(max_digits=10, decimal_places=2)' },
         { num: '41', type: 'ctx', text: '    def validate(self, attrs):' },
         { num: '42', type: 'del', text: '-       if attrs.get("department_id") is None:' },
         { num: '43', type: 'add', text: '+       dept = attrs.get("department_id")' },
         { num: '44', type: 'add', text: '+       if dept is None or dept < 100:' },
-        { num: '45', type: 'add', text: '+           raise serializers.ValidationError("Corporate department >= 100 required")' },
+        { num: '45', type: 'add', text: '+           raise serializers.ValidationError("Valid corporate department required")' },
         { num: '46', type: 'ctx', text: '        return super().validate(attrs)' },
         { num: '47', type: 'ctx', text: ' ' },
         { num: '48', type: 'ctx', text: '    def create(self, validated_data):' },
@@ -915,623 +726,444 @@
       codeLines.forEach((line, idx) => {
         const y = 220 + idx * 36;
         if (line.type === 'del') {
-          ctx.fillStyle = 'rgba(255, 125, 125, 0.12)';
-          ctx.fillRect(380, y - 24, 1500, 36);
+          ctx.fillStyle = 'rgba(255, 125, 125, 0.12)'; ctx.fillRect(380, y - 24, 1500, 36);
           ctx.fillStyle = '#ff7d7d';
         } else if (line.type === 'add') {
-          ctx.fillStyle = 'rgba(143, 230, 169, 0.12)';
-          ctx.fillRect(380, y - 24, 1500, 36);
+          ctx.fillStyle = 'rgba(143, 230, 169, 0.12)'; ctx.fillRect(380, y - 24, 1500, 36);
           ctx.fillStyle = '#8fe6a9';
         } else {
           ctx.fillStyle = PALETTE.textSecondary;
         }
-
         ctx.font = '500 12px "JetBrains Mono"';
         ctx.fillText(line.num, 400, y);
         ctx.fillText(line.text, 450, y);
       });
 
-      // Animated Impact Ripple Waves extending from line 44
-      if (t > 2.5) {
-        const waveRadius = ((t - 2.5) * 120) % 240;
+      if (t > 2.0) {
+        const waveRadius = ((t - 2.0) * 110) % 220;
         ctx.save();
-        ctx.strokeStyle = `rgba(214, 250, 100, ${Math.max(0, 1 - waveRadius / 240)})`;
-        ctx.lineWidth = 2;
-        ctx.setLineDash([6, 6]);
-        ctx.beginPath();
-        ctx.arc(880, 375, waveRadius, 0, Math.PI * 2);
-        ctx.stroke();
+        ctx.strokeStyle = `rgba(214, 250, 100, ${Math.max(0, 1 - waveRadius / 220)})`;
+        ctx.lineWidth = 2; ctx.setLineDash([6, 6]); ctx.beginPath();
+        ctx.arc(880, 375, waveRadius, 0, Math.PI * 2); ctx.stroke();
         ctx.restore();
       }
 
-      // Title Card Overlay Transition at t > 4.5s
-      if (t > 3.0) {
-        const alpha = Math.min(1, (t - 3.0) / 1.5);
+      // Editorial transition overlay
+      if (t > 4.0 && t < 10.0) {
+        const alpha = Math.min(0.92, (t - 4.0) / 1.5);
         ctx.save();
-        ctx.fillStyle = `rgba(6, 11, 9, ${alpha * 0.88})`;
-        ctx.fillRect(0, 0, 1920, 1080);
-
+        ctx.fillStyle = `rgba(6, 11, 9, ${alpha})`; ctx.fillRect(0, 0, 1920, 1080);
         ctx.textAlign = 'center';
-        if (t < 5.8) {
-          ctx.fillStyle = PALETTE.textSecondary;
-          ctx.font = '600 24px "JetBrains Mono"';
-          ctx.fillText('A code diff tells you what changed.', 960, 510);
-        } else {
-          ctx.fillStyle = PALETTE.textPrimary;
-          ctx.font = '700 44px "Plus Jakarta Sans"';
-          ctx.fillText('A code diff tells you what changed.', 960, 480);
-
-          ctx.fillStyle = PALETTE.accentLime;
-          ctx.font = '800 58px "Plus Jakarta Sans"';
-          ctx.fillText('But what does that change affect?', 960, 560);
-        }
+        ctx.fillStyle = PALETTE.textSecondary; ctx.font = '600 24px "JetBrains Mono"';
+        ctx.fillText('A code diff tells you what changed line-by-line.', 960, 480);
+        ctx.fillStyle = PALETTE.accentLime; ctx.font = '800 52px "Plus Jakarta Sans"';
+        ctx.fillText('But what does that change actually affect?', 960, 550);
         ctx.restore();
       }
     }
 
     // -------------------------------------------------------------------------
-    // SCENE 2: ENTER DIFFBEACON (Dashboard Launch)
+    // SCENE 2: BEACONWORKS API DEMO WORKSPACE (Matches DemoWorkspace.tsx)
     // -------------------------------------------------------------------------
-    function renderScene2_EnterDiffBeacon(t) {
-      renderStandardAppFrame();
+    function renderScene2_DemoWorkspace(t) {
+      renderStandardAppFrame('Workspaces');
 
-      // Top Breadcrumb & Actions
-      ctx.fillStyle = PALETTE.textPrimary;
-      ctx.font = '700 22px "Plus Jakarta Sans"';
-      ctx.fillText('Workspace / Enterprise Order Service', 340, 160);
-
-      ctx.fillStyle = PALETTE.textSecondary;
-      ctx.font = '500 13px "JetBrains Mono"';
-      ctx.fillText('HEAD: feat/corporate-validation (PR #142) → BASE: main', 340, 190);
-
-      // Primary Action Button: "Start Change Analysis" (1480, 240)
-      const btnX = 1420;
-      const btnY = 150;
-      const btnW = 280;
-      const btnH = 50;
-
-      const isHovered = mouse.x >= btnX && mouse.x <= btnX + btnW && mouse.y >= btnY && mouse.y <= btnY + btnH;
-      ctx.save();
-      if (t >= 12.0) {
-        // Active clicked state
-        ctx.fillStyle = PALETTE.accentLime;
-      } else if (isHovered) {
-        ctx.fillStyle = '#e2feb0';
-        ctx.shadowColor = 'rgba(214, 250, 100, 0.4)';
-        ctx.shadowBlur = 16;
-      } else {
-        ctx.fillStyle = PALETTE.accentLime;
-      }
-      roundRect(ctx, btnX, btnY, btnW, btnH, 10, true, false);
-
-      ctx.fillStyle = '#06110b';
-      ctx.font = '700 14px "Plus Jakarta Sans"';
+      // Top Header pill matching DemoWorkspace.tsx
       ctx.textAlign = 'center';
-      ctx.fillText('⚡ Start Change Analysis', btnX + btnW / 2, btnY + 31);
-      ctx.restore();
+      ctx.fillStyle = '#121c15';
+      roundRect(ctx, 860, 140, 200, 32, 16, true, false);
+      ctx.strokeStyle = '#233829'; ctx.stroke();
+      ctx.fillStyle = PALETTE.accentLime; ctx.font = '600 12px "JetBrains Mono"';
+      ctx.fillText('🧭 Fictional Fixture Service', 960, 161);
 
-      // Repository Snapshot Card
+      // Title & Subtitle
+      ctx.fillStyle = PALETTE.textPrimary; ctx.font = '800 32px "Plus Jakarta Sans"';
+      ctx.fillText('BeaconWorks API Demo Workspace', 960, 210);
+
+      ctx.fillStyle = PALETTE.textSecondary; ctx.font = '500 14px "Plus Jakarta Sans"';
+      ctx.fillText('A realistic Django REST Framework service bundled with deliberate behavioral changes, schema shifts, and contract deltas.', 960, 240);
+      ctx.textAlign = 'left';
+
+      // Main Seed & Launch Card matching DemoWorkspace.tsx
       ctx.fillStyle = PALETTE.bgCard;
-      roundRect(ctx, 340, 230, 1460, 720, 16, true, false);
-      ctx.strokeStyle = PALETTE.border;
-      ctx.stroke();
+      roundRect(ctx, 360, 270, 1420, 680, 16, true, false);
+      ctx.strokeStyle = '#202e23'; ctx.stroke();
 
       // Card Header
-      ctx.fillStyle = PALETTE.textPrimary;
-      ctx.font = '700 16px "Plus Jakarta Sans"';
-      ctx.fillText('Target Pull Request Overview', 380, 280);
+      ctx.fillStyle = PALETTE.accentLime; ctx.font = '600 12px "JetBrains Mono"';
+      ctx.fillText('SNAPSHOT COMPARISON', 400, 315);
 
-      // Metrics in cards
-      const metrics = [
-        { label: 'Commits in Diff', val: '2 Commits', sub: 'feat: dept check' },
-        { label: 'Files Affected', val: '3 Files', sub: '+12 / -3 lines' },
-        { label: 'AST Symbols Tracked', val: '1,420 Symbols', sub: 'Python Django DRF' },
-        { label: 'Deterministic Engine', val: 'Local AST Parse', sub: 'Zero Cloud Leakage' }
+      ctx.fillStyle = PALETTE.textPrimary; ctx.font = '700 20px "Plus Jakarta Sans"';
+      ctx.fillText('BeaconWorks baseline → updated analysis story', 400, 345);
+
+      ctx.fillStyle = PALETTE.textMuted; ctx.font = '500 12px "JetBrains Mono"';
+      ctx.fillText('Base: baseline  |  Head: updated-change-set (PR #142)', 400, 375);
+
+      // Primary Button: "Seed & Run Analysis Pipeline" (at x: 1380, y: 310)
+      const btnX = 1360, btnY = 310, btnW = 380, btnH = 50;
+      const isClicked = t >= 14.5;
+
+      ctx.save();
+      ctx.fillStyle = isClicked ? '#18281f' : PALETTE.accentLime;
+      roundRect(ctx, btnX, btnY, btnW, btnH, 10, true, false);
+      ctx.strokeStyle = '#2e4738'; if (isClicked) ctx.stroke();
+
+      ctx.textAlign = 'center';
+      if (isClicked) {
+        ctx.fillStyle = PALETTE.accentLime; ctx.font = '700 14px "Plus Jakarta Sans"';
+        ctx.fillText('⚡ Running 12-Stage AST Pipeline...', btnX + btnW / 2, btnY + 31);
+      } else {
+        ctx.fillStyle = '#07110b'; ctx.font = '700 14px "Plus Jakarta Sans"';
+        ctx.fillText('▶ Seed & Run Analysis Pipeline →', btnX + btnW / 2, btnY + 31);
+      }
+      ctx.restore();
+      ctx.textAlign = 'left';
+
+      // 3 Fixture Scenarios Cards matching product
+      const scenarios = [
+        { title: '1. Department validation tightened', desc: 'OrderCreateSerializer enforces department_id >= 100, rejecting legacy payloads.', badge: 'API Contract Shift', color: PALETTE.accentLime },
+        { title: '2. Inventory reservation hook', desc: 'Checkout view triggers async warehouse reservation event prior to order persistence.', badge: 'Behavioral Delta', color: PALETTE.accentBrand },
+        { title: '3. Dynamic dispatch fallback', desc: 'Unknown payment provider dispatch branch audited with transparent epistemic boundaries.', badge: 'Epistemic Boundary', color: PALETTE.accentAmber }
       ];
 
-      metrics.forEach((m, idx) => {
-        const x = 380 + idx * 340;
+      scenarios.forEach((sc, idx) => {
+        const y = 430 + idx * 155;
         ctx.fillStyle = PALETTE.bgElevated;
-        roundRect(ctx, x, 320, 310, 120, 12, true, false);
-        ctx.strokeStyle = PALETTE.border;
-        ctx.stroke();
+        roundRect(ctx, 400, y, 1340, 130, 12, true, false);
+        ctx.strokeStyle = PALETTE.borderDivider; ctx.stroke();
 
-        ctx.fillStyle = PALETTE.textSecondary;
-        ctx.font = '600 11px "JetBrains Mono"';
-        ctx.fillText(m.label.toUpperCase(), x + 20, 350);
+        ctx.fillStyle = '#14231b';
+        roundRect(ctx, 420, y + 20, 170, 26, 6, true, false);
+        ctx.strokeStyle = '#2e4738'; ctx.stroke();
+        ctx.fillStyle = sc.color; ctx.font = '700 11px "JetBrains Mono"';
+        ctx.fillText(sc.badge.toUpperCase(), 435, y + 37);
 
-        ctx.fillStyle = PALETTE.accentBrand;
-        ctx.font = '700 20px "JetBrains Mono"';
-        ctx.fillText(m.val, x + 20, 390);
+        ctx.fillStyle = PALETTE.textPrimary; ctx.font = '700 16px "Plus Jakarta Sans"';
+        ctx.fillText(sc.title, 420, y + 75);
 
-        ctx.fillStyle = PALETTE.textMuted;
-        ctx.font = '500 12px "Plus Jakarta Sans"';
-        ctx.fillText(m.sub, x + 20, 418);
+        ctx.fillStyle = PALETTE.textSecondary; ctx.font = '500 13px "Plus Jakarta Sans"';
+        ctx.fillText(sc.desc, 420, y + 105);
       });
-
-      // Loading Progress overlay if t > 12.0
-      if (t >= 12.0) {
-        const progressT = Math.min(1, (t - 12.0) / 6.0);
-        ctx.fillStyle = 'rgba(6, 11, 9, 0.9)';
-        roundRect(ctx, 380, 480, 1380, 430, 14, true, false);
-        ctx.strokeStyle = PALETTE.borderHighlight;
-        ctx.stroke();
-
-        ctx.textAlign = 'center';
-        ctx.fillStyle = PALETTE.accentLime;
-        ctx.font = '700 22px "Plus Jakarta Sans"';
-        ctx.fillText('Preparing change analysis...', 1070, 660);
-
-        ctx.fillStyle = PALETTE.textSecondary;
-        ctx.font = '500 14px "JetBrains Mono"';
-        ctx.fillText('Comparing base (main) and head (feat/corporate-validation)', 1070, 700);
-
-        // Progress bar
-        ctx.fillStyle = '#15241b';
-        roundRect(ctx, 770, 740, 600, 12, 6, true, false);
-        ctx.fillStyle = PALETTE.accentLime;
-        roundRect(ctx, 770, 740, 600 * progressT, 12, 6, true, false);
-      }
     }
 
     // -------------------------------------------------------------------------
-    // SCENE 3: WATCH THE ANALYSIS HAPPEN (Live Pipeline Stepper)
+    // SCENE 3: 12-STAGE AST PIPELINE (Deterministic Multi-Pass Execution)
     // -------------------------------------------------------------------------
-    function renderScene3_AnalysisPipeline(t) {
-      renderStandardAppFrame();
+    function renderScene3_Pipeline(t) {
+      renderStandardAppFrame('Workspaces');
 
-      ctx.fillStyle = PALETTE.textPrimary;
-      ctx.font = '700 22px "Plus Jakarta Sans"';
-      ctx.fillText('Change Intelligence Pipeline', 340, 160);
+      ctx.fillStyle = PALETTE.textPrimary; ctx.font = '700 22px "Plus Jakarta Sans"';
+      ctx.fillText('Deterministic AST Analysis Pipeline', 340, 160);
 
-      ctx.fillStyle = PALETTE.textSecondary;
-      ctx.font = '500 13px "JetBrains Mono"';
-      ctx.fillText('Snapshot: pr-142-corporate-validation · AST Multi-Pass Resolver', 340, 190);
+      ctx.fillStyle = PALETTE.textSecondary; ctx.font = '500 13px "JetBrains Mono"';
+      ctx.fillText('Engine: Python Multi-Pass AST · Django DRF Symbol Resolver (Zero Cloud Leakage)', 340, 190);
 
-      // Pipeline Container
-      ctx.fillStyle = PALETTE.bgCard;
-      roundRect(ctx, 340, 230, 1460, 760, 16, true, false);
-      ctx.strokeStyle = PALETTE.border;
-      ctx.stroke();
+      // Pipeline Container Card
+      ctx.fillStyle = PALETTE.bgCard; roundRect(ctx, 340, 220, 1460, 770, 16, true, false);
+      ctx.strokeStyle = PALETTE.border; ctx.stroke();
 
-      const stages = [
-        { title: 'Comparing Code & AST Changes', desc: 'Normalized AST symbol diffs & token boundaries', doneAt: 20 },
-        { title: 'Detecting Behavioral Deltas', desc: 'Identified stricter validation in OrderCreateSerializer', doneAt: 23 },
-        { title: 'Tracing Affected Components', desc: 'Navigating call graphs to CheckoutAPIView & OrderProcessor', doneAt: 27 },
-        { title: 'Checking API & Model Contracts', desc: 'Auditing DRF request payload compatibility across endpoints', doneAt: 31 },
-        { title: 'Preparing Verification Matrix', desc: 'Assembling targeted pytest sandbox test recommendations', doneAt: 34 }
+      const pipelineStages = [
+        { name: 'Stage 1: AST Token & Symbol Extraction', status: 'Completed (1,420 symbols)', done: t > 23 },
+        { name: 'Stage 2: Behavioral Delta Differentiation', status: 'Detected: Validation rule tightened in OrderCreateSerializer', done: t > 26 },
+        { name: 'Stage 3: Cross-Module Graph Traversal', status: 'Tracing caller paths: CheckoutAPIView → OrderProcessor', done: t > 29 },
+        { name: 'Stage 4: DRF Serializer & API Contract Audit', status: 'Breaking Contract: Rejects department_id < 100', done: t > 33 },
+        { name: 'Stage 5: Epistemic Provenance Assignment', status: 'Classified: Confirmed (AST) · Inferred (Call Graph)', done: t > 36 }
       ];
 
-      stages.forEach((st, idx) => {
-        const y = 300 + idx * 110;
-        const isDone = t >= st.doneAt;
-        const isActive = t >= st.doneAt - 3 && t < st.doneAt;
+      pipelineStages.forEach((st, idx) => {
+        const y = 260 + idx * 95;
+        ctx.fillStyle = st.done ? '#132219' : PALETTE.bgElevated;
+        roundRect(ctx, 380, y, 760, 78, 12, true, false);
+        ctx.strokeStyle = st.done ? '#2e4738' : PALETTE.border; ctx.stroke();
 
-        // Stage row box
-        ctx.fillStyle = isActive ? '#14231b' : PALETTE.bgElevated;
-        roundRect(ctx, 380, y, 680, 85, 12, true, false);
-        ctx.strokeStyle = isActive ? PALETTE.borderHighlight : PALETTE.border;
-        ctx.stroke();
+        ctx.fillStyle = st.done ? PALETTE.accentMint : PALETTE.textMuted;
+        ctx.font = '700 13px "JetBrains Mono"';
+        ctx.fillText(st.done ? '✓ ' + st.name : '→ ' + st.name, 410, y + 33);
 
-        // Icon circle
-        ctx.beginPath();
-        ctx.arc(420, y + 42, 18, 0, Math.PI * 2);
-        if (isDone) {
-          ctx.fillStyle = PALETTE.accentMint;
-          ctx.fill();
-          ctx.fillStyle = '#06110b';
-          ctx.font = '700 14px "JetBrains Mono"';
-          ctx.textAlign = 'center';
-          ctx.fillText('✓', 420, y + 47);
-        } else if (isActive) {
-          ctx.fillStyle = PALETTE.accentLime;
-          ctx.fill();
-          ctx.fillStyle = '#06110b';
-          ctx.font = '700 14px "JetBrains Mono"';
-          ctx.textAlign = 'center';
-          ctx.fillText('→', 420, y + 47);
-        } else {
-          ctx.fillStyle = '#1c2820';
-          ctx.fill();
-          ctx.fillStyle = PALETTE.textMuted;
-          ctx.font = '600 12px "JetBrains Mono"';
-          ctx.textAlign = 'center';
-          ctx.fillText('○', 420, y + 46);
-        }
-
-        // Texts
-        ctx.textAlign = 'left';
-        ctx.fillStyle = isDone ? PALETTE.textPrimary : isActive ? PALETTE.accentLime : PALETTE.textSecondary;
-        ctx.font = '700 15px "Plus Jakarta Sans"';
-        ctx.fillText(st.title, 460, y + 36);
-
-        ctx.fillStyle = PALETTE.textMuted;
-        ctx.font = '500 12px "JetBrains Mono"';
-        ctx.fillText(st.desc, 460, y + 60);
+        ctx.fillStyle = PALETTE.textSecondary; ctx.font = '500 12px "Plus Jakarta Sans"';
+        ctx.fillText(st.status, 410, y + 58);
       });
 
-      // Right Side: Live Dynamic Topology Graph Visualizer
-      ctx.fillStyle = '#060b09';
-      roundRect(ctx, 1100, 270, 660, 670, 14, true, false);
-      ctx.strokeStyle = PALETTE.border;
-      ctx.stroke();
+      // Right Live AST Call Graph
+      ctx.fillStyle = '#060b09'; roundRect(ctx, 1180, 260, 580, 700, 12, true, false);
+      ctx.strokeStyle = PALETTE.border; ctx.stroke();
 
-      ctx.fillStyle = PALETTE.accentLime;
-      ctx.font = '600 12px "JetBrains Mono"';
-      ctx.fillText('TOPOLOGY IMPACT STREAM', 1130, 310);
+      ctx.fillStyle = PALETTE.accentLime; ctx.font = '600 12px "JetBrains Mono"';
+      ctx.fillText('DYNAMIC AST GRAPH STREAM', 1210, 300);
 
-      // Draw Connected Nodes
       const nodes = [
-        { label: 'OrderCreateSerializer.validate', x: 1240, y: 410, active: t > 21 },
-        { label: 'CheckoutAPIView.post', x: 1540, y: 410, active: t > 24 },
-        { label: 'OrderProcessingService.submit', x: 1390, y: 560, active: t > 26 },
-        { label: 'InventoryModel.reserve', x: 1240, y: 720, active: t > 28 },
-        { label: 'NotificationService.dispatch', x: 1540, y: 720, active: t > 30 }
+        { label: 'OrderCreateSerializer.validate', x: 1470, y: 380, active: t > 25 },
+        { label: 'CheckoutAPIView.post', x: 1470, y: 520, active: t > 28 },
+        { label: 'OrderProcessingService.submit', x: 1470, y: 660, active: t > 31 },
+        { label: 'InventoryModel.reserve', x: 1470, y: 800, active: t > 34 }
       ];
 
-      // Draw Lines
-      ctx.lineWidth = 2;
-      ctx.strokeStyle = '#213b2c';
-      ctx.beginPath();
-      ctx.moveTo(1240, 410); ctx.lineTo(1540, 410);
-      ctx.moveTo(1540, 410); ctx.lineTo(1390, 560);
-      ctx.moveTo(1390, 560); ctx.lineTo(1240, 720);
-      ctx.moveTo(1390, 560); ctx.lineTo(1540, 720);
-      ctx.stroke();
+      ctx.strokeStyle = '#213b2c'; ctx.lineWidth = 3; ctx.beginPath();
+      ctx.moveTo(1470, 380); ctx.lineTo(1470, 800); ctx.stroke();
 
-      // Render Graph Nodes
       nodes.forEach(nd => {
-        ctx.fillStyle = nd.active ? '#15241b' : '#0d1511';
-        roundRect(ctx, nd.x - 110, nd.y - 25, 220, 50, 10, true, false);
-        ctx.strokeStyle = nd.active ? PALETTE.accentLime : PALETTE.border;
-        ctx.stroke();
+        ctx.fillStyle = nd.active ? '#15241b' : '#0c120e';
+        roundRect(ctx, nd.x - 170, nd.y - 25, 340, 50, 10, true, false);
+        ctx.strokeStyle = nd.active ? PALETTE.accentLime : PALETTE.border; ctx.stroke();
 
         ctx.fillStyle = nd.active ? PALETTE.accentLime : PALETTE.textMuted;
-        ctx.font = '600 11px "JetBrains Mono"';
-        ctx.textAlign = 'center';
-        ctx.fillText(nd.label, nd.x, nd.y + 5);
+        ctx.font = '600 12px "JetBrains Mono"'; ctx.textAlign = 'center';
+        ctx.fillText(nd.label, nd.x, nd.y + 6);
       });
       ctx.textAlign = 'left';
     }
 
     // -------------------------------------------------------------------------
-    // SCENE 4: CHANGE IMPACT REPORT
+    // SCENE 4: IMPACT EXPLORER (Matches ImpactExplorer.tsx)
     // -------------------------------------------------------------------------
-    function renderScene4_ChangeImpactReport(t) {
-      renderStandardAppFrame();
+    function renderScene4_ImpactExplorer(t) {
+      renderStandardAppFrame('Workspaces');
 
-      ctx.fillStyle = PALETTE.textPrimary;
-      ctx.font = '700 22px "Plus Jakarta Sans"';
-      ctx.fillText('Change Impact Report / PR #142', 340, 160);
+      // Top Tab Navigation Bar matching AnalysisWorkspace.tsx
+      renderAnalysisWorkspaceTabs('Impact Explorer');
 
-      ctx.fillStyle = PALETTE.accentLime;
-      ctx.font = '700 13px "JetBrains Mono"';
-      ctx.fillText('FINDING 1 OF 3: Validation Rule Tightened', 340, 190);
+      // Top Toolbar matching ImpactExplorer.tsx
+      ctx.fillStyle = PALETTE.bgCard; roundRect(ctx, 340, 240, 1460, 60, 12, true, false);
+      ctx.strokeStyle = PALETTE.border; ctx.stroke();
 
-      // Summary Card
-      ctx.fillStyle = PALETTE.bgCard;
-      roundRect(ctx, 340, 220, 1460, 200, 16, true, false);
-      ctx.strokeStyle = PALETTE.border;
-      ctx.stroke();
+      // Version switcher button
+      ctx.fillStyle = '#15241b'; roundRect(ctx, 360, 252, 140, 36, 8, true, false);
+      ctx.strokeStyle = '#2e4738'; ctx.stroke();
+      ctx.fillStyle = PALETTE.accentLime; ctx.font = '700 12px "JetBrains Mono"'; ctx.fillText('Updated Version', 380, 275);
 
-      ctx.fillStyle = '#ff7d7d';
-      ctx.font = '700 18px "Plus Jakarta Sans"';
-      ctx.fillText('⚠️ Breaking Behavior: Corporate department validation rejected on previously valid IDs', 380, 265);
+      ctx.fillStyle = PALETTE.textSecondary; ctx.font = '500 12px "JetBrains Mono"';
+      ctx.fillText('Baseline Version', 525, 275);
 
-      ctx.fillStyle = PALETTE.textSecondary;
-      ctx.font = '500 14px "Plus Jakarta Sans"';
-      ctx.fillText('Validation logic now requires department_id >= 100. Requests with null, 0, or legacy single-digit department IDs will now return 400 Bad Request.', 380, 305);
-      ctx.fillText('Affected entry points: 1 Public API Endpoint · 2 Internal Celery Handlers · 4 Downstream Services', 380, 335);
+      ctx.fillStyle = PALETTE.accentLime; ctx.font = '600 12px "JetBrains Mono"';
+      ctx.fillText('4 Nodes Changed  •  8 Typed Dependency Edges', 1320, 275);
 
-      // Interactive Topological Flow Nodes
-      ctx.fillStyle = PALETTE.bgCard;
-      roundRect(ctx, 340, 440, 1460, 550, 16, true, false);
-      ctx.strokeStyle = PALETTE.border;
-      ctx.stroke();
+      // Graph Canvas & Inspector Area
+      ctx.fillStyle = '#060b09'; roundRect(ctx, 340, 315, 1460, 680, 16, true, false);
+      ctx.strokeStyle = PALETTE.border; ctx.stroke();
 
-      ctx.fillStyle = PALETTE.textSecondary;
-      ctx.font = '700 13px "JetBrains Mono"';
-      ctx.fillText('DOWNSTREAM IMPACT PATHWAY (CLICK TO TRACE)', 380, 480);
+      // Legend in top-left
+      ctx.fillStyle = 'rgba(8, 13, 10, 0.9)'; roundRect(ctx, 365, 335, 260, 120, 8, true, false);
+      ctx.strokeStyle = PALETTE.border; ctx.stroke();
+      ctx.fillStyle = PALETTE.textSecondary; ctx.font = '700 11px "JetBrains Mono"'; ctx.fillText('TOPOLOGICAL LAYERS', 380, 360);
+      ctx.fillStyle = '#a78bfa'; ctx.fillText('● Routes & Endpoints', 380, 385);
+      ctx.fillStyle = PALETTE.accentLime; ctx.fillText('● DRF Serializers', 380, 410);
+      ctx.fillStyle = '#60a5fa'; ctx.fillText('● Business Logic & Models', 380, 435);
 
+      // Interactive Pathway Nodes
       const pathNodes = [
-        { label: '1. Validation Rule', sub: 'orders/serializers.py:42', x: 540, y: 550, active: t >= 36.0 },
-        { label: '2. OrderCreateSerializer', sub: 'ModelSerializer Contract', x: 880, y: 550, active: t >= 41.0 },
-        { label: '3. CheckoutAPIView', sub: 'POST /api/v1/checkout/', x: 1220, y: 550, active: t >= 47.0 },
-        { label: '4. OrderProcessing', sub: 'services/fulfillment.py', x: 1560, y: 550, active: t >= 52.0 }
+        { label: 'OrderCreateSerializer.validate', sub: 'orders/serializers.py:42', x: 560, y: 520, active: t >= 39.0 },
+        { label: 'CheckoutAPIView.post', sub: 'POST /api/v1/checkout/', x: 940, y: 520, active: t >= 45.0 },
+        { label: 'OrderProcessingService', sub: 'services/fulfillment.py', x: 1320, y: 520, active: t >= 51.0 }
       ];
 
-      // Connecting Arrows
-      pathNodes.forEach((nd, idx) => {
-        if (idx < pathNodes.length - 1) {
-          const next = pathNodes[idx + 1];
-          ctx.strokeStyle = nd.active ? PALETTE.accentLime : PALETTE.border;
-          ctx.lineWidth = 3;
-          ctx.beginPath();
-          ctx.moveTo(nd.x + 120, nd.y);
-          ctx.lineTo(next.x - 120, next.y);
-          ctx.stroke();
-        }
-      });
+      // Connecting Edges
+      ctx.lineWidth = 3; ctx.strokeStyle = PALETTE.accentLime; ctx.beginPath();
+      ctx.moveTo(560, 520); ctx.lineTo(940, 520);
+      ctx.moveTo(940, 520); ctx.lineTo(1320, 520); ctx.stroke();
 
-      // Draw Path Nodes
       pathNodes.forEach(nd => {
         ctx.fillStyle = nd.active ? '#15241b' : PALETTE.bgElevated;
-        roundRect(ctx, nd.x - 120, nd.y - 45, 240, 90, 12, true, false);
-        ctx.strokeStyle = nd.active ? PALETTE.accentLime : PALETTE.border;
-        ctx.stroke();
+        roundRect(ctx, nd.x - 140, nd.y - 45, 280, 90, 12, true, false);
+        ctx.strokeStyle = nd.active ? PALETTE.accentLime : PALETTE.border; ctx.stroke();
 
         ctx.fillStyle = nd.active ? PALETTE.accentLime : PALETTE.textPrimary;
-        ctx.font = '700 13px "JetBrains Mono"';
-        ctx.textAlign = 'center';
+        ctx.font = '700 13px "JetBrains Mono"'; ctx.textAlign = 'center';
         ctx.fillText(nd.label, nd.x, nd.y - 10);
 
-        ctx.fillStyle = PALETTE.textMuted;
-        ctx.font = '500 11px "JetBrains Mono"';
+        ctx.fillStyle = PALETTE.textMuted; ctx.font = '500 11px "JetBrains Mono"';
         ctx.fillText(nd.sub, nd.x, nd.y + 18);
       });
       ctx.textAlign = 'left';
 
-      // Dynamic Code Inspector Drawer below path
-      ctx.fillStyle = '#060b09';
-      roundRect(ctx, 380, 640, 1380, 320, 12, true, false);
-      ctx.strokeStyle = PALETTE.border;
-      ctx.stroke();
+      // Slide-over Node Inspector Drawer (showing CheckoutAPIView details)
+      ctx.fillStyle = 'rgba(11, 17, 13, 0.95)';
+      roundRect(ctx, 1100, 335, 680, 640, 14, true, false);
+      ctx.strokeStyle = PALETTE.borderHighlight; ctx.stroke();
 
-      ctx.fillStyle = PALETTE.accentMint;
-      ctx.font = '600 12px "JetBrains Mono"';
-      ctx.fillText('AFFECTED SOURCE EVIDENCE (orders/serializers.py)', 410, 675);
+      ctx.fillStyle = PALETTE.accentLime; ctx.font = '700 14px "JetBrains Mono"';
+      ctx.fillText('INSPECTOR: CheckoutAPIView.post', 1130, 375);
 
-      const inspectCode = [
-        '38:   department_id = serializers.IntegerField(required=False, allow_null=True)',
-        '41:   def validate(self, attrs):',
-        '43: +     dept = attrs.get("department_id")',
-        '44: +     if dept is None or dept < 100:',
-        '45: +         raise serializers.ValidationError("Corporate department >= 100 required")',
-        '46:       return super().validate(attrs)'
+      ctx.fillStyle = '#ff7d7d'; ctx.font = '600 12px "JetBrains Mono"';
+      ctx.fillText('BREAKING STATUS: Rejects legacy null department payloads', 1130, 410);
+
+      ctx.fillStyle = PALETTE.textPrimary; ctx.font = '500 13px "Plus Jakarta Sans"';
+      ctx.fillText('Incoming Callers (2): Public Mobile App, Web Storefront', 1130, 450);
+      ctx.fillText('Outgoing Callees (3): OrderSerializer, PaymentService, InventoryModel', 1130, 480);
+
+      // Embedded Code Snip
+      ctx.fillStyle = '#060b09'; roundRect(ctx, 1130, 510, 620, 430, 10, true, false);
+      ctx.strokeStyle = PALETTE.border; ctx.stroke();
+
+      const snip = [
+        '# orders/views.py',
+        'class CheckoutAPIView(APIView):',
+        '    def post(self, request):',
+        '        serializer = OrderCreateSerializer(data=request.data)',
+        '        serializer.is_valid(raise_exception=True) # <-- Fails if dept < 100',
+        '        order = serializer.save()',
+        '        return Response({"id": order.id}, status=201)'
       ];
+      snip.forEach((line, idx) => {
+        ctx.fillStyle = line.includes('raise_exception') ? PALETTE.accentLime : PALETTE.textSecondary;
+        ctx.font = '500 12px "JetBrains Mono"';
+        ctx.fillText(line, 1150, 550 + idx * 30);
+      });
+    }
 
-      inspectCode.forEach((line, idx) => {
-        ctx.fillStyle = line.includes('+') ? PALETTE.accentLime : PALETTE.textSecondary;
+    // -------------------------------------------------------------------------
+    // SCENE 5: BEHAVIORAL DELTAS & PROVENANCE (Matches BehaviorLedger.tsx)
+    // -------------------------------------------------------------------------
+    function renderScene5_BehavioralDeltas(t) {
+      renderStandardAppFrame('Workspaces');
+      renderAnalysisWorkspaceTabs('Behavioral Deltas');
+
+      // Top Filter Bar matching BehaviorLedger.tsx
+      ctx.fillStyle = PALETTE.bgCard; roundRect(ctx, 340, 240, 1460, 60, 12, true, false);
+      ctx.strokeStyle = PALETTE.border; ctx.stroke();
+
+      ctx.fillStyle = '#15231c'; roundRect(ctx, 360, 252, 110, 36, 8, true, false);
+      ctx.strokeStyle = '#2e4738'; ctx.stroke();
+      ctx.fillStyle = PALETTE.accentBrand; ctx.font = '700 12px "JetBrains Mono"';
+      ctx.fillText('ALL DELTAS (3)', 375, 275);
+
+      ctx.fillStyle = PALETTE.textMuted; ctx.font = '500 12px "JetBrains Mono"';
+      ctx.fillText('Category: validation_rule  •  confidence: statically_established', 500, 275);
+
+      // Delta Card matching BehaviorLedger.tsx
+      ctx.fillStyle = PALETTE.bgCard; roundRect(ctx, 340, 320, 1460, 670, 16, true, false);
+      ctx.strokeStyle = PALETTE.border; ctx.stroke();
+
+      // Card Header
+      ctx.fillStyle = '#13231a'; roundRect(ctx, 370, 345, 140, 28, 6, true, false);
+      ctx.strokeStyle = '#213b2c'; ctx.stroke();
+      ctx.fillStyle = PALETTE.accentBrand; ctx.font = '700 11px "JetBrains Mono"';
+      ctx.fillText('VALIDATION RULE', 385, 364);
+
+      ctx.fillStyle = PALETTE.textPrimary; ctx.font = '700 18px "Plus Jakarta Sans"';
+      ctx.fillText('Department validation tightened in OrderCreateSerializer', 530, 366);
+
+      // Epistemic Provenance Badge (Mint)
+      ctx.fillStyle = '#15231c'; roundRect(ctx, 1500, 345, 260, 28, 6, true, false);
+      ctx.strokeStyle = '#2e4738'; ctx.stroke();
+      ctx.fillStyle = PALETTE.accentMint; ctx.font = '700 11px "JetBrains Mono"';
+      ctx.fillText('✓ STATICALLY ESTABLISHED', 1520, 364);
+
+      // Summary
+      ctx.fillStyle = PALETTE.textSecondary; ctx.font = '500 14px "Plus Jakarta Sans"';
+      ctx.fillText('Orders without a valid department_id >= 100 now fail immediately with a 400 ValidationError.', 370, 415);
+
+      // Side-by-Side Comparison Boxes
+      // Baseline
+      ctx.fillStyle = '#080d0a'; roundRect(ctx, 370, 445, 680, 400, 12, true, false);
+      ctx.strokeStyle = '#ff7d7d'; ctx.stroke();
+      ctx.fillStyle = '#ff7d7d'; ctx.font = '700 13px "JetBrains Mono"';
+      ctx.fillText('BASELINE BEHAVIOR (main branch)', 400, 480);
+
+      const baseCode = [
+        'def validate(self, attrs):',
+        '    # Legacy: Allowed missing department',
+        '    if attrs.get("department_id") is None:',
+        '        pass  # Null allowed',
+        '    return super().validate(attrs)'
+      ];
+      baseCode.forEach((line, idx) => {
+        ctx.fillStyle = PALETTE.textSecondary; ctx.font = '500 13px "JetBrains Mono"';
+        ctx.fillText(line, 400, 520 + idx * 32);
+      });
+
+      // Updated
+      ctx.fillStyle = '#080d0a'; roundRect(ctx, 1080, 445, 680, 400, 12, true, false);
+      ctx.strokeStyle = PALETTE.accentLime; ctx.stroke();
+      ctx.fillStyle = PALETTE.accentLime; ctx.font = '700 13px "JetBrains Mono"';
+      ctx.fillText('UPDATED BEHAVIOR (PR #142)', 1110, 480);
+
+      const updCode = [
+        'def validate(self, attrs):',
+        '    dept = attrs.get("department_id")',
+        '    if dept is None or dept < 100:',
+        '        raise serializers.ValidationError(',
+        '            "Valid corporate department required"',
+        '        )',
+        '    return super().validate(attrs)'
+      ];
+      updCode.forEach((line, idx) => {
+        ctx.fillStyle = line.includes('ValidationError') ? PALETTE.accentLime : PALETTE.textPrimary;
         ctx.font = '500 13px "JetBrains Mono"';
-        ctx.fillText(line, 410, 715 + idx * 30);
+        ctx.fillText(line, 1110, 520 + idx * 32);
       });
+
+      // Bottom Metadata
+      ctx.fillStyle = PALETTE.textMuted; ctx.font = '500 12px "JetBrains Mono"';
+      ctx.fillText('AFFECTED SYMBOL: OrderCreateSerializer.validate in orders/serializers.py (L41-L47)', 370, 890);
     }
 
     // -------------------------------------------------------------------------
-    // SCENE 5: EVIDENCE, NOT JUST AI CLAIMS (Epistemic Provenance)
+    // SCENE 6: VERIFICATION SANDBOX (Matches VerificationMatrix.tsx)
     // -------------------------------------------------------------------------
-    function renderScene5_EvidenceProvenance(t) {
-      renderStandardAppFrame();
+    function renderScene6_VerificationSandbox(t) {
+      renderStandardAppFrame('Workspaces');
+      renderAnalysisWorkspaceTabs('Verification Matrix');
 
-      ctx.fillStyle = PALETTE.textPrimary;
-      ctx.font = '700 22px "Plus Jakarta Sans"';
-      ctx.fillText('Epistemic Provenance & Evidence Explorer', 340, 160);
+      // Top Toolbar
+      ctx.fillStyle = PALETTE.bgCard; roundRect(ctx, 340, 240, 1460, 60, 12, true, false);
+      ctx.strokeStyle = PALETTE.border; ctx.stroke();
 
-      ctx.fillStyle = PALETTE.textSecondary;
-      ctx.font = '500 13px "JetBrains Mono"';
-      ctx.fillText('Transparent Confidence Tiers: No Hallucinated Certainty', 340, 190);
+      ctx.fillStyle = PALETTE.textPrimary; ctx.font = '700 14px "JetBrains Mono"';
+      ctx.fillText('TARGETED VERIFICATION SUITE', 370, 275);
 
-      // Three Provenance Cards
-      const tiers = [
-        {
-          tier: 'CONFIRMED',
-          sub: 'Statically Established AST Proof',
-          badgeColor: '#7ee7b2',
-          badgeBg: '#13281e',
-          desc: 'Direct AST syntax proof in orders/serializers.py lines 42-46. The validation function explicitly asserts dept >= 100.',
-          active: t >= 55.5 && t < 60.5
-        },
-        {
-          tier: 'INFERRED',
-          sub: 'Call Graph & Framework Relationship',
-          badgeColor: '#8fe6a9',
-          badgeBg: '#15241b',
-          desc: 'CheckoutAPIView uses OrderCreateSerializer as its default serializer. Downstream HTTP calls without dept >= 100 will fail.',
-          active: t >= 60.5 && t < 65.5
-        },
-        {
-          tier: 'UNVERIFIED',
-          sub: 'Requires Human or Test Verification',
-          badgeColor: '#f5d67b',
-          badgeBg: '#282313',
-          desc: 'External third-party API clients or mobile apps may still submit null department_id. Runtime sandbox verification recommended.',
-          active: t >= 65.5
-        }
-      ];
+      const btnX = 1460, btnY = 250, btnW = 310, btnH = 40;
+      const isRun = t >= 75.0;
 
-      tiers.forEach((tr, idx) => {
-        const x = 340 + idx * 495;
-        ctx.fillStyle = tr.active ? '#111d16' : PALETTE.bgCard;
-        roundRect(ctx, x, 230, 470, 240, 16, true, false);
-        ctx.strokeStyle = tr.active ? tr.badgeColor : PALETTE.border;
-        ctx.stroke();
+      ctx.fillStyle = isRun ? '#15241b' : PALETTE.accentLime;
+      roundRect(ctx, btnX, btnY, btnW, btnH, 8, true, false);
+      ctx.strokeStyle = '#2e4738'; ctx.stroke();
 
-        // Badge pill
-        ctx.fillStyle = tr.badgeBg;
-        roundRect(ctx, x + 25, 260, 140, 30, 6, true, false);
-        ctx.strokeStyle = tr.badgeColor;
-        ctx.stroke();
-
-        ctx.fillStyle = tr.badgeColor;
-        ctx.font = '700 12px "JetBrains Mono"';
-        ctx.textAlign = 'center';
-        ctx.fillText(tr.tier, x + 95, 280);
-
-        ctx.textAlign = 'left';
-        ctx.fillStyle = PALETTE.textPrimary;
-        ctx.font = '700 14px "Plus Jakarta Sans"';
-        ctx.fillText(tr.sub, x + 25, 325);
-
-        ctx.fillStyle = PALETTE.textSecondary;
-        ctx.font = '500 13px "Plus Jakarta Sans"';
-        renderWrappedText(ctx, tr.desc, x + 25, 360, 420, 24);
-      });
-
-      // Side-by-Side Evidence Inspection Card
-      ctx.fillStyle = PALETTE.bgCard;
-      roundRect(ctx, 340, 490, 1460, 500, 16, true, false);
-      ctx.strokeStyle = PALETTE.border;
-      ctx.stroke();
-
-      ctx.fillStyle = PALETTE.textPrimary;
-      ctx.font = '700 16px "Plus Jakarta Sans"';
-      ctx.fillText('Deterministic Evidence Ledger', 380, 535);
-
-      // Baseline vs Updated Table
-      ctx.fillStyle = '#060b09';
-      roundRect(ctx, 380, 560, 680, 390, 12, true, false);
-      ctx.strokeStyle = PALETTE.border;
-      ctx.stroke();
-
-      ctx.fillStyle = '#ff7d7d';
+      ctx.textAlign = 'center';
+      ctx.fillStyle = isRun ? PALETTE.accentMint : '#07110b';
       ctx.font = '700 13px "JetBrains Mono"';
-      ctx.fillText('BASELINE (main branch)', 410, 600);
-      ctx.fillStyle = PALETTE.textSecondary;
-      ctx.font = '500 12px "JetBrains Mono"';
-      ctx.fillText('Accepts department_id = None', 410, 640);
-      ctx.fillText('Accepts department_id = 0 .. 99', 410, 670);
-      ctx.fillText('Legacy partners payload succeeds (200 OK)', 410, 700);
+      ctx.fillText(isRun ? '✓ RUNTIME VERIFIED (1 Passed)' : '▶ Run Sandbox Test (pytest)', btnX + btnW / 2, btnY + 25);
+      ctx.textAlign = 'left';
 
-      ctx.fillStyle = '#060b09';
-      roundRect(ctx, 1100, 560, 660, 390, 12, true, false);
-      ctx.strokeStyle = PALETTE.border;
-      ctx.stroke();
+      // Test List Card
+      ctx.fillStyle = PALETTE.bgCard; roundRect(ctx, 340, 320, 1460, 670, 16, true, false);
+      ctx.strokeStyle = PALETTE.border; ctx.stroke();
 
-      ctx.fillStyle = PALETTE.accentLime;
-      ctx.font = '700 13px "JetBrains Mono"';
-      ctx.fillText('UPDATED (feat/corporate-validation)', 1130, 600);
-      ctx.fillStyle = PALETTE.textPrimary;
-      ctx.font = '500 12px "JetBrains Mono"';
-      ctx.fillText('Rejects department_id = None (ValidationError)', 1130, 640);
-      ctx.fillText('Rejects department_id < 100 (ValidationError)', 1130, 670);
-      ctx.fillText('Requires department_id >= 100 on all orders', 1130, 700);
-    }
+      // Test Row 1
+      ctx.fillStyle = isRun ? '#122018' : PALETTE.bgElevated;
+      roundRect(ctx, 370, 340, 1400, 90, 10, true, false);
+      ctx.strokeStyle = isRun ? '#2e4738' : PALETTE.border; ctx.stroke();
 
-    // -------------------------------------------------------------------------
-    // SCENE 6: WHAT TO VERIFY BEFORE MERGING (Verification Matrix & Pytest)
-    // -------------------------------------------------------------------------
-    function renderScene6_VerificationMatrix(t) {
-      renderStandardAppFrame();
+      ctx.fillStyle = PALETTE.textPrimary; ctx.font = '700 14px "JetBrains Mono"';
+      ctx.fillText('tests/test_orders.py::test_checkout_department_validation', 400, 375);
 
-      ctx.fillStyle = PALETTE.textPrimary;
-      ctx.font = '700 22px "Plus Jakarta Sans"';
-      ctx.fillText('Verification Matrix & Automated Sandbox', 340, 160);
+      ctx.fillStyle = PALETTE.textSecondary; ctx.font = '500 12px "Plus Jakarta Sans"';
+      ctx.fillText('Asserts that requests with omitted or sub-100 department IDs return HTTP 400 Bad Request.', 400, 405);
 
-      ctx.fillStyle = PALETTE.textSecondary;
-      ctx.font = '500 13px "JetBrains Mono"';
-      ctx.fillText('Actionable Test Plan: Verified with Ephemeral Pytest Runner', 340, 190);
+      // Embedded Terminal
+      ctx.fillStyle = '#060b09'; roundRect(ctx, 370, 450, 1400, 510, 12, true, false);
+      ctx.strokeStyle = PALETTE.border; ctx.stroke();
 
-      // Recommended Verification Checklist
-      ctx.fillStyle = PALETTE.bgCard;
-      roundRect(ctx, 340, 220, 1460, 770, 16, true, false);
-      ctx.strokeStyle = PALETTE.border;
-      ctx.stroke();
+      ctx.fillStyle = PALETTE.accentLime; ctx.font = '600 12px "JetBrains Mono"';
+      ctx.fillText('EPHEMERAL SANDBOX TERMINAL (ISOLATED SUB-PROCESS)', 400, 485);
 
-      const testCases = [
-        {
-          title: 'test_order_checkout_with_null_dept',
-          target: 'tests/test_orders.py',
-          reason: 'Validates that omitted department returns 400 Bad Request instead of silent corruption',
-          status: t >= 76.5 ? 'PASSED' : 'READY TO RUN'
-        },
-        {
-          title: 'test_legacy_partner_api_payload',
-          target: 'tests/test_integrations.py',
-          reason: 'Verifies external partner API clients handling corporate department >= 100',
-          status: 'PENDING'
-        },
-        {
-          title: 'test_department_id_boundary_at_100',
-          target: 'tests/test_orders.py',
-          reason: 'Boundary condition test for department_id == 99 (fails) vs 100 (passes)',
-          status: 'PENDING'
-        }
-      ];
-
-      testCases.forEach((tc, idx) => {
-        const y = 260 + idx * 105;
-        const isRun = idx === 0;
-
-        ctx.fillStyle = isRun ? '#122018' : PALETTE.bgElevated;
-        roundRect(ctx, 380, y, 1380, 85, 12, true, false);
-        ctx.strokeStyle = isRun ? PALETTE.borderHighlight : PALETTE.border;
-        ctx.stroke();
-
-        ctx.fillStyle = PALETTE.textPrimary;
-        ctx.font = '700 14px "JetBrains Mono"';
-        ctx.fillText(tc.title, 410, y + 36);
-
-        ctx.fillStyle = PALETTE.textMuted;
-        ctx.font = '500 12px "Plus Jakarta Sans"';
-        ctx.fillText(`Target: ${tc.target} · ${tc.reason}`, 410, y + 62);
-
-        // Run Button / Status Pill
-        if (isRun) {
-          if (t >= 76.5) {
-            ctx.fillStyle = 'rgba(126, 231, 178, 0.15)';
-            roundRect(ctx, 1540, y + 25, 180, 36, 8, true, false);
-            ctx.strokeStyle = PALETTE.accentMint;
-            ctx.stroke();
-
-            ctx.fillStyle = PALETTE.accentMint;
-            ctx.font = '700 12px "JetBrains Mono"';
-            ctx.textAlign = 'center';
-            ctx.fillText('✓ PASSED (0.24s)', 1630, y + 48);
-          } else {
-            ctx.fillStyle = PALETTE.accentLime;
-            roundRect(ctx, 1540, y + 25, 180, 36, 8, true, false);
-
-            ctx.fillStyle = '#06110b';
-            ctx.font = '700 12px "Plus Jakarta Sans"';
-            ctx.textAlign = 'center';
-            ctx.fillText('▶ Run Sandbox Test', 1630, y + 48);
-          }
-        } else {
-          ctx.fillStyle = '#14231b';
-          roundRect(ctx, 1540, y + 25, 180, 36, 8, true, false);
-          ctx.strokeStyle = PALETTE.border;
-          ctx.stroke();
-
-          ctx.fillStyle = PALETTE.textMuted;
-          ctx.font = '600 12px "JetBrains Mono"';
-          ctx.textAlign = 'center';
-          ctx.fillText(tc.status, 1630, y + 48);
-        }
-        ctx.textAlign = 'left';
-      });
-
-      // Live Execution Terminal Drawer
-      ctx.fillStyle = '#060b09';
-      roundRect(ctx, 380, 600, 1380, 350, 12, true, false);
-      ctx.strokeStyle = PALETTE.border;
-      ctx.stroke();
-
-      ctx.fillStyle = PALETTE.accentLime;
-      ctx.font = '600 12px "JetBrains Mono"';
-      ctx.fillText('SANDBOX TERMINAL LOG', 410, 635);
-
-      const termLogs = [
-        '$ pytest tests/test_orders.py::test_order_checkout_with_null_dept -v',
+      const pytestOutput = [
+        '$ pytest tests/test_orders.py::test_checkout_department_validation -v',
         '============================= test session starts =============================',
-        'platform linux -- Python 3.12.3, pytest-8.3.3',
-        'rootdir: /workspace/DiffBeacon/EnterpriseOrderService',
+        'platform linux -- Python 3.12.3, pytest-8.3.3, pluggy-1.5.0',
+        'django settings: config.settings.test (Django 5.1.2)',
         'collected 1 item',
         ' ',
-        'tests/test_orders.py::test_order_checkout_with_null_dept PASSED           [100%]',
+        'tests/test_orders.py::test_checkout_department_validation PASSED           [100%]',
         ' ',
         '============================== 1 passed in 0.24s =============================='
       ];
 
-      termLogs.forEach((line, idx) => {
-        if (line.includes('PASSED')) {
-          ctx.fillStyle = PALETTE.accentMint;
-        } else if (line.startsWith('$')) {
-          ctx.fillStyle = PALETTE.accentLime;
-        } else {
-          ctx.fillStyle = PALETTE.textSecondary;
-        }
-        ctx.font = '500 12px "JetBrains Mono"';
-        ctx.fillText(line, 410, 675 + idx * 26);
+      pytestOutput.forEach((line, idx) => {
+        if (line.includes('PASSED')) ctx.fillStyle = PALETTE.accentMint;
+        else if (line.startsWith('$')) ctx.fillStyle = PALETTE.accentLime;
+        else ctx.fillStyle = PALETTE.textSecondary;
+        ctx.font = '500 13px "JetBrains Mono"';
+        ctx.fillText(line, 400, 530 + idx * 34);
       });
     }
 
@@ -1539,206 +1171,200 @@
     // SCENE 7: STRONG CLOSING
     // -------------------------------------------------------------------------
     function renderScene7_Closing(t) {
-      ctx.fillStyle = '#040705';
-      ctx.fillRect(0, 0, 1920, 1080);
+      ctx.fillStyle = '#040705'; ctx.fillRect(0, 0, 1920, 1080);
 
-      // Radial Ambient Gradient
       const grad = ctx.createRadialGradient(960, 540, 50, 960, 540, 800);
       grad.addColorStop(0, 'rgba(143, 230, 169, 0.08)');
       grad.addColorStop(1, 'rgba(4, 7, 5, 0)');
-      ctx.fillStyle = grad;
-      ctx.fillRect(0, 0, 1920, 1080);
+      ctx.fillStyle = grad; ctx.fillRect(0, 0, 1920, 1080);
 
       ctx.save();
       ctx.textAlign = 'center';
 
-      // Glowing Beacon Logo
-      ctx.beginPath();
-      ctx.arc(960, 360, 24, 0, Math.PI * 2);
+      // Delta Beacon Logo
       ctx.fillStyle = PALETTE.accentLime;
-      ctx.shadowColor = PALETTE.accentLime;
-      ctx.shadowBlur = 32;
-      ctx.fill();
+      roundRect(ctx, 936, 320, 48, 48, 12, true, false);
+      ctx.fillStyle = '#07110b'; ctx.font = '800 28px "JetBrains Mono"';
+      ctx.fillText('Δ', 960, 355);
 
-      // Title Sequence
-      ctx.fillStyle = PALETTE.textSecondary;
-      ctx.font = '600 24px "Plus Jakarta Sans"';
-      ctx.fillText('Not just what changed.', 960, 450);
+      ctx.fillStyle = PALETTE.textSecondary; ctx.font = '600 24px "Plus Jakarta Sans"';
+      ctx.fillText('Not just what changed.', 960, 440);
 
-      ctx.fillStyle = PALETTE.textPrimary;
-      ctx.font = '800 64px "Plus Jakarta Sans"';
-      ctx.fillText('Understand what it affects.', 960, 530);
+      ctx.fillStyle = PALETTE.textPrimary; ctx.font = '800 64px "Plus Jakarta Sans"';
+      ctx.fillText('Understand what it affects.', 960, 520);
 
-      ctx.fillStyle = PALETTE.accentLime;
-      ctx.font = '800 36px "Plus Jakarta Sans"';
-      ctx.fillText('DiffBeacon', 960, 600);
+      ctx.fillStyle = PALETTE.accentLime; ctx.font = '800 36px "Plus Jakarta Sans"';
+      ctx.fillText('DiffBeacon', 960, 590);
 
-      ctx.fillStyle = PALETTE.accentBrand;
-      ctx.font = '500 18px "JetBrains Mono"';
-      ctx.fillText('Understand the impact before the merge.', 960, 640);
+      ctx.fillStyle = PALETTE.accentBrand; ctx.font = '500 18px "JetBrains Mono"';
+      ctx.fillText('Understand the impact before the merge.', 960, 630);
 
       // Deployment URL pill
-      ctx.fillStyle = '#0c1611';
-      roundRect(ctx, 800, 690, 320, 44, 22, true, false);
-      ctx.strokeStyle = PALETTE.borderHighlight;
-      ctx.stroke();
-
-      ctx.fillStyle = PALETTE.accentMint;
-      ctx.font = '600 14px "JetBrains Mono"';
-      ctx.fillText('diffbeacon-delta.vercel.app', 960, 717);
+      ctx.fillStyle = '#0c1611'; roundRect(ctx, 800, 680, 320, 44, 22, true, false);
+      ctx.strokeStyle = PALETTE.borderHighlight; ctx.stroke();
+      ctx.fillStyle = PALETTE.accentMint; ctx.font = '600 14px "JetBrains Mono"';
+      ctx.fillText('diffbeacon-delta.vercel.app', 960, 707);
 
       ctx.restore();
-    }
-
-    // -------------------------------------------------------------------------
-    // RENDER HELPERS
-    // -------------------------------------------------------------------------
-    function renderBrowserHeader(title) {
-      // Browser Window Header Bar
-      ctx.fillStyle = '#080e0b';
-      ctx.fillRect(0, 0, 1920, 80);
-      ctx.strokeStyle = PALETTE.border;
-      ctx.beginPath();
-      ctx.moveTo(0, 80); ctx.lineTo(1920, 80);
-      ctx.stroke();
-
-      // Mac Window Dots
-      ctx.fillStyle = '#ff5f56';
-      ctx.beginPath(); ctx.arc(40, 40, 7, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = '#ffbd2e';
-      ctx.beginPath(); ctx.arc(65, 40, 7, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = '#27c93f';
-      ctx.beginPath(); ctx.arc(90, 40, 7, 0, Math.PI * 2); ctx.fill();
-
-      // Browser Search Pill
-      ctx.fillStyle = '#0c1410';
-      roundRect(ctx, 480, 20, 960, 40, 8, true, false);
-      ctx.strokeStyle = PALETTE.border;
-      ctx.stroke();
-
-      ctx.fillStyle = PALETTE.textSecondary;
-      ctx.font = '500 13px "JetBrains Mono"';
-      ctx.textAlign = 'center';
-      ctx.fillText(`🔒 https://github.com/org/EnterpriseOrderService/${title}`, 960, 45);
-      ctx.textAlign = 'left';
-    }
-
-    function renderStandardAppFrame() {
-      // Background
-      ctx.fillStyle = PALETTE.bgDark;
-      ctx.fillRect(0, 0, 1920, 1080);
-
-      // Top Chrome
-      renderBrowserHeader('diffbeacon-delta.vercel.app');
-
-      // Left Navigation Sidebar
-      ctx.fillStyle = '#070c09';
-      ctx.fillRect(0, 80, 300, 1000);
-      ctx.strokeStyle = PALETTE.border;
-      ctx.strokeRect(0, 80, 300, 1000);
-
-      // DiffBeacon Logo in sidebar
-      ctx.beginPath();
-      ctx.arc(45, 135, 8, 0, Math.PI * 2);
-      ctx.fillStyle = PALETTE.accentLime;
-      ctx.shadowColor = PALETTE.accentLime;
-      ctx.shadowBlur = 12;
-      ctx.fill();
-      ctx.shadowBlur = 0;
-
-      ctx.fillStyle = PALETTE.textPrimary;
-      ctx.font = '800 18px "Plus Jakarta Sans"';
-      ctx.fillText('DiffBeacon', 65, 142);
-
-      const navItems = [
-        { label: 'Project Dashboard', active: false },
-        { label: 'Change Intelligence', active: true },
-        { label: 'Impact Graph', active: false },
-        { label: 'Contract Map', active: false },
-        { label: 'Verification Matrix', active: false },
-        { label: 'Settings', active: false }
-      ];
-
-      navItems.forEach((item, idx) => {
-        const y = 200 + idx * 48;
-        if (item.active) {
-          ctx.fillStyle = '#15241b';
-          roundRect(ctx, 20, y - 24, 260, 38, 8, true, false);
-          ctx.strokeStyle = '#2e4738';
-          ctx.stroke();
-        }
-        ctx.fillStyle = item.active ? PALETTE.accentLime : PALETTE.textSecondary;
-        ctx.font = '600 13px "Plus Jakarta Sans"';
-        ctx.fillText(item.label, 40, y);
-      });
-    }
-
-    function renderMouseCursor() {
-      ctx.save();
-      ctx.translate(mouse.x, mouse.y);
-
-      // Click shockwave ring
-      if (mouse.clicking) {
-        ctx.beginPath();
-        ctx.arc(0, 0, 18, 0, Math.PI * 2);
-        ctx.strokeStyle = PALETTE.accentLime;
-        ctx.lineWidth = 2;
-        ctx.stroke();
-      }
-
-      // Cursor pointer shape (SVG path simulation)
-      ctx.fillStyle = '#edf7f2';
-      ctx.strokeStyle = '#060b09';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(0, 0);
-      ctx.lineTo(0, 18);
-      ctx.lineTo(5, 14);
-      ctx.lineTo(10, 22);
-      ctx.lineTo(13, 20);
-      ctx.lineTo(8, 12);
-      ctx.lineTo(14, 12);
-      ctx.closePath();
-      ctx.fill();
-      ctx.stroke();
-      ctx.restore();
-    }
-
-    function roundRect(ctx, x, y, width, height, radius, fill, stroke) {
-      ctx.beginPath();
-      ctx.moveTo(x + radius, y);
-      ctx.lineTo(x + width - radius, y);
-      ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
-      ctx.lineTo(x + width, y + height - radius);
-      ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
-      ctx.lineTo(x + radius, y + height);
-      ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
-      ctx.lineTo(x, y + radius);
-      ctx.quadraticCurveTo(x, y, x + radius, y);
-      ctx.closePath();
-      if (fill) ctx.fill();
-      if (stroke) ctx.stroke();
-    }
-
-    function renderWrappedText(ctx, text, x, y, maxWidth, lineHeight) {
-      const words = text.split(' ');
-      let line = '';
-      for (let n = 0; n < words.length; n++) {
-        const testLine = line + words[n] + ' ';
-        const metrics = ctx.measureText(testLine);
-        if (metrics.width > maxWidth && n > 0) {
-          ctx.fillText(line, x, y);
-          line = words[n] + ' ';
-          y += lineHeight;
-        } else {
-          line = testLine;
-        }
-      }
-      ctx.fillText(line, x, y);
     }
 
     // =========================================================================
-    // ANIMATION & PLAYBACK LOOP (60 FPS)
+    // RENDER HELPERS
+    // =========================================================================
+    function renderBrowserHeader(title) {
+      ctx.fillStyle = '#080e0b'; ctx.fillRect(0, 0, 1920, 80);
+      ctx.strokeStyle = PALETTE.border; ctx.beginPath(); ctx.moveTo(0, 80); ctx.lineTo(1920, 80); ctx.stroke();
+
+      ctx.fillStyle = '#ff5f56'; ctx.beginPath(); ctx.arc(40, 40, 7, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#ffbd2e'; ctx.beginPath(); ctx.arc(65, 40, 7, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#27c93f'; ctx.beginPath(); ctx.arc(90, 40, 7, 0, Math.PI * 2); ctx.fill();
+
+      ctx.fillStyle = '#0c1410'; roundRect(ctx, 480, 20, 960, 40, 8, true, false);
+      ctx.strokeStyle = PALETTE.border; ctx.stroke();
+
+      ctx.fillStyle = PALETTE.textSecondary; ctx.font = '500 13px "JetBrains Mono"';
+      ctx.textAlign = 'center';
+      ctx.fillText(`🔒 https://diffbeacon-delta.vercel.app/${title}`, 960, 45);
+      ctx.textAlign = 'left';
+    }
+
+    // Exact replica of frontend/src/components/Navbar.tsx
+    function renderStandardAppFrame(activeNavLink = 'Workspaces') {
+      ctx.fillStyle = PALETTE.bgCanvas; ctx.fillRect(0, 0, 1920, 1080);
+      renderBrowserHeader('dashboard');
+
+      // Top Navbar (Height 70px)
+      ctx.fillStyle = '#090c09'; ctx.fillRect(0, 80, 1920, 70);
+      ctx.strokeStyle = '#202720'; ctx.beginPath(); ctx.moveTo(0, 150); ctx.lineTo(1920, 150); ctx.stroke();
+
+      // Brand Logo Δ
+      ctx.fillStyle = '#d6fa64'; roundRect(ctx, 40, 97, 34, 34, 8, true, false);
+      ctx.fillStyle = '#18211c'; ctx.font = '800 18px "JetBrains Mono"';
+      ctx.fillText('Δ', 50, 121);
+
+      ctx.fillStyle = PALETTE.textPrimary; ctx.font = '700 18px "Plus Jakarta Sans"';
+      ctx.fillText('DiffBeacon', 85, 120);
+
+      ctx.fillStyle = '#7e8c7d'; ctx.font = '600 11px "JetBrains Mono"';
+      ctx.fillText('BEHAVIORAL CHANGE INTELLIGENCE', 210, 119);
+
+      // Search bar
+      ctx.fillStyle = '#101410'; roundRect(ctx, 620, 97, 380, 36, 18, true, false);
+      ctx.strokeStyle = '#273027'; ctx.stroke();
+      ctx.fillStyle = '#858f85'; ctx.font = '500 12px "Plus Jakarta Sans"';
+      ctx.fillText('🔍 Search symbols, scenarios, diffs...', 640, 120);
+      ctx.fillStyle = '#444'; ctx.font = '600 10px "JetBrains Mono"';
+      ctx.fillText('⌘K', 960, 120);
+
+      // Nav Links
+      const navs = ['Workspaces', 'Benchmarks', 'Languages', 'Settings'];
+      navs.forEach((nav, idx) => {
+        const x = 1120 + idx * 125;
+        const isCurrent = nav === activeNavLink;
+        if (isCurrent) {
+          ctx.fillStyle = '#19231c'; roundRect(ctx, x - 10, 97, 110, 36, 6, true, false);
+          ctx.strokeStyle = '#354638'; ctx.stroke();
+        }
+        ctx.fillStyle = isCurrent ? '#e8f3d0' : '#969f96';
+        ctx.font = '600 13px "Plus Jakarta Sans"';
+        ctx.fillText(nav, x, 120);
+      });
+
+      // User pill
+      ctx.fillStyle = '#111a14'; roundRect(ctx, 1680, 97, 200, 36, 6, true, false);
+      ctx.strokeStyle = '#2f3d35'; ctx.stroke();
+      ctx.fillStyle = '#cfe7c9'; ctx.font = '600 12px "JetBrains Mono"';
+      ctx.fillText('demo-engineer', 1700, 120);
+      ctx.fillStyle = '#7a8c86'; ctx.font = '500 11px "Plus Jakarta Sans"';
+      ctx.fillText('Logout', 1830, 120);
+    }
+
+    // Exact replica of the 7 tabs in AnalysisWorkspace.tsx
+    function renderAnalysisWorkspaceTabs(activeTabName) {
+      const tabs = [
+        { label: 'Scenario Studio', badge: '3' },
+        { label: 'Behavioral Deltas', badge: '3' },
+        { label: 'Contract Map', badge: '3' },
+        { label: 'Impact Explorer', badge: null },
+        { label: 'Verification Matrix', badge: '3' },
+        { label: 'Analysis Boundaries', badge: '2' },
+        { label: 'Evidence & Source', badge: null }
+      ];
+
+      ctx.fillStyle = PALETTE.bgCard; roundRect(ctx, 340, 165, 1460, 60, 10, true, false);
+      ctx.strokeStyle = PALETTE.border; ctx.stroke();
+
+      tabs.forEach((tb, idx) => {
+        const x = 360 + idx * 205;
+        const isCurrent = tb.label === activeTabName;
+        if (isCurrent) {
+          ctx.fillStyle = '#15231c'; roundRect(ctx, x - 10, 175, 190, 40, 8, true, false);
+          ctx.strokeStyle = '#2e4738'; ctx.stroke();
+        }
+        ctx.fillStyle = isCurrent ? PALETTE.accentLime : PALETTE.textSecondary;
+        ctx.font = '600 12px "JetBrains Mono"';
+        ctx.fillText(tb.label, x, 200);
+
+        if (tb.badge) {
+          ctx.fillStyle = isCurrent ? '#d6fa64' : '#666';
+          ctx.font = '700 10px "JetBrains Mono"';
+          ctx.fillText(`(${tb.badge})`, x + tb.label.length * 7.5 + 5, 200);
+        }
+      });
+    }
+
+    // Dynamic In-Between Text Callout Overlays
+    function renderInBetweenCallout(t) {
+      const callout = IN_BETWEEN_CALLOUTS.find(c => t >= c.start && t <= c.end);
+      if (!callout) return;
+
+      const progress = Math.min(1, Math.min((t - callout.start) / 0.5, (callout.end - t) / 0.5));
+      ctx.save();
+      ctx.globalAlpha = progress;
+
+      // Bottom floating pill overlay
+      const cardW = 760, cardH = 68;
+      const cardX = (1920 - cardW) / 2;
+      const cardY = 960;
+
+      ctx.fillStyle = 'rgba(6, 11, 9, 0.94)';
+      roundRect(ctx, cardX, cardY, cardW, cardH, 34, true, false);
+      ctx.strokeStyle = PALETTE.borderHighlight; ctx.lineWidth = 1.5; ctx.stroke();
+
+      ctx.textAlign = 'center';
+      ctx.fillStyle = PALETTE.accentLime;
+      ctx.font = '700 12px "JetBrains Mono"';
+      ctx.fillText(callout.title, 960, cardY + 26);
+
+      ctx.fillStyle = PALETTE.textPrimary;
+      ctx.font = '500 13px "Plus Jakarta Sans"';
+      ctx.fillText(callout.subtitle, 960, cardY + 48);
+
+      ctx.restore();
+    }
+
+    function renderMouseCursor() {
+      ctx.save(); ctx.translate(mouse.x, mouse.y);
+      if (mouse.clicking) {
+        ctx.beginPath(); ctx.arc(0, 0, 16, 0, Math.PI * 2);
+        ctx.strokeStyle = PALETTE.accentLime; ctx.lineWidth = 2; ctx.stroke();
+      }
+      ctx.fillStyle = '#edf7f2'; ctx.strokeStyle = '#060b09'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, 18); ctx.lineTo(5, 14); ctx.lineTo(10, 22); ctx.lineTo(13, 20); ctx.lineTo(8, 12); ctx.lineTo(14, 12); ctx.closePath();
+      ctx.fill(); ctx.stroke(); ctx.restore();
+    }
+
+    function roundRect(ctx, x, y, width, height, radius, fill, stroke) {
+      ctx.beginPath(); ctx.moveTo(x + radius, y); ctx.lineTo(x + width - radius, y);
+      ctx.quadraticCurveTo(x + width, y, x + width, y + radius); ctx.lineTo(x + width, y + height - radius);
+      ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height); ctx.lineTo(x + radius, y + height);
+      ctx.quadraticCurveTo(x, y + height, x, y + height - radius); ctx.lineTo(x, y + radius);
+      ctx.quadraticCurveTo(x, y, x + radius, y); ctx.closePath();
+      if (fill) ctx.fill(); if (stroke) ctx.stroke();
+    }
+
+    // =========================================================================
+    // 60 FPS TICK ENGINE
     // =========================================================================
     function tick(timestamp) {
       if (!lastTimestamp) lastTimestamp = timestamp;
@@ -1748,9 +1374,7 @@
       if (isPlaying) {
         currentTime += deltaTime * playbackSpeed;
         if (currentTime >= TOTAL_DURATION) {
-          currentTime = TOTAL_DURATION;
-          isPlaying = false;
-          playBtn.textContent = '▶';
+          currentTime = TOTAL_DURATION; isPlaying = false; playBtn.textContent = '▶';
           if (isRecording) stopRecording();
         }
       }
@@ -1758,7 +1382,6 @@
       updateSimulation(currentTime);
       renderFrame(currentTime);
 
-      // Update UI Progress readouts
       const progressPercent = (currentTime / TOTAL_DURATION) * 100;
       scrubFill.style.width = `${progressPercent}%`;
 
@@ -1772,9 +1395,7 @@
     }
     requestAnimationFrame(tick);
 
-    // =========================================================================
-    // EVENT LISTENERS & CONTROLS
-    // =========================================================================
+    // Controls
     playBtn.addEventListener('click', () => {
       initAudio();
       if (currentTime >= TOTAL_DURATION) currentTime = 0;
@@ -1783,30 +1404,22 @@
     });
 
     restartBtn.addEventListener('click', () => {
-      currentTime = 0;
-      lastSpokenScene = -1;
-      updateSimulation(0);
-      renderFrame(0);
+      currentTime = 0; lastSpokenScene = -1; updateSimulation(0); renderFrame(0);
     });
 
     scrubber.addEventListener('click', (e) => {
       const rect = scrubber.getBoundingClientRect();
       const pos = (e.clientX - rect.left) / rect.width;
       currentTime = Math.max(0, Math.min(TOTAL_DURATION, pos * TOTAL_DURATION));
-      lastSpokenScene = -1;
-      updateSimulation(currentTime);
+      lastSpokenScene = -1; updateSimulation(currentTime);
     });
 
     scenePills.forEach(pill => {
       pill.addEventListener('click', () => {
         initAudio();
         currentTime = parseFloat(pill.dataset.time);
-        lastSpokenScene = -1;
-        updateSimulation(currentTime);
-        if (!isPlaying) {
-          isPlaying = true;
-          playBtn.textContent = '❚❚';
-        }
+        lastSpokenScene = -1; updateSimulation(currentTime);
+        if (!isPlaying) { isPlaying = true; playBtn.textContent = '❚❚'; }
       });
     });
 
@@ -1821,17 +1434,14 @@
       soundEnabled = !soundEnabled;
       audioIcon.textContent = soundEnabled ? '🔊' : '🔇';
       audioLabel.textContent = soundEnabled ? 'Sound & Voice On' : 'Muted';
-      if (synthGain) synthGain.gain.setValueAtTime(soundEnabled ? 0.04 : 0.0, audioCtx.currentTime);
+      if (synthMasterGain) synthMasterGain.gain.setValueAtTime(soundEnabled ? 0.03 : 0.0, audioCtx.currentTime);
       if (!soundEnabled && 'speechSynthesis' in window) window.speechSynthesis.cancel();
     });
 
     fullscreenBtn.addEventListener('click', () => {
       const el = document.getElementById('viewport');
-      if (!document.fullscreenElement) {
-        el.requestFullscreen().catch(err => alert(err.message));
-      } else {
-        document.exitFullscreen();
-      }
+      if (!document.fullscreenElement) el.requestFullscreen().catch(err => alert(err.message));
+      else document.exitFullscreen();
     });
 
     copyCaptionBtn.addEventListener('click', () => {
@@ -1841,15 +1451,9 @@
       setTimeout(() => (copyCaptionBtn.textContent = 'Copy LinkedIn Post'), 2000);
     });
 
-    // =========================================================================
-    // 1080p CANVAS VIDEO RECORDER & EXPORT (WebM/MP4)
-    // =========================================================================
     recordBtn.addEventListener('click', () => {
-      if (!isRecording) {
-        startRecording();
-      } else {
-        stopRecording();
-      }
+      if (!isRecording) startRecording();
+      else stopRecording();
     });
 
     function startRecording() {
@@ -1859,28 +1463,19 @@
       recordBtn.classList.add('recording');
       recordLabel.textContent = 'Recording 1080p... Click to Stop';
 
-      // Capture canvas stream at 60 fps
       const stream = canvas.captureStream(60);
-
-      // Connect Web Audio stream if present
       if (audioCtx) {
         const dest = audioCtx.createMediaStreamDestination();
-        synthGain.connect(dest);
+        synthMasterGain.connect(dest);
         const audioTracks = dest.stream.getAudioTracks();
         if (audioTracks.length > 0) stream.addTrack(audioTracks[0]);
       }
 
       const options = { mimeType: 'video/webm;codecs=vp9', videoBitsPerSecond: 8000000 };
-      try {
-        mediaRecorder = new MediaRecorder(stream, options);
-      } catch (e) {
-        mediaRecorder = new MediaRecorder(stream);
-      }
+      try { mediaRecorder = new MediaRecorder(stream, options); }
+      catch (e) { mediaRecorder = new MediaRecorder(stream); }
 
-      mediaRecorder.ondataavailable = (e) => {
-        if (e.data.size > 0) recordedChunks.push(e.data);
-      };
-
+      mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) recordedChunks.push(e.data); };
       mediaRecorder.onstop = () => {
         const blob = new Blob(recordedChunks, { type: 'video/webm' });
         const url = URL.createObjectURL(blob);
@@ -1889,25 +1484,18 @@
         a.download = `DiffBeacon-Product-Demo-1080p-${new Date().toISOString().slice(0, 10)}.webm`;
         a.click();
         URL.revokeObjectURL(url);
-
         recordBtn.classList.remove('recording');
         recordLabel.textContent = 'Record & Export 1080p Video';
         isRecording = false;
         alert('🎉 1080p Video export complete! The video file has been saved to your downloads folder.');
       };
 
-      // Restart from beginning and play
-      currentTime = 0;
-      lastSpokenScene = -1;
-      isPlaying = true;
-      playBtn.textContent = '❚❚';
+      currentTime = 0; lastSpokenScene = -1; isPlaying = true; playBtn.textContent = '❚❚';
       mediaRecorder.start();
     }
 
     function stopRecording() {
-      if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-        mediaRecorder.stop();
-      }
+      if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
     }
   </script>
 </body>
