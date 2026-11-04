@@ -30,10 +30,10 @@ export const EpistemicBadge: React.FC<Props> = ({ provenance, size = 'sm' }) => 
     },
     inferred: {
       label: 'Inferred',
-      bg: 'bg-indigo-950/40',
-      text: 'text-indigo-300',
-      border: 'border-indigo-800/60',
-      icon: <Sparkles className="w-3 h-3 text-indigo-400" />,
+      bg: 'bg-[#15231c]',
+      text: 'text-[#8fe6a9]',
+      border: 'border-[#2e4738]',
+      icon: <Sparkles className="w-3 h-3 text-[#d6fa64]" />,
     },
     unresolved: {
       label: 'Unresolved / Unknown',

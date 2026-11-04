@@ -231,10 +231,10 @@ export const ImpactExplorer: React.FC<Props> = ({ analysisId, onInspectNode }) =
   return (
     <div className="space-y-4 font-sans">
       {/* Top Toolbar */}
-      <div className="surface-card p-4 border-[#1f2638] flex flex-wrap items-center justify-between gap-4">
+      <div className="surface-card p-4 border-[#1d2b22] flex flex-wrap items-center justify-between gap-4">
         {/* Left: Version Switcher & Search */}
         <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center rounded-lg bg-[#0c0f18] p-1 border border-[#1e2436]">
+          <div className="flex items-center rounded-lg bg-[#080d0a] p-1 border border-[#1b281f]">
             <button
               onClick={() => {
                 setSide('head');
@@ -242,7 +242,7 @@ export const ImpactExplorer: React.FC<Props> = ({ analysisId, onInspectNode }) =
               }}
               className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all cursor-pointer ${
                 side === 'head'
-                  ? 'bg-indigo-600 text-white shadow-sm'
+                  ? 'bg-[#15241b] text-[#d6fa64] border border-[#2e4738] shadow-sm'
                   : 'text-slate-400 hover:text-white'
               }`}
             >
@@ -255,7 +255,7 @@ export const ImpactExplorer: React.FC<Props> = ({ analysisId, onInspectNode }) =
               }}
               className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all cursor-pointer ${
                 side === 'base'
-                  ? 'bg-indigo-600 text-white shadow-sm'
+                  ? 'bg-[#15241b] text-[#d6fa64] border border-[#2e4738] shadow-sm'
                   : 'text-slate-400 hover:text-white'
               }`}
             >
@@ -271,7 +271,7 @@ export const ImpactExplorer: React.FC<Props> = ({ analysisId, onInspectNode }) =
               placeholder="Filter symbols in graph..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-8 pr-3 py-1.5 text-xs rounded-lg bg-[#090b12] border border-[#1f2638] text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-indigo-500 w-52 transition-colors font-mono"
+              className="pl-8 pr-3 py-1.5 text-xs rounded-lg bg-[#080d0a] border border-[#1b281f] text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-[#8fe6a9]/80 w-52 transition-colors font-mono"
             />
             {searchQuery && (
               <button
@@ -292,7 +292,7 @@ export const ImpactExplorer: React.FC<Props> = ({ analysisId, onInspectNode }) =
             className={`px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer border ${
               blastRadiusOnly
                 ? 'bg-amber-950/70 text-amber-300 border-amber-600'
-                : 'bg-[#0e111a] text-slate-300 border-[#1f2638] hover:border-slate-600'
+                : 'bg-[#0c120e] text-slate-300 border-[#1d2b22] hover:border-[#2e4738]'
             }`}
           >
             <Target className="w-3.5 h-3.5 text-amber-400" />
@@ -312,7 +312,7 @@ export const ImpactExplorer: React.FC<Props> = ({ analysisId, onInspectNode }) =
           <span>{rawEdges.length} Typed Edges</span>
           <button
             onClick={() => refetch()}
-            className="p-1.5 rounded bg-[#141824] hover:bg-[#1a2030] text-slate-300 border border-[#232b3e] transition-colors cursor-pointer"
+            className="p-1.5 rounded bg-[#0c120e] hover:bg-[#14231b] text-slate-300 border border-[#1d2b22] transition-colors cursor-pointer"
             title="Reload graph data"
           >
             <RefreshCw className="w-3.5 h-3.5" />
@@ -321,7 +321,7 @@ export const ImpactExplorer: React.FC<Props> = ({ analysisId, onInspectNode }) =
       </div>
 
       {/* Main Graph Canvas with Side Drawer */}
-      <div className="relative border border-[#1f2638] rounded-2xl bg-[#07090e] overflow-hidden h-[680px] shadow-2xl">
+      <div className="relative border border-[#1d2b22] rounded-2xl bg-[#060b09] overflow-hidden h-[680px] shadow-2xl">
         <ReactFlow
           nodes={nodes}
           edges={edges}
@@ -334,17 +334,17 @@ export const ImpactExplorer: React.FC<Props> = ({ analysisId, onInspectNode }) =
           minZoom={0.2}
           maxZoom={1.8}
         >
-          <Background variant={BackgroundVariant.Dots} gap={24} size={1.2} color="#1b2130" />
-          <Controls className="!bg-[#0c0f18] !border-[#1e2436] !text-slate-200" />
+          <Background variant={BackgroundVariant.Dots} gap={24} size={1.2} color="#1b281f" />
+          <Controls className="!bg-[#0c120e] !border-[#1b281f] !text-slate-200" />
           <MiniMap
-            nodeColor={(node: any) => (node.data?.is_changed ? '#f59e0b' : '#6366f1')}
-            className="!bg-[#090b12] !border-[#1e2436] !rounded-xl"
-            maskColor="rgba(8, 10, 15, 0.85)"
+            nodeColor={(node: any) => (node.data?.is_changed ? '#f59e0b' : '#8fe6a9')}
+            className="!bg-[#080d0a] !border-[#1b281f] !rounded-xl"
+            maskColor="rgba(6, 11, 9, 0.85)"
           />
         </ReactFlow>
 
         {/* Floating Architectural Legend */}
-        <div className="absolute top-4 left-4 p-2.5 rounded-xl bg-[#0a0d14]/90 border border-[#1f2638] backdrop-blur-md text-[11px] font-mono text-slate-300 space-y-1 pointer-events-none select-none z-10 shadow-lg">
+        <div className="absolute top-4 left-4 p-2.5 rounded-xl bg-[#080d0a]/90 border border-[#1d2b22] backdrop-blur-md text-[11px] font-mono text-slate-300 space-y-1 pointer-events-none select-none z-10 shadow-lg">
           <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
             Topological Layers
           </div>
@@ -352,8 +352,8 @@ export const ImpactExplorer: React.FC<Props> = ({ analysisId, onInspectNode }) =
             <span className="w-2 h-2 rounded-full bg-violet-400" />
             <span>Routes & Endpoints</span>
           </div>
-          <div className="flex items-center gap-1.5 text-indigo-400">
-            <span className="w-2 h-2 rounded-full bg-indigo-400" />
+          <div className="flex items-center gap-1.5 text-[#d6fa64]">
+            <span className="w-2 h-2 rounded-full bg-[#d6fa64]" />
             <span>DRF ViewSets & Serializers</span>
           </div>
           <div className="flex items-center gap-1.5 text-blue-400">
@@ -368,12 +368,12 @@ export const ImpactExplorer: React.FC<Props> = ({ analysisId, onInspectNode }) =
 
         {/* Selected Node Slide-Over Drawer */}
         {selectedApiNode && (
-          <div className="absolute top-4 right-4 bottom-4 w-96 rounded-xl bg-[#0e121c]/95 border border-[#2b354b] p-5 shadow-2xl backdrop-blur-md z-20 flex flex-col justify-between overflow-y-auto animate-fade-in font-mono text-xs">
+          <div className="absolute top-4 right-4 bottom-4 w-96 rounded-xl bg-[#0b110d]/95 border border-[#1d2b22] p-5 shadow-2xl backdrop-blur-md z-20 flex flex-col justify-between overflow-y-auto animate-fade-in font-mono text-xs">
             <div className="space-y-4">
               {/* Drawer Header */}
               <div className="flex items-start justify-between gap-2 pb-3 border-b border-[#1b2130]">
                 <div>
-                  <span className="px-2 py-0.5 rounded text-[10px] uppercase font-bold bg-indigo-950/70 text-indigo-300 border border-indigo-800/60">
+                  <span className="px-2 py-0.5 rounded text-[10px] uppercase font-bold bg-[#13231a] text-[#8fe6a9] border border-[#213b2c]">
                     {selectedApiNode.type}
                   </span>
                   <h3 className="text-sm font-bold text-white mt-2 break-all">
@@ -427,7 +427,7 @@ export const ImpactExplorer: React.FC<Props> = ({ analysisId, onInspectNode }) =
                         className="p-2 rounded bg-[#090c13] border border-[#1b2130] text-[11px] text-slate-300 truncate"
                         title={e.source}
                       >
-                        <span className="text-[10px] font-bold text-indigo-400 mr-1.5 uppercase">
+                        <span className="text-[10px] font-bold text-[#8fe6a9] mr-1.5 uppercase">
                           ← {e.type}
                         </span>
                         {e.source.split('.').pop()}
@@ -452,7 +452,7 @@ export const ImpactExplorer: React.FC<Props> = ({ analysisId, onInspectNode }) =
                         className="p-2 rounded bg-[#090c13] border border-[#1b2130] text-[11px] text-slate-300 truncate"
                         title={e.target}
                       >
-                        <span className="text-[10px] font-bold text-indigo-400 mr-1.5 uppercase">
+                        <span className="text-[10px] font-bold text-[#8fe6a9] mr-1.5 uppercase">
                           ↳ {e.type}
                         </span>
                         {e.target.split('.').pop()}
@@ -471,7 +471,7 @@ export const ImpactExplorer: React.FC<Props> = ({ analysisId, onInspectNode }) =
                 onClick={() =>
                   onInspectNode(selectedApiNode.file_path, selectedApiNode.line_number)
                 }
-                className="w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs flex items-center justify-center gap-1.5 transition-all shadow-md cursor-pointer"
+                className="w-full py-2.5 rounded-xl bg-[#18281f] hover:bg-[#20362a] border border-[#2e4738] text-[#d6fa64] font-semibold text-xs flex items-center justify-center gap-1.5 transition-all shadow-md cursor-pointer"
               >
                 <FileCode className="w-3.5 h-3.5" />
                 <span>Jump to Source Line in Viewer</span>

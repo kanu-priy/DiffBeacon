@@ -33,13 +33,13 @@ export const ContractMap: React.FC<Props> = ({ contracts, onInspectEvidence }) =
   const getContractIcon = (type: string) => {
     switch (type) {
       case 'drf_serializer':
-        return <Cpu className="w-4 h-4 text-indigo-400" />;
+        return <Cpu className="w-4 h-4 text-[#d6fa64]" />;
       case 'django_model':
-        return <Database className="w-4 h-4 text-indigo-300" />;
+        return <Database className="w-4 h-4 text-[#8fe6a9]" />;
       case 'api_route':
-        return <Network className="w-4 h-4 text-emerald-400" />;
+        return <Network className="w-4 h-4 text-[#7ee7b2]" />;
       default:
-        return <Cpu className="w-4 h-4 text-slate-400" />;
+        return <Cpu className="w-4 h-4 text-[#a7b7b0]" />;
     }
   };
 
@@ -190,13 +190,13 @@ export const ContractMap: React.FC<Props> = ({ contracts, onInspectEvidence }) =
   return (
     <div className="space-y-6">
       {/* Top Banner & Stats */}
-      <div className="p-4 rounded-xl bg-slate-900/70 border border-slate-800 flex flex-wrap items-center justify-between gap-4">
+      <div className="surface-card p-4 border-[#1e2a22] flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h3 className="text-sm font-semibold text-slate-200 flex items-center gap-2">
-            <Cpu className="w-4 h-4 text-teal-400" />
+          <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+            <Cpu className="w-4 h-4 text-[#d6fa64]" />
             <span>Contract Surface Map</span>
           </h3>
-          <p className="text-xs text-slate-400 mt-0.5">
+          <p className="text-xs text-[#a7b7b0] mt-0.5">
             Compare supported contracts across base and head. Distinguishes structural schema differences from demonstrated breaking changes.
           </p>
         </div>
@@ -206,8 +206,8 @@ export const ContractMap: React.FC<Props> = ({ contracts, onInspectEvidence }) =
             onClick={() => setBreakingFilter(breakingFilter === 'compatible' ? 'all' : 'compatible')}
             className={`px-3 py-1.5 rounded-lg border transition-all cursor-pointer ${
               breakingFilter === 'compatible'
-                ? 'bg-teal-950 text-teal-300 border-teal-500/60 font-bold shadow-sm'
-                : 'bg-teal-950/40 text-teal-400 border-teal-800/60 hover:bg-teal-900/40'
+                ? 'bg-[#14231b] text-[#9ef0c7] border-[#2e4738] font-bold shadow-sm'
+                : 'bg-[#0f1713] text-[#7ee7b2] border-[#1d2b22] hover:bg-[#15231c]'
             }`}
           >
             {compatibleCount} Compatible
@@ -216,8 +216,8 @@ export const ContractMap: React.FC<Props> = ({ contracts, onInspectEvidence }) =
             onClick={() => setBreakingFilter(breakingFilter === 'breaking' ? 'all' : 'breaking')}
             className={`px-3 py-1.5 rounded-lg border transition-all cursor-pointer ${
               breakingFilter === 'breaking'
-                ? 'bg-rose-950 text-rose-300 border-rose-500/60 font-bold shadow-sm'
-                : 'bg-rose-950/40 text-rose-400 border-rose-800/60 hover:bg-rose-900/40'
+                ? 'bg-[#291313] text-[#ffb0b0] border-[#592222] font-bold shadow-sm'
+                : 'bg-[#1c0f0f] text-[#ff7d7d] border-[#381a1a] hover:bg-[#261313]'
             }`}
           >
             {breakingCount} Breaking
@@ -226,17 +226,17 @@ export const ContractMap: React.FC<Props> = ({ contracts, onInspectEvidence }) =
       </div>
 
       {/* Filter & Search Bar */}
-      <div className="p-3.5 rounded-xl bg-slate-900/50 border border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs">
+      <div className="p-3.5 rounded-xl bg-[#0b100d] border border-[#1b281f] flex flex-wrap items-center justify-between gap-3 text-xs">
         <div className="flex items-center gap-3 flex-1 min-w-[240px]">
           {/* Search */}
           <div className="relative flex-1 max-w-sm">
-            <Search className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
+            <Search className="w-3.5 h-3.5 text-[#7a8c86] absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search contracts (e.g. EmployeeCreateSerializer)..."
-              className="w-full pl-8 pr-3 py-1.5 rounded-lg bg-[#0a0d14] border border-[#1b202e] text-slate-200 placeholder-slate-500 text-xs focus:outline-none focus:border-indigo-500 font-mono"
+              className="w-full pl-8 pr-3 py-1.5 rounded-lg bg-[#070b09] border border-[#1d2b22] text-[#edf7f2] placeholder-[#7a8c86] text-xs focus:outline-none focus:border-[#8fe6a9] font-mono"
             />
           </div>
 
@@ -248,8 +248,8 @@ export const ContractMap: React.FC<Props> = ({ contracts, onInspectEvidence }) =
                 onClick={() => setTypeFilter(type)}
                 className={`px-2.5 py-1 rounded-md text-xs font-mono uppercase tracking-wider transition-colors cursor-pointer ${
                   typeFilter === type
-                    ? 'bg-indigo-950/70 text-indigo-300 border border-indigo-700/60 font-semibold'
-                    : 'bg-[#0a0d14] text-slate-400 hover:text-white border border-[#1b202e]'
+                    ? 'bg-[#15231c] text-[#d6fa64] border border-[#2e4738] font-semibold'
+                    : 'bg-[#070b09] text-[#a7b7b0] hover:text-white border border-[#1d2b22]'
                 }`}
               >
                 {type === 'drf_serializer' ? 'Serializers' : type === 'django_model' ? 'Models' : type === 'api_route' ? 'Routes' : 'All Types'}
@@ -259,11 +259,11 @@ export const ContractMap: React.FC<Props> = ({ contracts, onInspectEvidence }) =
         </div>
 
         {/* View Format Toggle (Visual Diff vs JSON) */}
-        <div className="flex items-center rounded-lg bg-[#0a0d14] p-1 border border-[#1b202e] text-xs">
+        <div className="flex items-center rounded-lg bg-[#070b09] p-1 border border-[#1d2b22] text-xs">
           <button
             onClick={() => setViewFormat('visual')}
             className={`px-2.5 py-1 rounded flex items-center gap-1.5 cursor-pointer transition-colors ${
-              viewFormat === 'visual' ? 'bg-indigo-600 text-white font-medium shadow-sm' : 'text-slate-400 hover:text-white'
+              viewFormat === 'visual' ? 'bg-[#d6fa64] text-[#07110b] font-medium shadow-sm' : 'text-[#a7b7b0] hover:text-white'
             }`}
           >
             <ListTree className="w-3.5 h-3.5" />
@@ -272,7 +272,7 @@ export const ContractMap: React.FC<Props> = ({ contracts, onInspectEvidence }) =
           <button
             onClick={() => setViewFormat('json')}
             className={`px-2.5 py-1 rounded flex items-center gap-1.5 cursor-pointer transition-colors ${
-              viewFormat === 'json' ? 'bg-indigo-600 text-white font-medium shadow-sm' : 'text-slate-400 hover:text-white'
+              viewFormat === 'json' ? 'bg-[#d6fa64] text-[#07110b] font-medium shadow-sm' : 'text-[#a7b7b0] hover:text-white'
             }`}
           >
             <Code2 className="w-3.5 h-3.5" />
@@ -294,16 +294,16 @@ export const ContractMap: React.FC<Props> = ({ contracts, onInspectEvidence }) =
               className="rounded-xl bg-slate-900/80 border border-slate-800 hover:border-slate-700 transition-all space-y-4 overflow-hidden shadow-xl"
             >
               {/* Header */}
-              <div className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-900/90 border-b border-slate-800/80">
+              <div className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#0d1410] border-b border-[#1b281f]">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-slate-950 border border-slate-800">
+                  <div className="p-2 rounded-lg bg-[#070b09] border border-[#1d2b22]">
                     {getContractIcon(contract.contract_type)}
                   </div>
                   <div>
-                    <h4 className="text-sm font-bold text-slate-100 font-mono flex items-center gap-2">
+                    <h4 className="text-sm font-bold text-white font-mono flex items-center gap-2">
                       <span>{contract.identifier}</span>
                     </h4>
-                    <span className="text-[11px] text-slate-400 font-sans capitalize">
+                    <span className="text-[11px] text-[#a7b7b0] font-sans capitalize">
                       {contract.contract_type.replace('_', ' ')} • Nature: {contract.change_nature.replace('_', ' ')}
                     </span>
                   </div>
@@ -311,23 +311,23 @@ export const ContractMap: React.FC<Props> = ({ contracts, onInspectEvidence }) =
 
                 <div className="flex items-center gap-2 shrink-0">
                   {contract.is_breaking ? (
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-rose-950/60 text-rose-300 border border-rose-800/80 shadow-sm">
-                      <ShieldAlert className="w-3.5 h-3.5 text-rose-400" />
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-[#291313] text-[#ffb0b0] border border-[#592222] shadow-sm">
+                      <ShieldAlert className="w-3.5 h-3.5 text-[#ff7d7d]" />
                       <span>Breaking Change</span>
                     </span>
                   ) : (
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-teal-950/60 text-teal-300 border border-teal-800/80 shadow-sm">
-                      <ShieldCheck className="w-3.5 h-3.5 text-teal-400" />
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-[#14231b] text-[#9ef0c7] border border-[#2e4738] shadow-sm">
+                      <ShieldCheck className="w-3.5 h-3.5 text-[#7ee7b2]" />
                       <span>Backward-Compatible</span>
                     </span>
                   )}
 
                   <button
                     onClick={() => copySpec(contract)}
-                    className="p-1.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors cursor-pointer"
+                    className="p-1.5 rounded bg-[#15231c] hover:bg-[#1d2f26] border border-[#23352b] text-[#a7b7b0] hover:text-white transition-colors cursor-pointer"
                     title="Copy contract specification"
                   >
-                    {copiedId === contract.id ? <Check className="w-3.5 h-3.5 text-teal-400" /> : <Copy className="w-3.5 h-3.5" />}
+                    {copiedId === contract.id ? <Check className="w-3.5 h-3.5 text-[#7ee7b2]" /> : <Copy className="w-3.5 h-3.5" />}
                   </button>
                 </div>
               </div>
@@ -335,8 +335,8 @@ export const ContractMap: React.FC<Props> = ({ contracts, onInspectEvidence }) =
               {/* Body */}
               <div className="px-5 pb-5 space-y-4">
                 {/* Assessment Box */}
-                <div className="font-sans text-xs text-slate-300 leading-relaxed bg-slate-950/60 p-3.5 rounded-lg border border-slate-800/80">
-                  <span className="font-semibold text-slate-100">Compatibility Assessment: </span>
+                <div className="font-sans text-xs text-slate-300 leading-relaxed bg-[#070b09] p-3.5 rounded-lg border border-[#1d2b22]">
+                  <span className="font-semibold text-white">Compatibility Assessment: </span>
                   {contract.compatibility_assessment}
                 </div>
 

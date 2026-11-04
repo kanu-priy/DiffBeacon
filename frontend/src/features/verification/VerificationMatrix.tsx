@@ -140,14 +140,14 @@ def ${fnName}():
         </div>
 
         <div className="flex items-center gap-3">
-          <div className="text-xs font-mono px-3 py-1.5 rounded-lg bg-slate-950 border border-slate-800 text-slate-300">
-            <span className="text-teal-400 font-bold">{verifiedCount}</span> / {cases.length} Runtime Verified
+          <div className="text-xs font-mono px-3 py-1.5 rounded-lg bg-[#080d0a] border border-[#1b281f] text-slate-300">
+            <span className="text-[#8fe6a9] font-bold">{verifiedCount}</span> / {cases.length} Runtime Verified
           </div>
 
           <button
             onClick={handleRunAll}
             disabled={isRunningAll}
-            className="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-xs flex items-center gap-2 shadow-sm transition-all cursor-pointer disabled:opacity-50"
+            className="px-4 py-2 rounded-lg bg-[#18281f] hover:bg-[#20362a] border border-[#2e4738] text-[#d6fa64] font-medium text-xs flex items-center gap-2 shadow-sm transition-all cursor-pointer disabled:opacity-50"
           >
             {isRunningAll ? (
               <>
@@ -165,7 +165,7 @@ def ${fnName}():
       </div>
 
       {/* Filter and Search Bar */}
-      <div className="surface-card p-3.5 border-[#1f2638] flex flex-wrap items-center justify-between gap-3 text-xs">
+      <div className="surface-card p-3.5 border-[#1d2b22] flex flex-wrap items-center justify-between gap-3 text-xs">
         {/* Search */}
         <div className="relative flex-1 min-w-[220px] max-w-sm">
           <Search className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -174,7 +174,7 @@ def ${fnName}():
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search test recommendations..."
-            className="w-full pl-8 pr-3 py-1.5 rounded-lg bg-[#0a0d14] border border-[#1b202e] text-slate-200 placeholder-slate-500 text-xs focus:outline-none focus:border-indigo-500 font-mono"
+            className="w-full pl-8 pr-3 py-1.5 rounded-lg bg-[#080d0a] border border-[#1b281f] text-slate-200 placeholder-slate-500 text-xs focus:outline-none focus:border-[#8fe6a9]/80 font-mono"
           />
         </div>
 
@@ -184,8 +184,8 @@ def ${fnName}():
             onClick={() => setCoverageFilter('all')}
             className={`px-2.5 py-1 rounded-md text-xs font-mono uppercase tracking-wider transition-colors cursor-pointer ${
               coverageFilter === 'all'
-                ? 'bg-indigo-950/70 text-indigo-300 border border-indigo-700/60 font-semibold'
-                : 'bg-[#0a0d14] text-slate-400 hover:text-white border border-[#1b202e]'
+                ? 'bg-[#15231c] text-[#8fe6a9] border border-[#2e4738] font-semibold'
+                : 'bg-[#080d0a] text-slate-400 hover:text-white border border-[#1b281f]'
             }`}
           >
             All ({cases.length})
@@ -241,15 +241,15 @@ def ${fnName}():
               }`}
             >
               {/* Header */}
-              <div className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-900/90 border-b border-slate-800/80 font-sans">
+              <div className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#0c120e] border-b border-[#1b281f] font-sans">
                 <div className="flex items-center gap-2.5">
-                  <span className="p-2 rounded-lg bg-[#0a0d14] border border-[#1b202e]">
-                    <Sparkles className="w-4 h-4 text-indigo-400" />
+                  <span className="p-2 rounded-lg bg-[#080d0a] border border-[#1b281f]">
+                    <Sparkles className="w-4 h-4 text-[#d6fa64]" />
                   </span>
                   <div>
                     <h4 className="text-sm font-semibold text-white">{c.title}</h4>
                     {c.existing_test_ref ? (
-                      <span className="text-[11px] text-emerald-400 font-mono">Matched: {c.existing_test_ref}</span>
+                      <span className="text-[11px] text-[#7ee7b2] font-mono">Matched: {c.existing_test_ref}</span>
                     ) : (
                       <span className="text-[11px] text-amber-400 font-mono">Suggested Uncovered Scenario</span>
                     )}
@@ -264,12 +264,12 @@ def ${fnName}():
                       <span>Runtime Verified</span>
                     </span>
                   ) : status === 'running' ? (
-                    <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-indigo-950 text-indigo-300 border border-indigo-700/80 flex items-center gap-1.5 animate-pulse">
-                      <Loader2 className="w-3.5 h-3.5 text-indigo-400 animate-spin" />
+                    <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-[#13231a] text-[#8fe6a9] border border-[#213b2c] flex items-center gap-1.5 animate-pulse">
+                      <Loader2 className="w-3.5 h-3.5 text-[#d6fa64] animate-spin" />
                       <span>Executing...</span>
                     </span>
                   ) : (
-                    <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-[#0a0d14] text-slate-400 border border-[#1b202e]">
+                    <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-[#080d0a] text-slate-400 border border-[#1b281f]">
                       Static Recommendation
                     </span>
                   )}

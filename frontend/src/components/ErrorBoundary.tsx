@@ -90,7 +90,7 @@ ${errorInfo?.componentStack || 'No component stack'}
           <div className="flex flex-wrap items-center justify-center gap-2.5 pt-2">
             <button
               onClick={this.handleReset}
-              className="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-xs flex items-center gap-1.5 transition-all cursor-pointer shadow-sm"
+              className="px-4 py-2 rounded-lg bg-[#18281f] hover:bg-[#20362a] border border-[#2e4738] text-[#d6fa64] font-medium text-xs flex items-center gap-1.5 transition-all cursor-pointer shadow-sm"
             >
               <RotateCcw className="w-3.5 h-3.5" />
               <span>Retry Component</span>
@@ -98,7 +98,7 @@ ${errorInfo?.componentStack || 'No component stack'}
 
             <button
               onClick={this.handleCopyDiagnostic}
-              className="px-3.5 py-2 rounded-lg bg-[#141824] hover:bg-[#1a2030] border border-[#232b3e] text-slate-300 font-mono text-xs flex items-center gap-1.5 transition-all cursor-pointer"
+              className="px-3.5 py-2 rounded-lg bg-[#0c120e] hover:bg-[#14231b] border border-[#1d2b22] text-slate-300 font-mono text-xs flex items-center gap-1.5 transition-all cursor-pointer"
             >
               {this.state.copied ? (
                 <>
@@ -115,7 +115,7 @@ ${errorInfo?.componentStack || 'No component stack'}
 
             <button
               onClick={() => (window.location.href = '/dashboard')}
-              className="px-3.5 py-2 rounded-lg bg-[#141824] hover:bg-[#1a2030] border border-[#232b3e] text-slate-300 text-xs flex items-center gap-1.5 transition-all cursor-pointer"
+              className="px-3.5 py-2 rounded-lg bg-[#0c120e] hover:bg-[#14231b] border border-[#1d2b22] text-slate-300 text-xs flex items-center gap-1.5 transition-all cursor-pointer"
             >
               <Home className="w-3.5 h-3.5 text-slate-400" />
               <span>Return to Dashboard</span>

@@ -122,9 +122,9 @@ export const SettingsView: React.FC = () => {
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
       {/* Header */}
-      <div className="pb-6 border-b border-[#1f2638] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="pb-6 border-b border-[#1d2b22] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2 text-xs font-mono text-emerald-400 font-semibold uppercase tracking-wider">
+          <div className="flex items-center gap-2 text-xs font-mono text-[#8fe6a9] font-semibold uppercase tracking-wider">
             <Settings className="w-3.5 h-3.5" />
             <span>Application Settings</span>
             <span className="text-slate-600">/</span>
@@ -138,11 +138,11 @@ export const SettingsView: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center rounded-lg bg-[#0e111a] p-1 border border-[#1e2537] text-xs gap-1">
+        <div className="flex flex-wrap items-center rounded-lg bg-[#080d0a] p-1 border border-[#1b281f] text-xs gap-1">
           <button
             onClick={() => setActiveTab('providers')}
             className={`px-3 py-1.5 rounded transition-colors cursor-pointer flex items-center gap-1.5 ${
-              activeTab === 'providers' ? 'bg-emerald-600 text-slate-950 font-semibold' : 'text-slate-400 hover:text-white'
+              activeTab === 'providers' ? 'bg-[#18281f] text-[#d6fa64] border border-[#2e4738] font-semibold' : 'text-slate-400 hover:text-white'
             }`}
           >
             <Cpu className="w-3.5 h-3.5" />
@@ -151,7 +151,7 @@ export const SettingsView: React.FC = () => {
           <button
             onClick={() => setActiveTab('integrations')}
             className={`px-3 py-1.5 rounded transition-colors cursor-pointer flex items-center gap-1.5 ${
-              activeTab === 'integrations' ? 'bg-emerald-600 text-slate-950 font-semibold' : 'text-slate-400 hover:text-white'
+              activeTab === 'integrations' ? 'bg-[#18281f] text-[#d6fa64] border border-[#2e4738] font-semibold' : 'text-slate-400 hover:text-white'
             }`}
           >
             <GitPullRequest className="w-3.5 h-3.5" />
@@ -160,7 +160,7 @@ export const SettingsView: React.FC = () => {
           <button
             onClick={() => setActiveTab('security')}
             className={`px-3 py-1.5 rounded transition-colors cursor-pointer flex items-center gap-1.5 ${
-              activeTab === 'security' ? 'bg-emerald-600 text-slate-950 font-semibold' : 'text-slate-400 hover:text-white'
+              activeTab === 'security' ? 'bg-[#18281f] text-[#d6fa64] border border-[#2e4738] font-semibold' : 'text-slate-400 hover:text-white'
             }`}
           >
             <Shield className="w-3.5 h-3.5" />
@@ -169,7 +169,7 @@ export const SettingsView: React.FC = () => {
           <button
             onClick={() => setActiveTab('health')}
             className={`px-3 py-1.5 rounded transition-colors cursor-pointer flex items-center gap-1.5 ${
-              activeTab === 'health' ? 'bg-emerald-600 text-slate-950 font-semibold' : 'text-slate-400 hover:text-white'
+              activeTab === 'health' ? 'bg-[#18281f] text-[#d6fa64] border border-[#2e4738] font-semibold' : 'text-slate-400 hover:text-white'
             }`}
           >
             <Activity className="w-3.5 h-3.5" />
@@ -181,7 +181,7 @@ export const SettingsView: React.FC = () => {
       {/* TAB 1: AI PROVIDERS */}
       {activeTab === 'providers' && (
         <div className="space-y-6">
-          <div className="surface-card p-4 border-[#1f2638] bg-[#0c0e17] flex items-start gap-3">
+          <div className="surface-card p-4 border-[#1d2b22] bg-[#0c120e] flex items-start gap-3">
             <Shield className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
             <div className="space-y-1">
               <h3 className="text-xs font-bold text-white uppercase tracking-wider font-mono">
@@ -208,7 +208,7 @@ export const SettingsView: React.FC = () => {
                   <div
                     key={p.id}
                     className={`surface-card p-5 border transition-all ${
-                      isSelected ? 'border-emerald-500 shadow-md ring-1 ring-emerald-500/30' : 'border-[#1f2638]'
+                      isSelected ? 'border-[#8fe6a9] shadow-md ring-1 ring-[#8fe6a9]/30' : 'border-[#1d2b22]'
                     }`}
                   >
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -225,7 +225,7 @@ export const SettingsView: React.FC = () => {
                             </span>
                           )}
                           {isActiveProvider && (
-                            <span className="px-2 py-0.2 rounded text-[10px] font-mono bg-[#141824] text-slate-300 border border-[#232b3e]">
+                            <span className="px-2 py-0.2 rounded text-[10px] font-mono bg-[#0c120e] text-[#8fe6a9] border border-[#1d2b22]">
                               Active Provider
                             </span>
                           )}
@@ -237,7 +237,7 @@ export const SettingsView: React.FC = () => {
                         <button
                           onClick={() => handleTestProvider(normalizedId)}
                           disabled={isTesting}
-                          className="px-3 py-1.5 rounded-lg bg-[#141824] hover:bg-[#1a2030] border border-[#232b3e] text-xs font-mono text-slate-200 flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50"
+                          className="px-3 py-1.5 rounded-lg bg-[#0c120e] hover:bg-[#14231b] border border-[#1d2b22] text-xs font-mono text-slate-200 flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50"
                         >
                           {isTesting ? (
                             <>
@@ -260,7 +260,7 @@ export const SettingsView: React.FC = () => {
                           className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
                             isSelected
                               ? 'bg-emerald-600 text-slate-950 font-semibold'
-                              : 'bg-[#10141f] text-slate-400 hover:text-white border border-[#1b202e]'
+                              : 'bg-[#080d0a] text-slate-400 hover:text-white border border-[#1b281f]'
                           }`}
                         >
                           {isSelected ? 'Active' : 'Select'}
@@ -269,7 +269,7 @@ export const SettingsView: React.FC = () => {
                     </div>
 
                     {result && (
-                      <div className="mt-3 p-2.5 rounded-lg bg-[#07090e] border border-[#1b202e] flex items-center justify-between text-xs font-mono">
+                      <div className="mt-3 p-2.5 rounded-lg bg-[#080d0a] border border-[#1b281f] flex items-center justify-between text-xs font-mono">
                         <span className="text-emerald-400 flex items-center gap-1.5">
                           <CheckCircle2 className="w-3.5 h-3.5" />
                           <span>{result.message}</span>
@@ -288,7 +288,7 @@ export const SettingsView: React.FC = () => {
       {/* TAB 2: SECURITY & PRIVACY */}
       {activeTab === 'security' && (
         <div className="space-y-6">
-          <div className="surface-card p-6 border-[#1f2638] space-y-5 font-sans">
+          <div className="surface-card p-6 border-[#1d2b22] space-y-5 font-sans">
             <div>
               <h2 className="text-base font-bold text-white">Trust Boundaries & Data Protection</h2>
               <p className="text-xs text-slate-400 mt-0.5">
@@ -296,7 +296,7 @@ export const SettingsView: React.FC = () => {
               </p>
             </div>
 
-            <div className="divide-y divide-[#1b202e] text-xs">
+            <div className="divide-y divide-[#1b281f] text-xs">
               <div className="py-4 flex items-center justify-between gap-4">
                 <div>
                   <div className="font-semibold text-white">Secret & Credential Redaction</div>
@@ -309,7 +309,7 @@ export const SettingsView: React.FC = () => {
                   className={`px-3 py-1 rounded-full text-xs font-mono uppercase transition-colors cursor-pointer ${
                     redactionEnabled
                       ? 'bg-emerald-950 text-emerald-300 border border-emerald-800'
-                      : 'bg-[#141824] text-slate-500 border border-[#232b3e]'
+                      : 'bg-[#080d0a] text-slate-500 border border-[#1b281f]'
                   }`}
                 >
                   {redactionEnabled ? 'Enforced' : 'Disabled'}
@@ -362,7 +362,7 @@ export const SettingsView: React.FC = () => {
       {/* TAB 2: GITHUB & WEBHOOKS */}
       {activeTab === 'integrations' && (
         <div className="space-y-6">
-          <div className="surface-card p-5 border-[#1f2638] space-y-4">
+          <div className="surface-card p-5 border-[#1d2b22] space-y-4">
             <div className="flex items-center justify-between gap-3 pb-3 border-b border-[#1b2130]">
               <div className="flex items-center gap-2">
                 <GitPullRequest className="w-4 h-4 text-emerald-400" />
@@ -372,7 +372,7 @@ export const SettingsView: React.FC = () => {
               {githubStatus?.connected ? (
                 <button
                   onClick={handleDisconnectGitHub}
-                  className="px-3 py-1.5 rounded-lg bg-[#10141f] text-slate-300 border border-[#232b3e] hover:bg-[#141b2b] text-xs font-medium cursor-pointer"
+                  className="px-3 py-1.5 rounded-lg bg-[#080d0a] text-slate-300 border border-[#1b281f] hover:bg-[#14231b] text-xs font-medium cursor-pointer"
                 >
                   Disconnect GitHub
                 </button>
@@ -387,7 +387,7 @@ export const SettingsView: React.FC = () => {
               )}
             </div>
 
-            <div className="rounded-xl border border-[#1b202e] bg-[#0a0d14] p-4 space-y-3">
+            <div className="rounded-xl border border-[#1b281f] bg-[#080d0a] p-4 space-y-3">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <div className="text-[10px] font-mono uppercase tracking-[0.2em] text-slate-400">Connection status</div>
@@ -416,7 +416,7 @@ export const SettingsView: React.FC = () => {
             </div>
 
             {githubStatus?.connected && (
-              <div className="space-y-3 rounded-xl border border-[#1b202e] bg-[#0c111a] p-4">
+              <div className="space-y-3 rounded-xl border border-[#1b281f] bg-[#0c120e] p-4">
                 <div className="flex items-center justify-between gap-3">
                   <div className="text-xs font-semibold text-white">Selected repositories</div>
                   <span className="text-[10px] font-mono uppercase tracking-[0.15em] text-slate-400">
@@ -445,7 +445,7 @@ export const SettingsView: React.FC = () => {
               </div>
             )}
 
-            <div className="rounded-xl border border-[#1b202e] bg-[#0a0d14] p-4 space-y-3 font-mono text-xs">
+            <div className="rounded-xl border border-[#1b281f] bg-[#080d0a] p-4 space-y-3 font-mono text-xs">
               <div className="flex items-center justify-between gap-3">
                 <span className="text-[11px] text-slate-400 uppercase tracking-wider block font-bold">
                   Webhook Payload URL
@@ -455,7 +455,7 @@ export const SettingsView: React.FC = () => {
                 </span>
               </div>
 
-              <div className="flex items-center justify-between gap-3 rounded-lg bg-[#0e121c] border border-[#232b3e] p-2.5 text-slate-200">
+              <div className="flex items-center justify-between gap-3 rounded-lg bg-[#060b09] border border-[#1b281f] p-2.5 text-slate-200">
                 <span className="truncate">{window.location.origin}/api/v1/integrations/github/webhook/</span>
                 <button
                   onClick={() => {
@@ -497,7 +497,7 @@ export const SettingsView: React.FC = () => {
       {/* TAB 4: SYSTEM HEALTH */}
       {activeTab === 'health' && (
         <div className="space-y-6">
-          <div className="surface-card p-5 border-[#1f2638] space-y-4">
+          <div className="surface-card p-5 border-[#1d2b22] space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-[#1b2130]">
               <div className="flex items-center gap-2">
                 <Activity className="w-4 h-4 text-emerald-400" />
@@ -506,7 +506,7 @@ export const SettingsView: React.FC = () => {
               <button
                 onClick={() => refetchHealth()}
                 disabled={isHealthLoading}
-                className="px-3 py-1 rounded bg-[#141824] hover:bg-[#1a2030] border border-[#232b3e] text-xs font-mono text-slate-300 flex items-center gap-1.5 cursor-pointer"
+                className="px-3 py-1 rounded bg-[#0c120e] hover:bg-[#14231b] border border-[#1d2b22] text-xs font-mono text-slate-300 flex items-center gap-1.5 cursor-pointer"
               >
                 <RotateCcw className={`w-3 h-3 ${isHealthLoading ? 'animate-spin' : ''}`} />
                 <span>Recheck Status</span>
@@ -520,7 +520,7 @@ export const SettingsView: React.FC = () => {
               </div>
             ) : healthData ? (
               <div className="space-y-4 font-mono text-xs">
-                <div className="p-3.5 rounded-xl bg-[#0a0d14] border border-[#1b202e] flex items-center justify-between">
+                <div className="p-3.5 rounded-xl bg-[#080d0a] border border-[#1b281f] flex items-center justify-between">
                   <span className="text-slate-300">System Overall Status</span>
                   <span className={`px-2.5 py-0.5 rounded text-[11px] font-bold uppercase ${
                     healthData.status === 'healthy'
@@ -532,17 +532,17 @@ export const SettingsView: React.FC = () => {
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div className="p-3.5 rounded-xl bg-[#0a0d14] border border-[#1b202e] space-y-1">
+                  <div className="p-3.5 rounded-xl bg-[#080d0a] border border-[#1b281f] space-y-1">
                     <span className="text-[10px] text-slate-400 uppercase block">Database Engine</span>
                     <span className="text-sm font-bold text-white capitalize">{healthData.checks.database}</span>
                   </div>
 
-                  <div className="p-3.5 rounded-xl bg-[#0a0d14] border border-[#1b202e] space-y-1">
+                  <div className="p-3.5 rounded-xl bg-[#080d0a] border border-[#1b281f] space-y-1">
                     <span className="text-[10px] text-slate-400 uppercase block">Snapshot Storage</span>
                     <span className="text-sm font-bold text-white capitalize">{healthData.checks.storage}</span>
                   </div>
 
-                  <div className="p-3.5 rounded-xl bg-[#0a0d14] border border-[#1b202e] space-y-1">
+                  <div className="p-3.5 rounded-xl bg-[#080d0a] border border-[#1b281f] space-y-1">
                     <span className="text-[10px] text-slate-400 uppercase block">AI Provider Engine</span>
                     <span className="text-sm font-bold text-white capitalize">{healthData.checks.ai_provider.name}</span>
                   </div>
