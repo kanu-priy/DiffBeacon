@@ -303,6 +303,12 @@
   <!-- 16:9 Canvas Viewport (1920x1080 Native Target) -->
   <div class="video-viewport" id="viewport">
     <canvas id="demoCanvas" width="1920" height="1080"></canvas>
+    <!-- Live Recording Banner -->
+    <div id="recordingBanner" style="display:none; position:absolute; top:20px; left:50%; transform:translateX(-50%); background:rgba(220, 38, 38, 0.95); color:#fff; padding:10px 24px; border-radius:30px; font-weight:700; font-size:13px; z-index:100; box-shadow:0 10px 30px rgba(0,0,0,0.6); align-items:center; gap:10px; font-family:'JetBrains Mono',monospace;">
+      <span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:#fff; animation:rec-blink 1s infinite;"></span>
+      <span id="recordingStatusText">RECORDING 1080p FOR LINKEDIN: 0s / 88s</span>
+      <span style="font-weight:400; font-size:11px; opacity:0.9;">(Auto-downloads on finish)</span>
+    </div>
   </div>
 
   <!-- Player Controls -->
@@ -336,16 +342,119 @@
     "A small code change can affect much more than the file you're looking at."
   </div>
 
-  <!-- Ready-to-use LinkedIn Caption Box -->
-  <div class="linkedin-card">
-    <button class="linkedin-copy-btn" id="copyCaptionBtn">Copy LinkedIn Post</button>
-    <strong>Ready-to-Post LinkedIn Caption:</strong><br>
-    A standard Git diff tells you *what* changed line-by-line. But how do you know *what that change actually affects* across APIs, data models, and business logic before merging?<br><br>
-    I built <strong>DiffBeacon</strong> — code-change intelligence with evidence and transparent uncertainty.<br>
-    ⚡ Traces behavioral impact across serializers, endpoints & downstream dependencies.<br>
-    🛡️ Provenance tiers (Confirmed vs Inferred vs Unverified) — no hallucinated confidence.<br>
-    🧪 Auto-generates targeted sandbox verification pytest cases.<br><br>
-    Live App: <a href="https://diffbeacon-delta.vercel.app" style="color: #8fe6a9;" target="_blank">https://diffbeacon-delta.vercel.app</a> | Built with Python AST + Django + React + Tailwind
+  <!-- Step-by-Step LinkedIn Publishing Assistant -->
+  <div class="linkedin-card" style="margin-top: 16px;">
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; border-bottom: 1px solid #1b281f; padding-bottom: 8px;">
+      <div style="font-size: 14px; font-weight: 700; color: #edf7f2; display: flex; align-items: center; gap: 8px;">
+        <span style="color: #d6fa64;">📥</span>
+        <span>How to Download & Post on LinkedIn in 3 Easy Steps</span>
+      </div>
+      <button class="btn-record" id="quickRecordBtn" style="padding: 6px 14px; font-size: 12px; border-radius: 6px; cursor: pointer;">
+        ⏺ Download Video File Now
+      </button>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; margin-bottom: 16px;">
+      <div style="background: #060b09; padding: 12px; border-radius: 8px; border: 1px solid #1b281f;">
+        <strong style="color: #d6fa64; display: block; margin-bottom: 4px;">Step 1: Download Video</strong>
+        Click the green <strong>"Download Video File Now"</strong> button above. The 88-second 1080p demo runs and automatically saves to your computer's Downloads folder as an MP4/WebM video.
+      </div>
+      <div style="background: #060b09; padding: 12px; border-radius: 8px; border: 1px solid #1b281f;">
+        <strong style="color: #8fe6a9; display: block; margin-bottom: 4px;">Step 2: Upload to LinkedIn</strong>
+        Go to LinkedIn → Click <strong>"Start a post"</strong> → Click the <strong>Video</strong> icon 📹 → Select your downloaded <code>DiffBeacon-Product-Demo.webm</code> file.
+      </div>
+      <div style="background: #060b09; padding: 12px; border-radius: 8px; border: 1px solid #1b281f;">
+        <strong style="color: #7ee7b2; display: block; margin-bottom: 4px;">Step 3: Copy Caption & Post</strong>
+        Choose one of the 3 prepared post templates below, click <strong>"Copy Caption"</strong>, paste it into your LinkedIn post, and hit <strong>Post</strong>!
+      </div>
+    </div>
+
+    <!-- 3 Tailored LinkedIn Post Options -->
+    <div style="margin-top: 12px; border-top: 1px solid #1b281f; padding-top: 12px;">
+      <div style="font-weight: 700; color: #edf7f2; margin-bottom: 10px; font-size: 13px;">
+        Choose Your Preferred LinkedIn Post Caption:
+      </div>
+
+      <!-- Option 1: Story & Engagement (Recommended) -->
+      <div style="background: #0c120e; border: 1px solid #2e4738; border-radius: 8px; padding: 14px; margin-bottom: 12px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <span style="font-weight: 700; color: #d6fa64; font-size: 13px;">Option 1: Story-Driven & Engaging (Recommended for Highest Reach)</span>
+          <button class="linkedin-copy-btn" id="copyTemplate1Btn">Copy Option 1</button>
+        </div>
+        <pre id="template1Text" style="white-space: pre-wrap; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 12px; color: #a7b7b0; line-height: 1.6; margin: 0;">A standard Git diff tells you *what* changed line-by-line.
+
+But how do you know *what that change actually affects* across APIs, data models, and business logic before merging?
+
+Most production regressions don't happen because of syntax errors. They happen because of hidden ripple effects: a "small" serializer validation tweak silently breaks downstream checkout endpoints, background workers, or third-party client integrations.
+
+I built DiffBeacon to answer the question standard diffs can't:
+"What does this change touch across the architecture?"
+
+⚡ Downstream Call Pathways — traces behavioral impact across serializers, endpoints & celery tasks
+🛡️ Epistemic Provenance — separates static AST code proof from inferred risks (zero hallucinated confidence)
+🧪 Targeted Verification Matrix — auto-generates executable pytest cases to verify regressions before merge
+🔒 100% Deterministic & Local — pure Python AST parsing with zero proprietary code sent to external LLMs
+
+Check out the 88s demo video attached!
+🌐 Try the live app: https://diffbeacon-delta.vercel.app
+
+Would love to hear how your team currently tracks downstream impact during PR reviews!
+
+#softwareengineering #developer #devtools #python #django #react #programming #github #codereview</pre>
+      </div>
+
+      <!-- Option 2: Technical Deep-Dive -->
+      <div style="background: #0c120e; border: 1px solid #1b281f; border-radius: 8px; padding: 14px; margin-bottom: 12px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <span style="font-weight: 700; color: #8fe6a9; font-size: 13px;">Option 2: Technical Deep-Dive (For Senior Engineers & Tech Leads)</span>
+          <button class="linkedin-copy-btn" id="copyTemplate2Btn">Copy Option 2</button>
+        </div>
+        <pre id="template2Text" style="white-space: pre-wrap; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 12px; color: #a7b7b0; line-height: 1.6; margin: 0;">Beyond line diffs: Deterministic code-change intelligence for pull requests.
+
+When a pull request is opened, Git diffs only show changed text lines without semantic context.
+
+I built DiffBeacon — an open-source code intelligence tool that maps change blast radius across Python and Django applications:
+
+1. Deterministic Multi-Pass AST Engine:
+Extracts normalized AST symbols and detects behavioral deltas (e.g. tighter validation bounds) without relying on probabilistic LLMs.
+
+2. Cross-Module Dependency Graph:
+Traces call chains from modified serializer fields all the way down to public HTTP routes and Celery workers.
+
+3. Epistemic Confidence Tiers:
+Classifies findings into Confirmed (AST proof), Inferred (call graph relationship), and Unverified (boundary unknowns).
+
+4. Automated Verification Matrix:
+Synthesizes targeted pytest test recommendations and runs them in ephemeral sandboxes.
+
+🎥 Video walkthrough attached.
+🌐 Live Demo: https://diffbeacon-delta.vercel.app
+💻 GitHub: https://github.com/kanu-priy/DiffBeacon
+
+#python #django #ast #devtools #backend #architecture #cleancode</pre>
+      </div>
+
+      <!-- Option 3: Short & Punchy -->
+      <div style="background: #0c120e; border: 1px solid #1b281f; border-radius: 8px; padding: 14px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <span style="font-weight: 700; color: #7ee7b2; font-size: 13px;">Option 3: Short & Punchy (Fast Feed Scrollers)</span>
+          <button class="linkedin-copy-btn" id="copyTemplate3Btn">Copy Option 3</button>
+        </div>
+        <pre id="template3Text" style="white-space: pre-wrap; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 12px; color: #a7b7b0; line-height: 1.6; margin: 0;">Understand the impact before the merge.
+
+A Git diff tells you *what* changed. DiffBeacon shows you *what it affects*.
+
+🔍 Traces ripple effects from small code changes to downstream APIs
+🛡️ Provenance tiers (Confirmed vs Inferred vs Unverified)
+🧪 Generates targeted sandbox pytest suites
+⚡ 100% deterministic local AST analysis
+
+Watch the 88s product demo below 👇
+Live App: https://diffbeacon-delta.vercel.app
+
+#developer #devtools #softwareengineering #github #tech</pre>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -1373,6 +1482,14 @@
 
       if (isPlaying) {
         currentTime += deltaTime * playbackSpeed;
+        if (isRecording) {
+          const recordingBanner = document.getElementById('recordingBanner');
+          const recordingStatusText = document.getElementById('recordingStatusText');
+          if (recordingBanner) recordingBanner.style.display = 'flex';
+          if (recordingStatusText) {
+            recordingStatusText.textContent = `RECORDING 1080p FOR LINKEDIN: ${Math.floor(currentTime)}s / ${Math.floor(TOTAL_DURATION)}s`;
+          }
+        }
         if (currentTime >= TOTAL_DURATION) {
           currentTime = TOTAL_DURATION; isPlaying = false; playBtn.textContent = '▶';
           if (isRecording) stopRecording();
@@ -1451,6 +1568,37 @@
       setTimeout(() => (copyCaptionBtn.textContent = 'Copy LinkedIn Post'), 2000);
     });
 
+    const quickRecordBtn = document.getElementById('quickRecordBtn');
+    if (quickRecordBtn) {
+      quickRecordBtn.addEventListener('click', () => {
+        if (!isRecording) startRecording();
+        else stopRecording();
+      });
+    }
+
+    function setupCopyBtn(btnId, textId) {
+      const btn = document.getElementById(btnId);
+      const textEl = document.getElementById(textId);
+      if (btn && textEl) {
+        btn.addEventListener('click', () => {
+          const text = textEl.innerText || textEl.textContent;
+          navigator.clipboard.writeText(text);
+          const orig = btn.textContent;
+          btn.textContent = '✓ Copied to Clipboard!';
+          btn.style.borderColor = '#d6fa64';
+          btn.style.color = '#d6fa64';
+          setTimeout(() => {
+            btn.textContent = orig;
+            btn.style.borderColor = '';
+            btn.style.color = '';
+          }, 2500);
+        });
+      }
+    }
+    setupCopyBtn('copyTemplate1Btn', 'template1Text');
+    setupCopyBtn('copyTemplate2Btn', 'template2Text');
+    setupCopyBtn('copyTemplate3Btn', 'template3Text');
+
     recordBtn.addEventListener('click', () => {
       if (!isRecording) startRecording();
       else stopRecording();
@@ -1462,6 +1610,13 @@
       recordedChunks = [];
       recordBtn.classList.add('recording');
       recordLabel.textContent = 'Recording 1080p... Click to Stop';
+      if (quickRecordBtn) {
+        quickRecordBtn.textContent = '⏹ Stop & Download Video';
+        quickRecordBtn.style.background = '#dc2626';
+        quickRecordBtn.style.color = '#ffffff';
+      }
+      const recordingBanner = document.getElementById('recordingBanner');
+      if (recordingBanner) recordingBanner.style.display = 'flex';
 
       const stream = canvas.captureStream(60);
       if (audioCtx) {
@@ -1471,23 +1626,38 @@
         if (audioTracks.length > 0) stream.addTrack(audioTracks[0]);
       }
 
-      const options = { mimeType: 'video/webm;codecs=vp9', videoBitsPerSecond: 8000000 };
-      try { mediaRecorder = new MediaRecorder(stream, options); }
-      catch (e) { mediaRecorder = new MediaRecorder(stream); }
+      let mimeType = 'video/webm;codecs=vp9,opus';
+      if (!MediaRecorder.isTypeSupported(mimeType)) mimeType = 'video/webm;codecs=vp8,opus';
+      if (!MediaRecorder.isTypeSupported(mimeType)) mimeType = 'video/webm';
+      if (!MediaRecorder.isTypeSupported(mimeType)) mimeType = 'video/mp4';
+
+      try {
+        mediaRecorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 8000000 });
+      } catch (e) {
+        mediaRecorder = new MediaRecorder(stream);
+      }
 
       mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) recordedChunks.push(e.data); };
       mediaRecorder.onstop = () => {
-        const blob = new Blob(recordedChunks, { type: 'video/webm' });
+        const ext = mediaRecorder.mimeType && mediaRecorder.mimeType.includes('mp4') ? 'mp4' : 'webm';
+        const blob = new Blob(recordedChunks, { type: mediaRecorder.mimeType || 'video/webm' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `DiffBeacon-Product-Demo-1080p-${new Date().toISOString().slice(0, 10)}.webm`;
+        a.download = `DiffBeacon-Product-Demo-1080p-${new Date().toISOString().slice(0, 10)}.${ext}`;
         a.click();
         URL.revokeObjectURL(url);
         recordBtn.classList.remove('recording');
         recordLabel.textContent = 'Record & Export 1080p Video';
+        if (quickRecordBtn) {
+          quickRecordBtn.textContent = '⏺ Download Video File Now';
+          quickRecordBtn.style.background = '';
+          quickRecordBtn.style.color = '';
+        }
+        const recBanner = document.getElementById('recordingBanner');
+        if (recBanner) recBanner.style.display = 'none';
         isRecording = false;
-        alert('🎉 1080p Video export complete! The video file has been saved to your downloads folder.');
+        alert('🎉 1080p Video export complete! The video file has been saved to your downloads folder. Ready for LinkedIn!');
       };
 
       currentTime = 0; lastSpokenScene = -1; isPlaying = true; playBtn.textContent = '❚❚';
@@ -1496,6 +1666,8 @@
 
     function stopRecording() {
       if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
+      const recBanner = document.getElementById('recordingBanner');
+      if (recBanner) recBanner.style.display = 'none';
     }
   </script>
 </body>
